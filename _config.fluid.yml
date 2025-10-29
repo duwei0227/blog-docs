@@ -146,3 +146,16 @@ open_graph:
 post:
   copyright:
     enable: false
+
+code:
+  copy_btn: true
+  highlight:
+    enable: true
+    line_number: true
+    lib: "highlightjs"
+    highlightjs:
+      style: 'atom-one-dark'
+      bg_color: false
+    prismjs:
+      style: "default"
+      preprocess: true
