@@ -101,4 +101,19 @@ theme: fluid
 # Deployment
 ## Docs: https://hexo.io/docs/one-command-deployment
 deploy:
-  type: ''
+  type: git
+  repo: git@github.com:duwei0227/blog-docs.git
+  branch: gh-pages
+
+code:
+  copy_btn: true
+  highlight:
+    enable: true
+    line_number: true
+    lib: "highlightjs"
+    highlightjs:
+      style: "atom-one-dark"
+      bg_color: false
+    prismjs:
+      style: "default"
+      preprocess: true

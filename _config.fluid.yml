@@ -154,7 +154,7 @@ code:
     line_number: true
     lib: "highlightjs"
     highlightjs:
-      style: 'atom-one-dark'
+      style: "atom-one-dark"
       bg_color: false
     prismjs:
       style: "default"
