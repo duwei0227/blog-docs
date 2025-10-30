@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  
+  
+  
+  <entry>
+    <title>Fedora系统自动删除历史kernel</title>
+    <link href="/linux/fedora/removal_old_kernel.html"/>
+    <url>/linux/fedora/removal_old_kernel.html</url>
+    
+    <content type="html"><![CDATA[<h3 id="一、编辑-dnf-conf-文件"><a href="#一、编辑-dnf-conf-文件" class="headerlink" title="一、编辑 dnf.conf 文件"></a>一、编辑 dnf.conf 文件</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">sudo</span> vi /etc/dnf/dnf.conf<br></code></pre></td></tr></table></figure><h3 id="二、在-main-下边添加-installonly-limit"><a href="#二、在-main-下边添加-installonly-limit" class="headerlink" title="二、在[main]下边添加 installonly_limit"></a>二、在[main]下边添加 installonly_limit</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">installonly_limit=2<br></code></pre></td></tr></table></figure><p>数字 <strong>2</strong>表示需要保留的内核数量，包含当前在使用的最新内核</p><h3 id="三、执行-sudo-dnf-update-删除旧内核"><a href="#三、执行-sudo-dnf-update-删除旧内核" class="headerlink" title="三、执行 sudo dnf update 删除旧内核"></a>三、执行 sudo dnf update 删除旧内核</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs bash">duwei@probiecoder:~$ <span class="hljs-built_in">sudo</span> dnf update<br>Updating and loading repositories:<br>dRepositories loaded.<br>Package                  Arch    Version                  Repository        Size<br>Removing:<br> kernel                  x86_64  6.17.4-200.fc42          &lt;unknown&gt;      0.0   B<br> kernel-core             x86_64  6.17.4-200.fc42          &lt;unknown&gt;     98.8 MiB<br> kernel-modules          x86_64  6.17.4-200.fc42          &lt;unknown&gt;     95.6 MiB<br> kernel-modules-core     x86_64  6.17.4-200.fc42          &lt;unknown&gt;     68.3 MiB<br> kernel-modules-extra    x86_64  6.17.4-200.fc42          &lt;unknown&gt;      4.2 MiB<br><br>Transaction Summary:<br> Removing:           5 packages<br><br></code></pre></td></tr></table></figure>]]></content>
+    
+    
+    <categories>
+      
+      <category>Linux</category>
+      
+    </categories>
+    
+    
+    <tags>
+      
+      <tag>Fedora</tag>
+      
+    </tags>
+    
+  </entry>
+  
+  
+  
+  
+</search>
