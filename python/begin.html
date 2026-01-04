@@ -21,11 +21,11 @@
   <meta name="author" content="John Doe">
   <meta name="keywords" content="">
   
-    <meta name="description" content="Linux环境下Typora通过PicGo-Core上传图片到GitHub配置： config.json配置如下： 12345678910111213&amp;#123;    &amp;quot;picBed&amp;quot;: &amp;#123;        &amp;quot;current&amp;quot;: &amp;quot;github&amp;quot;,        &amp;quot;github&amp;quot;: &amp;#123;">
+    <meta name="description" content="一、安装Python下载链接： https://www.python.org/downloads/windows/ 在下载页面选择 Stable Releases 稳定版本，下载文件可以选择exe或zip包  Windows installer (64-bit)：exe格式的安装包，目前Windows系统一般都是64位的，选择第一个即可 Windows embeddable package (64">
   
   
   
-  <title>Typora配置GitHub图床 - probie&#39;s blog</title>
+  <title>Python安装与入门 - probie&#39;s blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -191,7 +191,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Typora配置GitHub图床"></span>
+            <span id="subtitle" data-typed-text="Python安装与入门"></span>
           
         </div>
 
@@ -202,8 +202,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2025-11-25 19:02" pubdate>
-          2025年11月25日 晚上
+        <time datetime="2026-01-04 19:00" pubdate>
+          2026年1月4日 晚上
         </time>
       </span>
     
@@ -214,7 +214,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          190 字
+          631 字
         
       </span>
     
@@ -225,7 +225,7 @@
         
         
         
-          2 分钟
+          6 分钟
         
       </span>
     
@@ -262,25 +262,75 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">Typora配置GitHub图床</h1>
+            <h1 id="seo-header">Python安装与入门</h1>
             
             
               <div class="markdown-body">
                 
-                <p><code>Linux</code>环境下<code>Typora</code>通过<code>PicGo-Core</code>上传图片到<code>GitHub</code>配置：</p>
-<p><code>config.json</code>配置如下：</p>
-<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>    <span class="hljs-attr">&quot;picBed&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>        <span class="hljs-attr">&quot;current&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;github&quot;</span><span class="hljs-punctuation">,</span><br>        <span class="hljs-attr">&quot;github&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><br>            <span class="hljs-attr">&quot;repo&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;duwei0227/picbed&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-comment">// 仓库名，格式是 username/reponame</span><br>            <span class="hljs-attr">&quot;token&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;g&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-comment">// github token</span><br>            <span class="hljs-attr">&quot;path&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-comment">// 自定义存储路径，比如 img/</span><br>            <span class="hljs-attr">&quot;customUrl&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;&quot;</span><span class="hljs-punctuation">,</span> <span class="hljs-comment">// 自定义域名，注意要加 http://或者 https://</span><br>            <span class="hljs-attr">&quot;branch&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;main&quot;</span> <span class="hljs-comment">// 分支名，默认是 main</span><br>        <span class="hljs-punctuation">&#125;</span><br>    <span class="hljs-punctuation">&#125;</span><span class="hljs-punctuation">,</span><br>    <span class="hljs-attr">&quot;picgoPlugins&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">&#123;</span><span class="hljs-punctuation">&#125;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
-
-
-
-<p><code>token</code>生成：<br>1、访问 <a target="_blank" rel="noopener" href="https://github.com/settings/tokens">https://github.com/settings/tokens</a></p>
-<p>2、点击 <code>New personal access token (classic)</code></p>
-<p>3、选择<code>token</code>实效时间，勾选<code>repo</code></p>
-<p>4、<code>Generate token</code></p>
-<p>5、复制生成的<code>token</code>信息（<strong>重新访问页面时，token信息无法再次查看，需要自行保存</strong>）</p>
-<p><strong>注意事项</strong></p>
+                <h3 id=""><a href="#" class="headerlink" title=""></a></h3><h2 id="一、安装Python"><a href="#一、安装Python" class="headerlink" title="一、安装Python"></a>一、安装Python</h2><p>下载链接： <a target="_blank" rel="noopener" href="https://www.python.org/downloads/windows/">https://www.python.org/downloads/windows/</a></p>
+<p>在下载页面选择 <code>Stable Releases</code> 稳定版本，下载文件可以选择<code>exe</code>或<code>zip</code>包</p>
 <ul>
-<li><code>branch</code>需要指定，默认提交会提示分支不存在</li>
+<li>Windows installer (64-bit)：<code>exe</code>格式的安装包，目前<code>Windows</code>系统一般都是<code>64</code>位的，选择第一个即可</li>
+<li>Windows embeddable package (64-bit)：<code>zip</code> 格式，解压后配置环境变量后使用<code>Python</code>解释器，相对于<code>exe</code>方式安装，提供的功能相对较少</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20251229131643659.png" srcset="/img/loading.gif" lazyload alt="image-20251229131643659"></p>
+<h3 id="1-exe格式安装（建议选择）"><a href="#1-exe格式安装（建议选择）" class="headerlink" title="1. exe格式安装（建议选择）"></a>1. exe格式安装（建议选择）</h3><ul>
+<li><p>运行下载后的<code>exe</code>文件，首先会让我们选择需要安装的功能，此处主要选择 <code>pip</code>即可，后续就不需要单独安装<code>pip</code>模块</p>
+<p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20251229132832044.png" srcset="/img/loading.gif" lazyload alt="image-20251229132832044"></p>
+</li>
+<li><p>下一步选择<code>Python</code>解释器安装目录和其他高级功能，选择创建快捷指令和添加<code>Python</code>到环境变量（后续不需要人工配置环境变量）即可</p>
+<p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20251229133027226.png" srcset="/img/loading.gif" lazyload alt="image-20251229133027226"></p>
+</li>
+<li><p>点击<code>Install</code> 安装</p>
+</li>
+<li><p>验证，<strong>采用<code>exe</code>的优点在于不用手动配置环境变量和安装<code>pip</code>模块</strong></p>
+<p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20251229133226623.png" srcset="/img/loading.gif" lazyload alt="image-20251229133226623"></p>
+</li>
+</ul>
+<h3 id="2-zip格式安装"><a href="#2-zip格式安装" class="headerlink" title="2. zip格式安装"></a>2. zip格式安装</h3><ul>
+<li><p>将下载下来的zip包解压，例如解压到 <code>D:/python-3.14.2-embed-amd64</code> 目录，具体路径和命名可以根据个人喜好设置</p>
+</li>
+<li><p>配置环境变量，将上一步的<code>D:/python-3.14.2-embed-amd64(包含python.exe)</code>的路径添加到<code>Path</code>环境变量上，<strong>添加路径：系统-&gt;系统信息-&gt;高级系统设置-&gt;环境变量-&gt;系统变量-&gt;Path-&gt;新建</strong> </p>
+<p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20251229131944926.png" srcset="/img/loading.gif" lazyload alt="image-20251229131944926"></p>
+</li>
+<li><p>检查配置正确性</p>
+<p>打开<code>cmd</code>窗口，输入 <code>python -V</code> 查看<code>python</code>版本，如果显示正确表明安装成功</p>
+<p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20251229132200244.png" srcset="/img/loading.gif" lazyload alt="image-20251229132200244"></p>
+</li>
+</ul>
+<p>使用<code>zip</code>包安装存在的问题：</p>
+<ul>
+<li>无法使用<code>pip</code>安装第三方模块</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20251229132345358.png" srcset="/img/loading.gif" lazyload alt="image-20251229132345358"></p>
+<p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20251229132351852.png" srcset="/img/loading.gif" lazyload alt="image-20251229132351852"></p>
+<p><strong>通过get-pip.py手动安装pip</strong></p>
+<ul>
+<li><p>获取get-pip.py文件</p>
+  <figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py<br></code></pre></td></tr></table></figure>
+</li>
+<li><p>运行get-pip.py文件安装pip</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">python get-pip.py<br></code></pre></td></tr></table></figure>
+
+
+
+<p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20251229132545972.png" srcset="/img/loading.gif" lazyload alt="image-20251229132545972"></p>
+</li>
+</ul>
+<h2 id="二、安装编码客户端"><a href="#二、安装编码客户端" class="headerlink" title="二、安装编码客户端"></a>二、安装编码客户端</h2><p><code>Python</code>解释器安装好以后，我们开始进入编码阶段，编码不要工具，此处介绍免费的<code>VS Code</code>的安装和配置，用于后续的学习。</p>
+<h3 id="1-安装-VS-Code"><a href="#1-安装-VS-Code" class="headerlink" title="1. 安装 VS Code"></a>1. 安装 VS Code</h3><p>访问：<a target="_blank" rel="noopener" href="https://code.visualstudio.com/download">https://code.visualstudio.com/download</a> 根据系统选择下载</p>
+<p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20251229152859065.png" srcset="/img/loading.gif" lazyload alt="image-20251229152859065"></p>
+<h3 id="2-安装Python插件"><a href="#2-安装Python插件" class="headerlink" title="2. 安装Python插件"></a>2. 安装Python插件</h3><p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20251229153320867.png" srcset="/img/loading.gif" lazyload alt="image-20251229153320867"></p>
+<h2 id="三、Hello-World"><a href="#三、Hello-World" class="headerlink" title="三、Hello World"></a>三、Hello World</h2><p>使用VS Code打开一个目录用于后续代码开发</p>
+<p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20251229171859046.png" srcset="/img/loading.gif" lazyload alt="image-20251229171859046"></p>
+<p>新建一个 <code>test.py</code> 文件并写入以下内容打印<code>Hello World</code></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Hello World&quot;</span>)<br><br><span class="hljs-comment"># 或 </span><br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&#x27;__main__&#x27;</span>:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Hello World&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+
+
+<ul>
+<li><code>Python</code> 是从上到下解释执行代码</li>
+<li><code>__name__</code>是一个内置变量，表示当前模块的名称，当使用<code>python xx.py</code>时，<code>__name__</code> 被设置为<code>__main__</code>， 当文件作为模块被其他文件引用时，<code>__name__</code>被设置为文件名（不含扩展名）</li>
 </ul>
 
                 
@@ -300,7 +350,7 @@
     
       <span class="category-chain">
         
-  <a href="/categories/%E5%85%B6%E4%BB%96/" class="category-chain-item">其他</a>
+  <a href="/categories/Python/" class="category-chain-item">Python</a>
   
   
 
@@ -312,13 +362,6 @@
     </div>
   
   
-    <div class="post-meta">
-      <i class="iconfont icon-tags"></i>
-      
-        <a href="/tags/PicBed/" class="print-no-link">#PicBed</a>
-      
-    </div>
-  
 </div>
 
 
@@ -329,9 +372,9 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/python/begin.html" title="Python安装与入门">
+                      <a href="/python/variable.html" title="Python变量">
                         <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">Python安装与入门</span>
+                        <span class="hidden-mobile">Python变量</span>
                         <span class="visible-mobile">上一篇</span>
                       </a>
                     
@@ -339,8 +382,8 @@
                   <article class="post-next col-6">
                     
                     
-                      <a href="/linux/fedora/removal_old_kernel.html" title="Fedora系统自动删除历史kernel">
-                        <span class="hidden-mobile">Fedora系统自动删除历史kernel</span>
+                      <a href="/other/picbed.html" title="Typora配置GitHub图床">
+                        <span class="hidden-mobile">Typora配置GitHub图床</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
