@@ -21,11 +21,11 @@
   <meta name="author" content="John Doe">
   <meta name="keywords" content="">
   
-    <meta name="description" content="一、变量的定义什么是变量：变量是用于存储数据的容器，可以通过变量名来引用存储的值，直白一点就是变量代表了一个值，我们可以通过变量存储和获取值。 基本特点  不需要显示声明类型，编译器会通过赋值进行类型推断 同一个变量名在声明以后，可以被赋值不同类型的值  命名规则  变量名只能包含：字母（a-z, A-Z）、数字（0-9）、下划线（_） 首字母只能以字母或下划线开头，不能以数字开头 区分大小写 n">
+    <meta name="description" content="运算符是一些特殊符号或关键字，用于对 变量或值执行特定操作，例如数学计算、组合条件、逻辑判断等。 一、算术运算（Arithmetic Operations）算术运算符用于对数字进行数学运算，可以对整数、浮点数等数值类型操作数执行算术计算。 🧮 常见算术运算符与含义   运算符 名称 作用    + 加法 相加两个数值   - 减法 从一个数中减去另一个   * 乘法 两个数相乘   / 除法 返">
   
   
   
-  <title>Python变量 - probie&#39;s blog</title>
+  <title>运算符 - probie&#39;s blog</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -191,7 +191,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="Python变量"></span>
+            <span id="subtitle" data-typed-text="运算符"></span>
           
         </div>
 
@@ -202,8 +202,8 @@
     
       <span class="post-meta">
         <i class="iconfont icon-date-fill" aria-hidden="true"></i>
-        <time datetime="2026-01-04 19:30" pubdate>
-          2026年1月4日 晚上
+        <time datetime="2026-01-06 14:00" pubdate>
+          2026年1月6日 下午
         </time>
       </span>
     
@@ -214,7 +214,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          919 字
+          494 字
         
       </span>
     
@@ -225,7 +225,7 @@
         
         
         
-          8 分钟
+          5 分钟
         
       </span>
     
@@ -262,123 +262,96 @@
       <div class="container nopadding-x-md" id="board-ctn">
         <div id="board">
           <article class="post-content mx-auto">
-            <h1 id="seo-header">Python变量</h1>
+            <h1 id="seo-header">运算符</h1>
             
             
               <div class="markdown-body">
                 
-                <h2 id="一、变量的定义"><a href="#一、变量的定义" class="headerlink" title="一、变量的定义"></a>一、变量的定义</h2><p>什么是变量：变量是用于存储数据的容器，可以通过变量名来引用存储的值，直白一点就是变量代表了一个值，我们可以通过变量存储和获取值。</p>
-<p><strong>基本特点</strong></p>
-<ul>
-<li>不需要显示声明类型，编译器会通过赋值进行类型推断</li>
-<li>同一个变量名在声明以后，可以被赋值不同类型的值</li>
-</ul>
-<p><strong>命名规则</strong></p>
-<ul>
-<li>变量名只能包含：字母（a-z, A-Z）、数字（0-9）、下划线（_）</li>
-<li>首字母只能以字母或下划线开头，不能以数字开头</li>
-<li>区分大小写 <code>name</code> 和 <code>NAME</code>表示不同的变量</li>
-<li>不能使用<code>Python</code>关键字，可以通过使用 <code>keyword.kwlist</code> 获取当前版本<code>Python</code>的保留关键字</li>
-</ul>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># ✅ 允许的</span><br>name = <span class="hljs-string">&quot;张三&quot;</span><br>age_1 = <span class="hljs-number">25</span><br>_user_count = <span class="hljs-number">100</span><br>variable = <span class="hljs-number">10</span>    <span class="hljs-comment"># 字母开头</span><br>_variable = <span class="hljs-number">20</span>   <span class="hljs-comment"># 下划线开头</span><br>var123 = <span class="hljs-number">30</span>      <span class="hljs-comment"># 字母开头，包含数字</span><br><br><span class="hljs-comment"># ❌ 不允许的</span><br><span class="hljs-comment"># my-name = &quot;张三&quot;     # 不允许连字符</span><br><span class="hljs-comment"># my.name = &quot;李四&quot;     # 不允许点号</span><br><span class="hljs-comment"># my name = &quot;王五&quot;     # 不允许空格</span><br><span class="hljs-comment"># name@email = &quot;test&quot;  # 不允许@符号</span><br><span class="hljs-comment"># $price = 100         # 不允许$符号</span><br>123var = <span class="hljs-number">10</span>      <span class="hljs-comment"># 数字开头</span><br>1variable = <span class="hljs-number">20</span>   <span class="hljs-comment"># 数字开头</span><br><span class="hljs-number">123</span> = <span class="hljs-string">&quot;test&quot;</span>     <span class="hljs-comment"># 纯数字也不行</span><br></code></pre></td></tr></table></figure>
-
-
-
-<p><strong>建议的命名</strong></p>
-<table>
+                <p><strong>运算符是一些特殊符号或关键字</strong>，用于对 <strong>变量或值执行特定操作</strong>，例如数学计算、组合条件、逻辑判断等。</p>
+<h2 id="一、算术运算（Arithmetic-Operations）"><a href="#一、算术运算（Arithmetic-Operations）" class="headerlink" title="一、算术运算（Arithmetic Operations）"></a>一、算术运算（Arithmetic Operations）</h2><p>算术运算符用于对数字进行数学运算，可以对整数、浮点数等数值类型操作数执行算术计算。</p>
+<h3 id="🧮-常见算术运算符与含义"><a href="#🧮-常见算术运算符与含义" class="headerlink" title="🧮 常见算术运算符与含义"></a>🧮 常见算术运算符与含义</h3><table>
 <thead>
 <tr>
-<th align="left">类型</th>
-<th align="left">命名约定</th>
-<th align="left">示例</th>
+<th>运算符</th>
+<th>名称</th>
+<th>作用</th>
 </tr>
 </thead>
 <tbody><tr>
-<td align="left">变量</td>
-<td align="left">snake_case（小写下划线）</td>
-<td align="left"><code>student_name</code>, <code>total_score</code></td>
+<td><code>+</code></td>
+<td>加法</td>
+<td>相加两个数值</td>
 </tr>
 <tr>
-<td align="left">函数</td>
-<td align="left">snake_case（小写下划线）</td>
-<td align="left"><code>get_user_info()</code>, <code>calculate_total()</code></td>
+<td><code>-</code></td>
+<td>减法</td>
+<td>从一个数中减去另一个</td>
 </tr>
 <tr>
-<td align="left">类名</td>
-<td align="left">PascalCase（大驼峰）</td>
-<td align="left"><code>StudentInfo</code>, <code>DataProcessor</code></td>
+<td><code>*</code></td>
+<td>乘法</td>
+<td>两个数相乘</td>
 </tr>
 <tr>
-<td align="left">常量</td>
-<td align="left">UPPER_CASE（全大写）</td>
-<td align="left"><code>MAX_SIZE</code>, <code>DEFAULT_TIMEOUT</code></td>
+<td><code>/</code></td>
+<td>除法</td>
+<td>返回除法的结果（浮点数）</td>
 </tr>
 <tr>
-<td align="left">模块</td>
-<td align="left">snake_case（小写下划线）</td>
-<td align="left"><code>my_module.py</code></td>
+<td><code>%</code></td>
+<td>取模</td>
+<td>返回两数相除的余数</td>
 </tr>
 <tr>
-<td align="left">包名</td>
-<td align="left">snake_case（全小写）</td>
-<td align="left"><code>my_package/</code></td>
+<td><code>//</code></td>
+<td>整除（地板除）</td>
+<td>返回商的整数部分</td>
+</tr>
+<tr>
+<td><code>**</code></td>
+<td>幂运算</td>
+<td>返回一个数的另一数次幂</td>
 </tr>
 </tbody></table>
-<h2 id="二、局部变量与全局变量"><a href="#二、局部变量与全局变量" class="headerlink" title="二、局部变量与全局变量"></a>二、局部变量与全局变量</h2><h3 id="1、局部变量"><a href="#1、局部变量" class="headerlink" title="1、局部变量"></a>1、局部变量</h3><p>定义位置：定义在函数内部的变量</p>
-<p>作用域：只在定义它的函数内部生效</p>
-<p>生命周期：函数调用时创建，函数结束时销毁</p>
-<p>访问权限：只能在函数内部访问</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">greet</span>():<br>    msg = <span class="hljs-string">&quot;Hello Python!&quot;</span><br>    <span class="hljs-built_in">print</span>(msg)  <span class="hljs-comment"># 这里能访问 msg</span><br><br>greet()<br><span class="hljs-built_in">print</span>(msg)  <span class="hljs-comment"># 报错：msg 在这里不存在</span><br><br></code></pre></td></tr></table></figure>
-
-
-
-<h3 id="2、全局变量"><a href="#2、全局变量" class="headerlink" title="2、全局变量"></a>2、全局变量</h3><p>定义位置：函数外部，模块顶层</p>
-<p>作用域：在整个模块中有效</p>
-<p>生命周期：程序运行时创建，程序结束时销毁</p>
-<p>访问权限：可以在任何地方访问</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python">x = <span class="hljs-number">10</span>  <span class="hljs-comment"># 全局变量</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">show</span>():<br>    <span class="hljs-built_in">print</span>(x)  <span class="hljs-comment"># 在函数内部访问全局变量</span><br><br>show()<br><span class="hljs-built_in">print</span>(x)  <span class="hljs-comment"># 同样能访问</span><br><br></code></pre></td></tr></table></figure>
-
-
-
-<h4 id="2-1-同名遮蔽（Shadowing）"><a href="#2-1-同名遮蔽（Shadowing）" class="headerlink" title="2.1 同名遮蔽（Shadowing）"></a>2.1 同名遮蔽（Shadowing）</h4><p>如果全局有一个变量 <code>a</code>，函数里也定义了 <code>a</code>，局部变量 <strong>不会修改</strong> 全局变量，仅在函数内遮蔽它</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python">a = <span class="hljs-number">10</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">f</span>():<br>    a = <span class="hljs-number">99</span>  <span class="hljs-comment"># 局部变量，函数内部定义的局部变量 a 会遮蔽全局变量 a</span><br>    <span class="hljs-built_in">print</span>(a)<br><br>f()        <span class="hljs-comment"># 输出 99</span><br><span class="hljs-built_in">print</span>(a)   <span class="hljs-comment"># 仍然是 10</span><br><br></code></pre></td></tr></table></figure>
-
-
-
-<h4 id="2-2-全局变量的修改"><a href="#2-2-全局变量的修改" class="headerlink" title="2.2 全局变量的修改"></a>2.2 全局变量的修改</h4><p>对全局变量的修改，需要借助关键字 <code>global</code> 完成，如果在修改全局变量时没有使用<code>global</code> 会发生错误。</p>
-<p><strong>语法：</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">global</span> 变量名<br><span class="hljs-comment"># 赋值操作</span><br></code></pre></td></tr></table></figure>
-
-
-
-<p><strong>错误示例：</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python">x = <span class="hljs-number">5</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">f</span>():<br>    x = x + <span class="hljs-number">1</span>  <span class="hljs-comment"># 会出错</span><br><br>f()<br></code></pre></td></tr></table></figure>
-
-
-
-<p>报错：</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">UnboundLocalError: cannot access local variable <span class="hljs-string">&#x27;x&#x27;</span> where it <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> associated <span class="hljs-keyword">with</span> a value<br></code></pre></td></tr></table></figure>
-
-
-
-<p><strong>正确示例：</strong></p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python">x = <span class="hljs-number">5</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">inc</span>():<br>    <span class="hljs-keyword">global</span> x<br>    x += <span class="hljs-number">1</span><br><br>inc()<br><span class="hljs-built_in">print</span>(x)  <span class="hljs-comment"># 输出6</span><br><br></code></pre></td></tr></table></figure>
-
-
-
-<p><strong>全局变量的滥用容易导致以下问题：</strong></p>
-<ul>
-<li><p>增加代码耦合度</p>
-</li>
-<li><p>增加非预期状态改变的风险</p>
-</li>
-<li><p>让调试变难</p>
-</li>
+<h4 id="🔍-特殊说明"><a href="#🔍-特殊说明" class="headerlink" title="🔍 特殊说明"></a>🔍 特殊说明</h4><ul>
+<li><code>//</code> 是 <strong>地板除</strong>（floor division）：对于正数等同整数除法，但对于负数结果向下取整（比简单截断更“低”）</li>
+<li>除法 <code>/</code> 总是返回 <strong>浮点数</strong></li>
 </ul>
-<h2 id="三、常量"><a href="#三、常量" class="headerlink" title="三、常量"></a>三、常量</h2><p>常量：一种特殊的变量，在程序整个生命周期中值不会发生改变，例如：数学的 <code>π</code> 。不过，<code>Python</code> 语言无法像<code>Java</code>等语言一样，通过<code>const</code>或<code>final</code>关键字来声明变量为常量，限制代码对变量的修改。</p>
-<p>命名风格：全大写字母 + 下划线，以此种方式声明变量预期是一个常量，不应该被修改</p>
-<p>常量的访问和变量是相同的，可以直接访问，只是声明为常量以后，不应该去修改它</p>
-<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python">PI = <span class="hljs-number">3.14159</span><br>MAX_RETRIES = <span class="hljs-number">5</span><br>BASE_URL = <span class="hljs-string">&quot;https://api.example.com&quot;</span><br></code></pre></td></tr></table></figure>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python">a = <span class="hljs-number">10</span><br>b = <span class="hljs-number">3</span><br><br><span class="hljs-built_in">print</span>(a + b)   <span class="hljs-comment"># 13</span><br><span class="hljs-built_in">print</span>(a - b)   <span class="hljs-comment"># 7</span><br><span class="hljs-built_in">print</span>(a * b)   <span class="hljs-comment"># 30</span><br><span class="hljs-built_in">print</span>(a / b)   <span class="hljs-comment"># 3.333333...</span><br><span class="hljs-built_in">print</span>(a // b)  <span class="hljs-comment"># 3 （整除）</span><br><span class="hljs-built_in">print</span>(a % b)   <span class="hljs-comment"># 1 （余数）</span><br><span class="hljs-built_in">print</span>(a ** b)  <span class="hljs-comment"># 1000 （10 的 3 次方）</span><br><br></code></pre></td></tr></table></figure>
+
+
+
+
+
+<h2 id="二、逻辑运算（Logical-Operations）"><a href="#二、逻辑运算（Logical-Operations）" class="headerlink" title="二、逻辑运算（Logical Operations）"></a>二、逻辑运算（Logical Operations）</h2><p>逻辑运算符用于 <strong>组合或反转布尔值（True &#x2F; False）表达式</strong>，常见于条件判断和流程控制语句中。</p>
+<h3 id="🔹-常用逻辑运算符"><a href="#🔹-常用逻辑运算符" class="headerlink" title="🔹 常用逻辑运算符"></a>🔹 常用逻辑运算符</h3><table>
+<thead>
+<tr>
+<th>运算符</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>and</code></td>
+<td>逻辑 AND：所有条件都为 True 时结果才是 True</td>
+</tr>
+<tr>
+<td><code>or</code></td>
+<td>逻辑 OR：只要有一个条件为 True，结果就为 True</td>
+</tr>
+<tr>
+<td><code>not</code></td>
+<td>逻辑 NOT：取反，将 True 变成 False，反之亦然</td>
+</tr>
+</tbody></table>
+<h4 id="🔍-特殊说明-1"><a href="#🔍-特殊说明-1" class="headerlink" title="🔍 特殊说明"></a>🔍 特殊说明</h4><ul>
+<li><code>and</code> 会在 <strong>第一个 False</strong> 时提前停止检查（短路行为）</li>
+<li><code>or</code> 会在 <strong>第一个 True</strong> 时提前返回 True</li>
+<li><code>not</code> 单独对一个布尔值取反</li>
+</ul>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python">x = <span class="hljs-number">5</span><br><span class="hljs-built_in">print</span>(x &gt; <span class="hljs-number">0</span> <span class="hljs-keyword">and</span> x &lt; <span class="hljs-number">10</span>)   <span class="hljs-comment"># True：两个条件同时满足</span><br><span class="hljs-built_in">print</span>(x &lt; <span class="hljs-number">0</span> <span class="hljs-keyword">or</span> x &gt; <span class="hljs-number">3</span>)     <span class="hljs-comment"># True：至少有一个条件为 True</span><br><span class="hljs-built_in">print</span>(<span class="hljs-keyword">not</span>(x &gt; <span class="hljs-number">3</span>))         <span class="hljs-comment"># False：对 True 取反</span><br><br><br><span class="hljs-comment"># and 或 or 短路示例</span><br><span class="hljs-built_in">print</span>(x &lt; <span class="hljs-number">5</span> <span class="hljs-keyword">and</span> x == <span class="hljs-number">5</span>) <span class="hljs-comment"># False：第一个条件为 False，第二个条件不再计算</span><br><span class="hljs-built_in">print</span>(x &gt; <span class="hljs-number">3</span> <span class="hljs-keyword">or</span> x == <span class="hljs-number">5</span>)  <span class="hljs-comment"># True：第一个条件为 True，第二个条件不再计算</span><br></code></pre></td></tr></table></figure>
 
 
                 
@@ -420,18 +393,12 @@
                   <article class="post-prev col-6">
                     
                     
-                      <a href="/python/data_type.html" title="常见的数据类型">
-                        <i class="iconfont icon-arrowleft"></i>
-                        <span class="hidden-mobile">常见的数据类型</span>
-                        <span class="visible-mobile">上一篇</span>
-                      </a>
-                    
                   </article>
                   <article class="post-next col-6">
                     
                     
-                      <a href="/python/begin.html" title="Python安装与入门">
-                        <span class="hidden-mobile">Python安装与入门</span>
+                      <a href="/python/data_type.html" title="常见的数据类型">
+                        <span class="hidden-mobile">常见的数据类型</span>
                         <span class="visible-mobile">下一篇</span>
                         <i class="iconfont icon-arrowright"></i>
                       </a>
