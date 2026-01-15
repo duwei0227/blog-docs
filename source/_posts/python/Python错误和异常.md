@@ -131,11 +131,9 @@ finally:   # 一定会执行的逻辑，可选
 * 首先执行`try`自己中的正常代码逻辑
 * 如果没有触发异常，则跳过`except`子句，会执行可选的 `else` 和 `finally` 子句
 * 如果发生异常，会跳过`try`子句中异常位置的后续语句的执行，会按照`except`的顺序进行异常类型匹配。如果异常的类型与 `except`关键字后指定的异常相匹配，则会执行 *except 子句*，
-* 如果发生的异常与 *except 子句* 中指定的异常不匹配，则它会被传递到外层的 [`try`](https://docs.python.org/zh-cn/3.14/reference/compound_stmts.html#try) 语句中；如果没有找到处理器，则它是一个 *未处理异常* 且执行将停止并输出一条错误消息。
+* 如果发生的异常与 *except 子句* 中指定的异常不匹配，则它会被传递到外层的 `try`语句中；如果没有找到处理器，则它是一个 *未处理异常* 且执行将停止并输出一条错误消息。
 
-![image-20260114150033522](https://raw.githubusercontent.com/probie0227/picbed/main/blogs/image-20260114150033522.png)
-
-
+![image-20260114170229669](https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20260114170229669.png)
 
 
 
