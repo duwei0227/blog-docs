@@ -1,0 +1,720 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="在Python中错误一般分为两种：编码阶段产生的语法错误 和 运行期间由于数据不满足逻辑产生的错误。 一、语法错误语法错误又称解析错误，是在编码阶段产生的错误，在初期学习Python时最常见的错误： 关键字错误示例： 12while True:    prin(&amp;quot;Hello, World!&amp;quot;) # 正确的应该为 print   运行python文件时，解释器会告诉我们错误发生的">
+  
+  
+  
+  <title>Python错误和异常 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Python错误和异常"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-01-14 19:00" pubdate>
+          2026年1月14日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          25 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Python错误和异常</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>在<code>Python</code>中错误一般分为两种：编码阶段产生的语法错误 和 运行期间由于数据不满足逻辑产生的错误。</p>
+<h2 id="一、语法错误"><a href="#一、语法错误" class="headerlink" title="一、语法错误"></a>一、语法错误</h2><p>语法错误又称解析错误，是在编码阶段产生的错误，在初期学习<code>Python</code>时最常见的错误：</p>
+<p><strong>关键字错误示例：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>    prin(<span class="hljs-string">&quot;Hello, World!&quot;</span>) <span class="hljs-comment"># 正确的应该为 print </span><br></code></pre></td></tr></table></figure>
+
+<p>运行python文件时，解释器会告诉我们错误发生的函数和错误位置，如果是关键字类错误，解释器也会给出可能的建议。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python">Traceback (most recent call last):<br>  File <span class="hljs-string">&quot;/home/probie/workspace/python/base-python/test.py&quot;</span>, line <span class="hljs-number">2</span>, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    prin(<span class="hljs-string">&quot;Hello, World!&quot;</span>) <span class="hljs-comment"># </span><br>    ^^^^<br>NameError: name <span class="hljs-string">&#x27;prin&#x27;</span> <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> defined. Did you mean: <span class="hljs-string">&#x27;print&#x27;</span>?<br></code></pre></td></tr></table></figure>
+
+<p><em>关键字错误会报 NameError，并给出可能的建议</em></p>
+<p><strong>语法错误示例：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;hlsshs&quot;</span>  <span class="hljs-comment"># 缺少右边的括号</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python">File <span class="hljs-string">&quot;/home/probie/workspace/python/base-python/test.py&quot;</span>, line <span class="hljs-number">2</span><br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;hlsshs&quot;</span><br>         ^<br>SyntaxError: <span class="hljs-string">&#x27;(&#x27;</span> was never closed<br></code></pre></td></tr></table></figure>
+
+<p><em>语法错误会报 SyntaxError，并会告知错误的行数和位置</em></p>
+<p><strong>针对语法错误，我们需要合理借助解释器给出的错误位置，错误函数，并针对性修复，是在编码阶段可发现的错误</strong></p>
+<h2 id="二、异常"><a href="#二、异常" class="headerlink" title="二、异常"></a>二、异常</h2><p>整个程序不存在语法错误时，就可以进入运行阶段，在运行阶段由于数据不符合程序预期（有些数据异常可以增加防御性拦截减少）发生的错误，或者程序需要访问网络和磁盘时，可能会发生的网络问题（例如超时）或者访问磁盘文件时文件不存在的情况，产生的错误称呼为 <strong>异常</strong>。</p>
+<p><strong>示例：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">divide</span>(<span class="hljs-params">a, b</span>):<br>    <span class="hljs-comment"># if b == 0:</span><br>        <span class="hljs-comment"># raise ValueError(&quot;Denominator cannot be zero.&quot;)</span><br>    <span class="hljs-keyword">return</span> a / b<br><br><span class="hljs-built_in">print</span>(divide(<span class="hljs-number">10</span>, <span class="hljs-number">2</span>))  <span class="hljs-comment"># Expected output: 5.0</span><br><span class="hljs-built_in">print</span>(divide(<span class="hljs-number">10</span>, <span class="hljs-number">0</span>))  <span class="hljs-comment"># This should raise a ValueError</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-number">5.0</span><br>Traceback (most recent call last):<br>  File <span class="hljs-string">&quot;/home/probie/workspace/python/base-python/test.py&quot;</span>, line <span class="hljs-number">7</span>, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    <span class="hljs-built_in">print</span>(divide(<span class="hljs-number">10</span>, <span class="hljs-number">0</span>))  <span class="hljs-comment"># This should raise a ValueError</span><br>          ^^^^^^^^^^^^^<br>  File <span class="hljs-string">&quot;/home/probie/workspace/python/base-python/test.py&quot;</span>, line <span class="hljs-number">4</span>, <span class="hljs-keyword">in</span> divide<br>    <span class="hljs-keyword">return</span> a / b<br>           ~~^~~<br>ZeroDivisionError: division by zero<br></code></pre></td></tr></table></figure>
+
+<p>同样，异常发生的时候，如果程序没有进行逻辑上的捕获处理，解释器会直接中断后续执行，并抛出错误信息，错误信息包含错误发生的位置，异常的原因。</p>
+<p>像上述示例中的 <code>ZeroDivisionError</code> 我们就可以通过防御性的错误，先判断除数是否为0,从而避免程序的直接中断。</p>
+<h3 id="1、异常的处理"><a href="#1、异常的处理" class="headerlink" title="1、异常的处理"></a>1、异常的处理</h3><p>在<code>Python</code>中异常的处理不是必须的，如果代码逻辑上没有主动进行异常的捕获和处理，在发生异常的时候，解释器会中断执行，可能不是我们预期需要的结果。</p>
+<p>为什么需要主动对异常进行捕获和处理呢？我们现在想要往文件里边写入数据，这个时候如果文件不存在或者没有写的权限，如果直接失败，用户体验就可能很差；对于文件不存在，业务上是否可以接收当发生文件不存在异常时，程序主动创建文件，继续后续逻辑的执行；对于没有写的权限，可能就需要对异常进行处理，转为用户可读的信息，返回调整后的描述信息。</p>
+<p><strong>异常处理语法：</strong></p>
+<figure class="highlight py"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs py"><span class="hljs-keyword">try</span>:<br>    <span class="hljs-comment"># 可能发生异常的代码</span><br><span class="hljs-keyword">except</span> 异常类型:  <span class="hljs-comment"># 可以有多个 except</span><br><span class="hljs-comment"># 或 </span><br><span class="hljs-keyword">except</span> 异常类型 <span class="hljs-keyword">as</span> 别名  <br><span class="hljs-keyword">else</span>:    <span class="hljs-comment"># 可选</span><br>    paas <br><span class="hljs-keyword">finally</span>:   <span class="hljs-comment"># 一定会执行的逻辑，可选</span><br>    paas<br></code></pre></td></tr></table></figure>
+
+<p><strong>关键字解释：</strong></p>
+<ul>
+<li><code>try</code>：可能发生异常的代码逻辑</li>
+<li><code>except</code>：用于捕获并匹配异常类型，可以有多个<code>except</code>匹配不同的类型，异常类型的匹配应该遵循从小到达的原则（即先具体异常逐步转为适配度更高的异常类型），同一个<code>except</code>下也可以同时匹配多个异常类型，使用元组配置多个异常类型；<code>except</code>的匹配过程按照从上到下的顺序。</li>
+<li><code>as</code>：在<code>except</code>中，对于异常类型定义一个别名，在子句中通过别名对类型进行操作</li>
+<li><code>else</code>：可选关键字，表示未发生异常的情况下，需要执行的代码逻辑</li>
+<li><code>finall</code>：可选关键字，无论是否发生异常都会执行的代码逻辑，通常用于资源的释放，例如：文件和网络IO资源</li>
+</ul>
+<p><strong>语句执行顺序：</strong></p>
+<ul>
+<li>首先执行<code>try</code>自己中的正常代码逻辑</li>
+<li>如果没有触发异常，则跳过<code>except</code>子句，会执行可选的 <code>else</code> 和 <code>finally</code> 子句</li>
+<li>如果发生异常，会跳过<code>try</code>子句中异常位置的后续语句的执行，会按照<code>except</code>的顺序进行异常类型匹配。如果异常的类型与 <code>except</code>关键字后指定的异常相匹配，则会执行 <em>except 子句</em>，</li>
+<li>如果发生的异常与 <em>except 子句</em> 中指定的异常不匹配，则它会被传递到外层的 <code>try</code>语句中；如果没有找到处理器，则它是一个 <em>未处理异常</em> 且执行将停止并输出一条错误消息。</li>
+</ul>
+<p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20260114170229669.png" srcset="/img/loading.gif" lazyload alt="image-20260114170229669"></p>
+<h4 id="1-1-无异常示例"><a href="#1-1-无异常示例" class="headerlink" title="1.1 无异常示例"></a>1.1 无异常示例</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">divide</span>(<span class="hljs-params">a, b</span>):<br>    <span class="hljs-keyword">try</span>:<br>        r = a / b<br>    <span class="hljs-keyword">except</span> ZeroDivisionError:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;哦豁，除以零了！&quot;</span>)<br>    <span class="hljs-keyword">else</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;除法成功，结果是：&quot;</span>, r)<br>    <span class="hljs-keyword">finally</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;无论如何，这段代码都会执行。&quot;</span>)<br>    <br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;函数执行完毕。&quot;</span>)<br><br><br>divide(<span class="hljs-number">10</span>, <span class="hljs-number">2</span>)<br><br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python">除法成功，结果是： <span class="hljs-number">5.0</span><br>无论如何，这段代码都会执行。<br>函数执行完毕。<br></code></pre></td></tr></table></figure>
+
+
+
+<p>从执行结果来说：执行完<code>try</code>子句以后，先执行<code>else</code>在执行<code>finally</code>语句。</p>
+<h4 id="1-2-抛出异常，匹配-except"><a href="#1-2-抛出异常，匹配-except" class="headerlink" title="1.2 抛出异常，匹配 except"></a>1.2 抛出异常，匹配 except</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">divide</span>(<span class="hljs-params">a, b</span>):<br>    <span class="hljs-keyword">try</span>:<br>        r = a / b<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;正在执行除法操作...&quot;</span>)<br>    <span class="hljs-keyword">except</span> ZeroDivisionError:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;哦豁，除以零了！&quot;</span>)<br>    <span class="hljs-keyword">else</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;除法成功，结果是：&quot;</span>, r)<br>    <span class="hljs-keyword">finally</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;无论如何，这段代码都会执行。&quot;</span>)<br>    <br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;函数执行完毕。&quot;</span>)<br><br><br>divide(<span class="hljs-number">10</span>, <span class="hljs-number">0</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python">哦豁，除以零了！<br>无论如何，这段代码都会执行。<br>函数执行完毕。<br></code></pre></td></tr></table></figure>
+
+<p>从执行结果来说：执行<code>try</code>子句<code>a/b</code>发生异常以后，后续的<code>print</code>语句不再执行，然后再进行<code>except</code>匹配，当前异常类型与<code>ZeroDivisionError</code>匹配，执行<code>except</code>子句，然后在执行<code>finally</code>语句，<strong>其中<code>else</code>未执行</strong>。</p>
+<h4 id="1-3-抛出异常，无任何except匹配"><a href="#1-3-抛出异常，无任何except匹配" class="headerlink" title="1.3 抛出异常，无任何except匹配"></a>1.3 抛出异常，无任何except匹配</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">divide</span>(<span class="hljs-params">a, b</span>):<br>    <span class="hljs-keyword">try</span>:<br>        r = a / b<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;正在执行除法操作...&quot;</span>)<br>    <span class="hljs-keyword">except</span> NameError:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;哦豁，除以零了！&quot;</span>)<br>    <span class="hljs-keyword">else</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;除法成功，结果是：&quot;</span>, r)<br>    <span class="hljs-keyword">finally</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;无论如何，这段代码都会执行。&quot;</span>)<br>    <br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;函数执行完毕。&quot;</span>)<br><br><br>divide(<span class="hljs-number">10</span>, <span class="hljs-number">0</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python">无论如何，这段代码都会执行。<br>Traceback (most recent call last):<br>  File <span class="hljs-string">&quot;/home/probie/workspace/python/base-python/test.py&quot;</span>, line <span class="hljs-number">15</span>, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    divide(<span class="hljs-number">10</span>, <span class="hljs-number">0</span>)<br>  File <span class="hljs-string">&quot;/home/probie/workspace/python/base-python/test.py&quot;</span>, line <span class="hljs-number">3</span>, <span class="hljs-keyword">in</span> divide<br>    r = a / b<br>        ~~^~~<br>ZeroDivisionError: division by zero<br></code></pre></td></tr></table></figure>
+
+<p><code>try</code>子句发生异常的时候，如果没有任何<code>except</code>匹配，会先执行<code>finally</code>子句，然后中断程序后续执行。</p>
+<h4 id="1-4-抛出异常，except按照从大到小匹配（错误顺序）"><a href="#1-4-抛出异常，except按照从大到小匹配（错误顺序）" class="headerlink" title="1.4 抛出异常，except按照从大到小匹配（错误顺序）"></a>1.4 抛出异常，except按照从大到小匹配（错误顺序）</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">divide</span>(<span class="hljs-params">a, b</span>):<br>    <span class="hljs-keyword">try</span>:<br>        r = a / b<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;正在执行除法操作...&quot;</span>)<br>    <span class="hljs-keyword">except</span> Exception:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;我是 Exception 捕获的异常！&quot;</span>)<br>    <span class="hljs-keyword">except</span> ZeroDivisionError:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;我是 ZeroDivisionError 捕获的异常！&quot;</span>)<br>    <span class="hljs-keyword">else</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;除法成功，结果是：&quot;</span>, r)<br>    <span class="hljs-keyword">finally</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;无论如何，这段代码都会执行。&quot;</span>)<br>    <br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;函数执行完毕。&quot;</span>)<br><br><br>divide(<span class="hljs-number">10</span>, <span class="hljs-number">0</span>)<br></code></pre></td></tr></table></figure>
+
+<p>由于 <code>ZeroDivisionError</code> 是 <code>Exception</code> 的子类，所有<code>except</code>按照从上到下匹配的时候，<code>Exception</code>满足，执行<code>Exception</code>子句，不再进行后续异常类型匹配。</p>
+<p><strong>此种顺序会导致抛出的错误信息非预期的精确描述</strong></p>
+<h4 id="1-5-同一个-except-匹配多个异常类型"><a href="#1-5-同一个-except-匹配多个异常类型" class="headerlink" title="1.5 同一个 except 匹配多个异常类型"></a>1.5 同一个 except 匹配多个异常类型</h4><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">divide</span>(<span class="hljs-params">a, b</span>):<br>    <span class="hljs-keyword">try</span>:<br>        r = a / b<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;正在执行除法操作...&quot;</span>)<br>    <span class="hljs-keyword">except</span> (ZeroDivisionError , NameError):<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;除法失败，除数不能为零或变量未定义。&quot;</span>)<br>    <span class="hljs-keyword">else</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;除法成功，结果是：&quot;</span>, r)<br>    <span class="hljs-keyword">finally</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;无论如何，这段代码都会执行。&quot;</span>)<br>    <br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;函数执行完毕。&quot;</span>)<br><br><br>divide(<span class="hljs-number">10</span>, <span class="hljs-number">0</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python">除法失败，除数不能为零或变量未定义。<br>无论如何，这段代码都会执行。<br>函数执行完毕。<br></code></pre></td></tr></table></figure>
+
+
+
+<h3 id="2、主动触发异常"><a href="#2、主动触发异常" class="headerlink" title="2、主动触发异常"></a>2、主动触发异常</h3><p>使用关键字 <code>raise</code> 可以强制触发异常。</p>
+<p>何时使用<code>raise</code>主动抛出异常：</p>
+<ul>
+<li>在捕获到异常以后，对异常添加额外的注释信息或记录相关行为后，抛出转换后的自定义异常–全局异常统一</li>
+<li>将 <code>raise</code> 作为多层嵌套<code>if</code>的一个替换，在条件不满足的情况下，抛出一个特定的异常，减少嵌套深度</li>
+</ul>
+<p><strong>示例：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python">i = <span class="hljs-built_in">int</span>(<span class="hljs-built_in">input</span>(<span class="hljs-string">&quot;输入一个整数: &quot;</span>))<br><br><span class="hljs-keyword">if</span> i &lt; <span class="hljs-number">0</span>:<br>    <span class="hljs-keyword">raise</span> ValueError(<span class="hljs-string">&quot;负数没有平方根&quot;</span>)<br><span class="hljs-keyword">else</span>:<br>    <span class="hljs-built_in">print</span>(i ** <span class="hljs-number">0.5</span>)<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python">输入一个整数: -<span class="hljs-number">1</span><br>Traceback (most recent call last):<br>  File <span class="hljs-string">&quot;/home/probie/workspace/python/base-python/test.py&quot;</span>, line <span class="hljs-number">4</span>, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    <span class="hljs-keyword">raise</span> ValueError(<span class="hljs-string">&quot;负数没有平方根&quot;</span>)<br>ValueError: 负数没有平方根<br></code></pre></td></tr></table></figure>
+
+
+
+<h3 id="3、使用注释细化异常原因"><a href="#3、使用注释细化异常原因" class="headerlink" title="3、使用注释细化异常原因"></a>3、使用注释细化异常原因</h3><p>当一个异常被创建以引发时，它通常被初始化为描述所发生错误的信息。在有些情况下，在异常被捕获后添加信息是很有用的。为了这个目的，异常有一个 <code>add_note(note)</code> 方法接受一个字符串，并将其添加到异常的注释列表。在异常堆栈信息之后按照它们被添加的顺序输出所有的注释。</p>
+<p><strong>如果对异常需要增加额外的注释信息时，需要使用 <code>as</code> 将异常定义一个别名</strong></p>
+<p><strong>示例：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">def</span> <span class="hljs-title function_">divide</span>(<span class="hljs-params">a, b</span>):<br>    <span class="hljs-keyword">try</span>:<br>        r = a / b<br>    <span class="hljs-keyword">except</span> ZeroDivisionError <span class="hljs-keyword">as</span> e:<br>        e.add_note(<span class="hljs-string">&quot;我是 1&quot;</span>)<br>        e.add_note(<span class="hljs-string">&quot;我是 2&quot;</span>)<br>        <span class="hljs-keyword">raise</span><br>    <span class="hljs-keyword">return</span> r<br><br>divide(<span class="hljs-number">1</span>, <span class="hljs-number">0</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python">Traceback (most recent call last):<br>  File <span class="hljs-string">&quot;/home/probie/workspace/python/base-python/test.py&quot;</span>, line <span class="hljs-number">10</span>, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    divide(<span class="hljs-number">1</span>, <span class="hljs-number">0</span>)<br>  File <span class="hljs-string">&quot;/home/probie/workspace/python/base-python/test.py&quot;</span>, line <span class="hljs-number">3</span>, <span class="hljs-keyword">in</span> divide<br>    r = a / b<br>        ~~^~~<br>ZeroDivisionError: division by zero<br>我是 <span class="hljs-number">1</span><br>我是 <span class="hljs-number">2</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h3 id="4、自定义异常"><a href="#4、自定义异常" class="headerlink" title="4、自定义异常"></a>4、自定义异常</h3><p>通过创建新的类自定义异常，自定义类需要直接或间接的方式继承 <code>Exception</code> 类。<code>Exception</code> 可以被用作通配符，捕获（几乎）一切。大多数异常命名都以 “Error” 结尾，类似标准异常的命名。</p>
+<p><em><code>BaseException</code>是所有异常的共同基类。它的一个子类， <code>Exception</code>，是所有非致命异常的基类。不是 <code>Exception</code>的子类的异常通常不被处理，因为它们被用来指示程序应该终止。</em></p>
+<h4 id="4-1-基本自定义异常"><a href="#4-1-基本自定义异常" class="headerlink" title="4.1 基本自定义异常"></a>4.1 基本自定义异常</h4><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">名称Error</span>(<span class="hljs-title class_ inherited__">Exception</span>):  <span class="hljs-comment"># 此处Exception可以变更为其他任何继承 Exception 的类</span><br>    paas<br></code></pre></td></tr></table></figure>
+
+
+
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">BaseError</span>(<span class="hljs-title class_ inherited__">Exception</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;Base class for all custom exceptions in the module.&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">pass</span><br><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">SubErrorA</span>(<span class="hljs-title class_ inherited__">BaseError</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;Exception raised for specific error A.&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">pass</span><br><br>i = <span class="hljs-built_in">int</span>(<span class="hljs-built_in">input</span>(<span class="hljs-string">&quot;请输入一个整数：&quot;</span>))<br><br><span class="hljs-keyword">if</span> i &lt; <span class="hljs-number">0</span>:<br>    <span class="hljs-keyword">raise</span> SubErrorA(<span class="hljs-string">&quot;输入的整数不能为负数。&quot;</span>)<br><span class="hljs-keyword">elif</span> i == <span class="hljs-number">0</span>:<br>    <span class="hljs-keyword">raise</span> BaseError(<span class="hljs-string">&quot;输入的整数不能为零。&quot;</span>)<br><span class="hljs-keyword">else</span>:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;输入的整数是：<span class="hljs-subst">&#123;i&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>匹配 <code>SubErrorA</code>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python">请输入一个整数：-<span class="hljs-number">1</span><br>Traceback (most recent call last):<br>  File <span class="hljs-string">&quot;/home/probie/workspace/python/base-python/test.py&quot;</span>, line <span class="hljs-number">12</span>, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    <span class="hljs-keyword">raise</span> SubErrorA(<span class="hljs-string">&quot;输入的整数不能为负数。&quot;</span>)<br>SubErrorA: 输入的整数不能为负数。<br></code></pre></td></tr></table></figure>
+
+<p>匹配<code>BaseError</code>:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python">请输入一个整数：<span class="hljs-number">0</span><br>Traceback (most recent call last):<br>  File <span class="hljs-string">&quot;/home/probie/workspace/python/base-python/test.py&quot;</span>, line <span class="hljs-number">14</span>, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    <span class="hljs-keyword">raise</span> BaseError(<span class="hljs-string">&quot;输入的整数不能为零。&quot;</span>)<br>BaseError: 输入的整数不能为零。<br></code></pre></td></tr></table></figure>
+
+<p>正常输出：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python">请输入一个整数：<span class="hljs-number">2</span><br>输入的整数是：<span class="hljs-number">2</span><br></code></pre></td></tr></table></figure>
+
+
+
+
+
+<h4 id="4-2-增加自定义操作异常定义"><a href="#4-2-增加自定义操作异常定义" class="headerlink" title="4.2 增加自定义操作异常定义"></a>4.2 增加自定义操作异常定义</h4><p><strong>自定义异常描述格式</strong></p>
+<p>需要重写 <code>__str__</code>方法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">名称Error</span>(<span class="hljs-title class_ inherited__">Exception</span>):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__str__</span>(<span class="hljs-params">self</span>):<br>        <span class="hljs-comment"># 自定义逻辑</span><br>        <span class="hljs-keyword">return</span> xx<br></code></pre></td></tr></table></figure>
+
+<p><strong>示例：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">class</span> <span class="hljs-title class_">CommonError</span>(<span class="hljs-title class_ inherited__">Exception</span>):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__init__</span>(<span class="hljs-params">self, code</span>):<br>        <span class="hljs-variable language_">self</span>._code = code<br>        <span class="hljs-built_in">super</span>().__init__(code)<br><br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">__str__</span>(<span class="hljs-params">self</span>):<br>        <span class="hljs-keyword">if</span> <span class="hljs-variable language_">self</span>._code == <span class="hljs-string">&quot;ERR101&quot;</span>:<br>            <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;输入的整数不能为负数&quot;</span><br>        <span class="hljs-keyword">elif</span> <span class="hljs-variable language_">self</span>._code == <span class="hljs-string">&quot;ERR102&quot;</span>:<br>            <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;输入的值不是整数&quot;</span><br>        <span class="hljs-keyword">else</span>:<br>            <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;未知错误&quot;</span><br><br>i = <span class="hljs-built_in">int</span>(<span class="hljs-built_in">input</span>(<span class="hljs-string">&quot;请输入一个整数: &quot;</span>))<br><span class="hljs-keyword">if</span> i &lt; <span class="hljs-number">0</span>:<br>    <span class="hljs-keyword">raise</span> CommonError(<span class="hljs-string">&quot;ERR101&quot;</span>)<br><span class="hljs-keyword">else</span>:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;输入的整数是:&quot;</span>, i)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python">请输入一个整数: -<span class="hljs-number">2</span><br>Traceback (most recent call last):<br>  File <span class="hljs-string">&quot;/home/probie/workspace/python/base-python/test.py&quot;</span>, line <span class="hljs-number">16</span>, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    <span class="hljs-keyword">raise</span> CommonError(<span class="hljs-string">&quot;ERR101&quot;</span>)<br>CommonError: 输入的整数不能为负数<br><br><br><br></code></pre></td></tr></table></figure>
+
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Python/" class="category-chain-item">Python</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/python/inner_data_type_api.html" title="Python常用内置数据类型API示例">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Python常用内置数据类型API示例</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/python/decorator.html" title="Python装饰器">
+                        <span class="hidden-mobile">Python装饰器</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,755 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="一、概念数据类型（Data Type） 是对数据的一种分类，它定义了：  这个数据可以存储什么样的值 可以对它进行哪些操作（算数、逻辑、索引、迭代等） 在内存中如何存储和管理这些数据  简单来说，数据类型告诉程序“这个值是什么”以及“可以对它做什么”。 二、基本数据类型数值类型（Numeric Types）用于存储数字。  整数 int：表示有小数点的数字，比如 42, -10。 浮点数 floa">
+  
+  
+  
+  <title>常见的数据类型 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="常见的数据类型"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-01-06 13:00" pubdate>
+          2026年1月6日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          9 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">常见的数据类型</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="一、概念"><a href="#一、概念" class="headerlink" title="一、概念"></a>一、概念</h2><p><strong>数据类型（Data Type）</strong> 是对数据的一种分类，它定义了：</p>
+<ul>
+<li>这个数据可以存储什么样的值</li>
+<li>可以对它进行哪些操作（算数、逻辑、索引、迭代等）</li>
+<li>在内存中如何存储和管理这些数据</li>
+</ul>
+<p>简单来说，<strong>数据类型告诉程序“这个值是什么”以及“可以对它做什么”</strong>。</p>
+<h2 id="二、基本数据类型"><a href="#二、基本数据类型" class="headerlink" title="二、基本数据类型"></a>二、基本数据类型</h2><h3 id="数值类型（Numeric-Types）"><a href="#数值类型（Numeric-Types）" class="headerlink" title="数值类型（Numeric Types）"></a>数值类型（Numeric Types）</h3><p>用于存储数字。</p>
+<ul>
+<li><strong>整数 <code>int</code></strong>：表示有小数点的数字，比如 <code>42</code>, <code>-10</code>。</li>
+<li><strong>浮点数 <code>float</code></strong>：表示带小数点数字，比如 <code>3.14</code>, <code>-0.001</code>。</li>
+<li><strong>复数 <code>complex</code></strong>：带有实部和虚部的数字，比如 <code>2+3j</code>。</li>
+</ul>
+<p>数据类型示例：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">a</span> = <span class="hljs-number">5</span>       <span class="hljs-comment"># int</span><br><span class="hljs-attr">b</span> = <span class="hljs-number">3.14</span>    <span class="hljs-comment"># float</span><br><span class="hljs-attr">c</span> = <span class="hljs-number">2</span> + <span class="hljs-number">3</span>j  <span class="hljs-comment"># complex</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h3 id="布尔类型（Boolean）"><a href="#布尔类型（Boolean）" class="headerlink" title="布尔类型（Boolean）"></a>布尔类型（Boolean）</h3><ul>
+<li><strong><code>bool</code></strong>：只有两个值：<code>True</code> 和 <code>False</code>。<br> 用于逻辑运算、条件判断等场景。</li>
+</ul>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">flag</span> = <span class="hljs-literal">True</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h3 id="字符串（Text）"><a href="#字符串（Text）" class="headerlink" title="字符串（Text）"></a>字符串（Text）</h3><ul>
+<li><strong><code>str</code></strong>：用于存放文本，由字符组成的序列。<br> 例如：</li>
+</ul>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs abnf"><span class="hljs-attribute">msg</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;Hello, Python!&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>字符串是 <strong>不可变的</strong>，也就是说创建之后不能改变其中的字符</p>
+<h3 id="None-类型"><a href="#None-类型" class="headerlink" title="None 类型"></a>None 类型</h3><ul>
+<li><strong><code>NoneType</code></strong>：只有一个值 <code>None</code>，表示 “没有值” 或 “空值”。<br> 常用于函数默认返回，或者初始化一个尚未赋值的变量。</li>
+</ul>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs abnf"><span class="hljs-attribute">result</span> <span class="hljs-operator">=</span> None<br></code></pre></td></tr></table></figure>
+
+<p>这是 Python 里一种特殊的数据类型。</p>
+<h2 id="三、高级数据类型"><a href="#三、高级数据类型" class="headerlink" title="三、高级数据类型"></a>三、高级数据类型</h2><h3 id="列表（List）"><a href="#列表（List）" class="headerlink" title="列表（List）"></a>列表（List）</h3><ul>
+<li><strong><code>list</code></strong>：有序、<strong>可变</strong> 的元素集合，可以存放不同类型的数据。</li>
+</ul>
+<p><strong>定义</strong></p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">empty_list</span> = []        <span class="hljs-comment"># 空列表</span><br><span class="hljs-attr">empty_list2</span> = list()   <span class="hljs-comment"># 另一种写法</span><br><br><span class="hljs-attr">nums</span> = [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>]    <span class="hljs-comment"># 有初始值的列表</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>使用示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs python">fruits = [<span class="hljs-string">&quot;apple&quot;</span>, <span class="hljs-string">&quot;banana&quot;</span>, <span class="hljs-string">&quot;orange&quot;</span>]<br><span class="hljs-built_in">print</span>(fruits)<br>fruits.append(<span class="hljs-string">&quot;grape&quot;</span>)      <span class="hljs-comment"># 添加元素</span><br><span class="hljs-built_in">print</span>(fruits)<br><span class="hljs-built_in">print</span>(fruits[<span class="hljs-number">0</span>], fruits[-<span class="hljs-number">1</span>]) <span class="hljs-comment"># 索引访问</span><br>fruits.remove(<span class="hljs-string">&quot;banana&quot;</span>)      <span class="hljs-comment"># 删除元素</span><br><span class="hljs-built_in">print</span>(fruits)<br><br>-- 输出<br>[<span class="hljs-string">&#x27;apple&#x27;</span>, <span class="hljs-string">&#x27;banana&#x27;</span>, <span class="hljs-string">&#x27;orange&#x27;</span>]<br>[<span class="hljs-string">&#x27;apple&#x27;</span>, <span class="hljs-string">&#x27;banana&#x27;</span>, <span class="hljs-string">&#x27;orange&#x27;</span>, <span class="hljs-string">&#x27;grape&#x27;</span>]<br>apple grape<br>[<span class="hljs-string">&#x27;apple&#x27;</span>, <span class="hljs-string">&#x27;orange&#x27;</span>, <span class="hljs-string">&#x27;grape&#x27;</span>]<br></code></pre></td></tr></table></figure>
+
+
+
+<p><strong>列表推导式（List Comprehension）</strong></p>
+<p>语法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">new_list = [expression <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> iterable <span class="hljs-keyword">if</span> condition]<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>把一个可迭代对象处理成一个新的列表</p>
+</blockquote>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs python">squares = [x**<span class="hljs-number">2</span> <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, <span class="hljs-number">6</span>)]<br><span class="hljs-built_in">print</span>(squares)  <span class="hljs-comment"># [1, 4, 9, 16, 25]</span><br><br>even_squares = [x**<span class="hljs-number">2</span> <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, <span class="hljs-number">11</span>) <span class="hljs-keyword">if</span> x % <span class="hljs-number">2</span> == <span class="hljs-number">0</span>]<br><span class="hljs-built_in">print</span>(even_squares)  <span class="hljs-comment"># [4, 16, 36, 64, 100]</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h3 id="元组（Tuple）"><a href="#元组（Tuple）" class="headerlink" title="元组（Tuple）"></a>元组（Tuple）</h3><ul>
+<li><strong><code>tuple</code></strong>：有序、<strong>不可变</strong> 的元素集合，一旦创建就不能修改。</li>
+</ul>
+<p><strong>定义</strong></p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">empty_tuple</span> = ()       <span class="hljs-comment"># 空元组</span><br><span class="hljs-attr">empty_tuple2</span> = tuple() <span class="hljs-comment"># 另一种写法</span><br><br><span class="hljs-attr">coords</span> = (<span class="hljs-number">10</span>, <span class="hljs-number">20</span>, <span class="hljs-number">30</span>)  <span class="hljs-comment"># 有初始值的元组</span><br></code></pre></td></tr></table></figure>
+
+<p>不能像列表那样修改，但适合表示固定的数据序列</p>
+<blockquote>
+<p>注意：只有一个元素的元组必须写成 <code>(value,)</code>，否则被认为是普通表达式。</p>
+</blockquote>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python">point = (<span class="hljs-number">5</span>, <span class="hljs-number">10</span>)<br>x, y = point  <span class="hljs-comment"># 解包</span><br><span class="hljs-built_in">print</span>(x, y)<br><br><span class="hljs-comment"># 一个元素的元组</span><br>single_element_tuple = (<span class="hljs-number">42</span>,)<br><span class="hljs-built_in">print</span>(single_element_tuple)<br><br>-- 输出<br><span class="hljs-number">5</span> <span class="hljs-number">10</span><br>(<span class="hljs-number">42</span>,)<br></code></pre></td></tr></table></figure>
+
+
+
+
+
+<h3 id="字典（Dictionary）"><a href="#字典（Dictionary）" class="headerlink" title="字典（Dictionary）"></a>字典（Dictionary）</h3><ul>
+<li><strong><code>dict</code></strong>：由 <strong>键–值对（key–value）</strong> 组成的无序集合，键必须是不可变类型（如 <code>str，int，tuple</code>）类似与书籍目录，通过目录查找对应的内容页码。</li>
+</ul>
+<p><strong>定义</strong></p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs makefile">empty_dict = &#123;&#125;        <span class="hljs-comment"># 空字典</span><br>empty_dict2 = dict()   <span class="hljs-comment"># 另一种写法</span><br><br>person = &#123;<br>    <span class="hljs-string">&quot;name&quot;</span>: <span class="hljs-string">&quot;Alice&quot;</span>,<br>    <span class="hljs-string">&quot;age&quot;</span>: 30<br>&#125;  <span class="hljs-comment"># 有初始键值对</span><br><br></code></pre></td></tr></table></figure>
+
+
+
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python">ages = &#123;<span class="hljs-string">&quot;Jay-Z&quot;</span>: <span class="hljs-number">52</span>, <span class="hljs-string">&quot;Emanuel&quot;</span>: <span class="hljs-number">44</span>&#125;<br><span class="hljs-built_in">print</span>(ages[<span class="hljs-string">&quot;Jay-Z&quot;</span>])   <span class="hljs-comment"># 访问</span><br>ages[<span class="hljs-string">&quot;Emanuel&quot;</span>] = <span class="hljs-number">45</span>   <span class="hljs-comment"># 修改</span><br>ages[<span class="hljs-string">&quot;Taylor&quot;</span>] = <span class="hljs-number">32</span>    <span class="hljs-comment"># 新增</span><br><span class="hljs-built_in">print</span>(ages.get(<span class="hljs-string">&quot;Unknown&quot;</span>, <span class="hljs-string">&quot;unknown&quot;</span>))  <span class="hljs-comment"># 安全访问</span><br><br>-- 输出<br><span class="hljs-number">52</span><br>unknown<br></code></pre></td></tr></table></figure>
+
+
+
+<p><strong>字典推导式（Dict Comprehension）</strong></p>
+<p>语法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">new_dict = &#123;key_expr: value_expr <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> iterable <span class="hljs-keyword">if</span> condition&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>可以用另一个可迭代对象快速构建字典</p>
+</blockquote>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python">square_dict = &#123;x: x**<span class="hljs-number">2</span> <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, <span class="hljs-number">6</span>)&#125;<br><span class="hljs-built_in">print</span>(square_dict)  <br><span class="hljs-comment"># &#123;1: 1, 2: 4, 3: 9, 4: 16, 5: 25&#125;</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h3 id="集合（Set）"><a href="#集合（Set）" class="headerlink" title="集合（Set）"></a>集合（Set）</h3><ul>
+<li><strong><code>set</code></strong>：集合是 <strong>无序、去重</strong> 的结构，可以快速进行成员检查和集合运算</li>
+</ul>
+<p><strong>定义</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python">empty_set = <span class="hljs-built_in">set</span>()  <span class="hljs-comment"># 空集合（&#123;&#125; 是空字典！）</span><br><br>fruits = &#123;<span class="hljs-string">&quot;apple&quot;</span>, <span class="hljs-string">&quot;banana&quot;</span>, <span class="hljs-string">&quot;orange&quot;</span>&#125;  <span class="hljs-comment"># 有初始值的集合</span><br><br></code></pre></td></tr></table></figure>
+
+
+
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python">s = &#123;<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>&#125;<br>s.add(<span class="hljs-number">4</span>)<br>s.remove(<span class="hljs-number">2</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-number">3</span> <span class="hljs-keyword">in</span> s)  <span class="hljs-comment"># True</span><br></code></pre></td></tr></table></figure>
+
+
+
+<p><strong>集合推导式（Set Comprehension）</strong></p>
+<p>语法：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">new_set = &#123;expression <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> iterable <span class="hljs-keyword">if</span> condition&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>类似列表推导式，但生成的是集合，会去除重复项</p>
+</blockquote>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python">unique_squares = &#123;x**<span class="hljs-number">2</span> <span class="hljs-keyword">for</span> x <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">1</span>, <span class="hljs-number">11</span>)&#125;<br><span class="hljs-built_in">print</span>(unique_squares)  <span class="hljs-comment"># 结果元素无序</span><br></code></pre></td></tr></table></figure>
+
+
+
+<p><strong>对比</strong></p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>是否有序</th>
+<th>是否可变</th>
+<th>推导式语法</th>
+<th>构建空对象</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>list</code></td>
+<td>有序</td>
+<td>是</td>
+<td><code>[x for …]</code></td>
+<td><code>[]</code> &#x2F; <code>list()</code></td>
+</tr>
+<tr>
+<td><code>tuple</code></td>
+<td>有序</td>
+<td>否</td>
+<td>无内建推导式（用生成器 + <code>tuple()</code>）</td>
+<td><code>()</code> &#x2F; <code>tuple()</code></td>
+</tr>
+<tr>
+<td><code>dict</code></td>
+<td>（有顺序保证）</td>
+<td>是</td>
+<td><code>{k:v for …}</code></td>
+<td><code>{}</code> &#x2F; <code>dict()</code></td>
+</tr>
+<tr>
+<td><code>set</code></td>
+<td>无序</td>
+<td>是</td>
+<td><code>{x for …}</code></td>
+<td><code>set()</code></td>
+</tr>
+</tbody></table>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Python/" class="category-chain-item">Python</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/python/operator.html" title="运算符">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">运算符</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/python/variable.html" title="Python变量">
+                        <span class="hidden-mobile">Python变量</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,687 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="模块什么是模块？ 模块是包含 Python 定义和语句的文件，其文件名是模块名加后缀名 .py ，简而言之，在Python中，一个.py文件就是一个模块。在模块内部，通过全局变量 __name__ 可以获取模块名（即字符串）。 为什么需要模块？ ​     在不引入模块的情况下，编写一个功能简单的程序，代码行数在千行以内时，看起来好像也不是什么大的问题；然而当我们在编写一个非常大的程序时，程序代码">
+  
+  
+  
+  <title>Python模块与包 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Python模块与包"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-01-08 19:00" pubdate>
+          2026年1月8日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.6k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          14 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Python模块与包</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="模块"><a href="#模块" class="headerlink" title="模块"></a>模块</h2><p><strong>什么是模块？</strong></p>
+<p>模块是包含 Python 定义和语句的文件，其文件名是模块名加后缀名 <code>.py</code> ，简而言之，在Python中，一个<code>.py</code>文件就是一个模块。在模块内部，通过全局变量 <code>__name__</code> 可以获取模块名（即字符串）。</p>
+<p><strong>为什么需要模块？</strong></p>
+<p>​     在不引入模块的情况下，编写一个功能简单的程序，代码行数在千行以内时，看起来好像也不是什么大的问题；然而当我们在编写一个非常大的程序时，程序代码量可能上万行甚至更多，在如此大的一个文件中进行功能的完善和维护，可以想象是如何的困难。</p>
+<p>​    基于此，Python引入了模块，可以将功能逻辑上相同的代码放在一个独立的文件中。这样，每个独立文件可以表示一部分功能，在进行功能的维护时，只需要修改这一个独立文件即可，不需要大海捞针。</p>
+<h3 id="模块的导入"><a href="#模块的导入" class="headerlink" title="模块的导入"></a>模块的导入</h3><p>我们使用独立的文件定义好模块，接下来就需要在上层引入模块，执行模块内部定义的逻辑。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> 模块名<br><span class="hljs-keyword">import</span> 模块名 <span class="hljs-keyword">as</span> 别名<br><span class="hljs-keyword">from</span> 模块名 <span class="hljs-keyword">import</span> 函数或其他<br><span class="hljs-keyword">from</span> 模块名 <span class="hljs-keyword">import</span> *<br></code></pre></td></tr></table></figure>
+
+
+
+<ul>
+<li><code>as</code>是用来声明导入模块的别名，一个情况是可以将模块进行重命名，另一个方面是：如果在当前模块中导入了两个不同的模块，而这两个模块名称可能相同，为了避免命名冲突，使用<code>as</code>进行重命名</li>
+<li><code>*</code>会导入所有不以下划线（<code>_</code>）开头的名称。大多数情况下，不要用这个功能，这种方式向解释器导入了一批未知的名称，可能会覆盖已经定义的名称。</li>
+</ul>
+<p><strong>示例：</strong></p>
+<p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20260108131616923.png" srcset="/img/loading.gif" lazyload alt="image-20260108131616923"></p>
+<p>定义 <code>mymath.py</code>模块</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># add</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">add</span>(<span class="hljs-params">a, b</span>):<br>    <span class="hljs-keyword">return</span> a + b<br><br><span class="hljs-comment"># subtract</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">subtract</span>(<span class="hljs-params">a, b</span>):<br>    <span class="hljs-keyword">return</span> a - b<br><br><span class="hljs-comment"># multiply</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">multiply</span>(<span class="hljs-params">a, b</span>):<br>    <span class="hljs-keyword">return</span> a * b<br><br><span class="hljs-comment"># divide</span><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">divide</span>(<span class="hljs-params">a, b</span>):<br>    <span class="hljs-keyword">if</span> b == <span class="hljs-number">0</span>:<br>        <span class="hljs-keyword">raise</span> ValueError(<span class="hljs-string">&quot;Cannot divide by zero.&quot;</span>)<br>    <span class="hljs-keyword">return</span> a / b<br></code></pre></td></tr></table></figure>
+
+
+
+<p>1、在 <code>test.py</code>中使用<code>mymath</code>模块</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> mymath<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Addition of 5 and 3:&quot;</span>, mymath.add(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Subtraction of 5 and 3:&quot;</span>, mymath.subtract(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Multiplication of 5 and 3:&quot;</span>, mymath.multiply(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Division of 5 and 3:&quot;</span>, mymath.divide(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br><br><span class="hljs-comment"># 输出</span><br>Addition of <span class="hljs-number">5</span> <span class="hljs-keyword">and</span> <span class="hljs-number">3</span>: <span class="hljs-number">8</span><br>Subtraction of <span class="hljs-number">5</span> <span class="hljs-keyword">and</span> <span class="hljs-number">3</span>: <span class="hljs-number">2</span><br>Multiplication of <span class="hljs-number">5</span> <span class="hljs-keyword">and</span> <span class="hljs-number">3</span>: <span class="hljs-number">15</span><br>Division of <span class="hljs-number">5</span> <span class="hljs-keyword">and</span> <span class="hljs-number">3</span>: <span class="hljs-number">1.6666666666666667</span><br></code></pre></td></tr></table></figure>
+
+
+
+<p>2、使用别名：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> mymath <span class="hljs-keyword">as</span> my<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Addition of 5 and 3:&quot;</span>, my.add(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Subtraction of 5 and 3:&quot;</span>, my.subtract(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Multiplication of 5 and 3:&quot;</span>, my.multiply(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Division of 5 and 3:&quot;</span>, my.divide(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br></code></pre></td></tr></table></figure>
+
+
+
+<p>3、导入具体的函数:</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> mymath <span class="hljs-keyword">import</span> add, divide<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Addition of 5 and 3:&quot;</span>, add(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Subtraction of 5 and 3:&quot;</span>, subtract(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Multiplication of 5 and 3:&quot;</span>,multiply(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Division of 5 and 3:&quot;</span>, divide(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br></code></pre></td></tr></table></figure>
+
+<p>由于已经使用<code>import</code>直接导入了模块内部具体的函数，所以在调用的时候，就不需要在函数名前增加模块名。</p>
+<p>另外由于我们只导入了<code>add</code>和<code>divide</code>函数，所以在执行<code>substract</code>时会报错：<code>NameError: name &#39;subtract&#39; is not defined</code></p>
+<p>4、使用<code>*</code>导入全部</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> mymath <span class="hljs-keyword">import</span> *<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Addition of 5 and 3:&quot;</span>, add(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Subtraction of 5 and 3:&quot;</span>, subtract(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Multiplication of 5 and 3:&quot;</span>,multiply(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;Division of 5 and 3:&quot;</span>, divide(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>))<br></code></pre></td></tr></table></figure>
+
+<p><code>*</code>会把<code>mymath</code>模块下所有不以<code>_</code>开头的内容都导入，函数调用前不需要在添加模块名</p>
+<h2 id="包"><a href="#包" class="headerlink" title="包"></a>包</h2><p>包是在模块的基础上，将模块在按照逻辑分类，在导入模块的时候，包名称也作为导入路径的一部分。定义包的时候，需要在包目录下新建一个<code>__init__.py</code>文件，文件内容可以为空。</p>
+<p>假设要为统一处理声音文件与声音数据设计一个模块集（“包”）。声音文件的格式很多（通常以扩展名来识别，例如：<code>.wav</code>，<code>.aiff</code>，<code>.au</code>），因此，为了不同文件格式之间的转换，需要创建和维护一个不断增长的模块集合。为了实现对声音数据的不同处理（例如，混声、添加回声、均衡器功能、创造人工立体声效果），还要编写无穷无尽的模块流。下面这个分级文件树展示了这个包的架构：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs stylus">sound/                          最高层级的包<br>      __init__<span class="hljs-selector-class">.py</span>               初始化 sound 包<br>      song<span class="hljs-selector-class">.py</span><br>      formats/                  用于文件格式转换的子包<br>              __init__<span class="hljs-selector-class">.py</span><br>              wavread<span class="hljs-selector-class">.py</span><br>              wavwrite<span class="hljs-selector-class">.py</span><br>              aiffread<span class="hljs-selector-class">.py</span><br>              aiffwrite<span class="hljs-selector-class">.py</span><br>              auread<span class="hljs-selector-class">.py</span><br>              auwrite<span class="hljs-selector-class">.py</span><br>              ...<br>      effects/                  用于音效的子包<br>              __init__<span class="hljs-selector-class">.py</span><br>              echo<span class="hljs-selector-class">.py</span><br>              surround<span class="hljs-selector-class">.py</span><br>              reverse<span class="hljs-selector-class">.py</span><br>              ...<br>      filters/                  用于过滤器的子包<br>              __init__<span class="hljs-selector-class">.py</span><br>              equalizer<span class="hljs-selector-class">.py</span><br>              vocoder<span class="hljs-selector-class">.py</span><br>              karaoke<span class="hljs-selector-class">.py</span><br>              ...<br></code></pre></td></tr></table></figure>
+
+
+
+<h3 id="包的导入"><a href="#包的导入" class="headerlink" title="包的导入"></a>包的导入</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> 父.子.模块<br><span class="hljs-keyword">from</span> 父.子 <span class="hljs-keyword">import</span> 模块<span class="hljs-number">1</span>,模块<span class="hljs-number">2</span><br><span class="hljs-keyword">from</span> 父.子 <span class="hljs-keyword">import</span> *<br><br><span class="hljs-comment"># 相对导入</span><br><span class="hljs-keyword">from</span> . <span class="hljs-keyword">import</span> 模块名 <span class="hljs-comment"># 使用当前模块所在路径查找 导入模块</span><br><span class="hljs-keyword">from</span> .. <span class="hljs-keyword">import</span> 模块名 <span class="hljs-comment"># 使用当前模块的直接父模块</span><br><span class="hljs-keyword">from</span> ..同级包名 <span class="hljs-keyword">import</span> 模块名  <span class="hljs-comment">#引入同级包下的模块</span><br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><code>*</code> 的使用需要在包的<code>__init__.py</code>文件中通过<code>__all__</code> 声明需要导出的模块</li>
+<li>使用相对路径引入的时候，如果使用<code>python</code>运行文件的时候，如果模块<code>A</code>使用相对路径引入了其他模块，不能直接运行<code>python a.py</code>，否则会报错：<code>ImportError: attempted relative import with no known parent package</code></li>
+</ul>
+<p><strong>举例：</strong></p>
+<p><img src="https://raw.githubusercontent.com/duwei0227/picbed/main/blogs/image-20260108191529667.png" srcset="/img/loading.gif" lazyload alt="image-20260108191529667"></p>
+<p>1、直接导入模块：</p>
+<p>使用 <code>import</code>直接导入全路径模块时，在使用的时候也需要完整的模块路径，较为繁琐</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> sound.effects.echo<br><br><span class="hljs-built_in">print</span>(sound.effects.echo.echo_str(<span class="hljs-string">&quot;Hello&quot;</span>))<br></code></pre></td></tr></table></figure>
+
+
+
+<p>2、使用<code>from 包路径 import 模块</code>方式：</p>
+<p>使用此种方式，在使用的时候可以直接使用最后的模块名，不需要前边的包路径，<strong>推荐采用</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> sound.effects <span class="hljs-keyword">import</span> echo<br><br><span class="hljs-built_in">print</span>(echo.echo_str(<span class="hljs-string">&quot;Hello&quot;</span>))  <span class="hljs-comment"># Expected output: &quot;Hello Hello&quot;</span><br></code></pre></td></tr></table></figure>
+
+
+
+<p>3、使用<code>from 包路径 import *</code>方式：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># 在 sound.effercts.__init__py文件中添加 __all__ 声明导出 errercts包下的 echo 模块</span><br>__all__ = [<span class="hljs-string">&#x27;echo&#x27;</span>]<br><br><span class="hljs-keyword">from</span> sound.effects <span class="hljs-keyword">import</span> *<br><br><span class="hljs-built_in">print</span>(echo.echo_str(<span class="hljs-string">&quot;Hello&quot;</span>))<br><span class="hljs-built_in">print</span>(reverse.reverse_str(<span class="hljs-string">&quot;Hello&quot;</span>))<br><br><span class="hljs-comment"># 由于没有在 __all__ 中声明导出 reverse，所以在执行 reverse.reverse_str时会报错</span><br>Hello Hello<br>Traceback (most recent call last):<br>  File <span class="hljs-string">&quot;/test.py&quot;</span>, line <span class="hljs-number">4</span>, <span class="hljs-keyword">in</span> &lt;module&gt;<br>    <span class="hljs-built_in">print</span>(reverse.reverse_str(<span class="hljs-string">&quot;Hello&quot;</span>))<br>          ^^^^^^^<br>NameError: name <span class="hljs-string">&#x27;reverse&#x27;</span> <span class="hljs-keyword">is</span> <span class="hljs-keyword">not</span> defined. Did you mean: <span class="hljs-string">&#x27;reversed&#x27;</span>?<br></code></pre></td></tr></table></figure>
+
+
+
+<p>4、使用相对路径 <code>.</code>：</p>
+<p>在 <code>reverse.py</code>文件中通过相对路径引入 <code>echo</code>模块</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> . <span class="hljs-keyword">import</span> echo<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">reverse_str</span>(<span class="hljs-params">s</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;Reverses the given string s.&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">return</span> s[::-<span class="hljs-number">1</span>]<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">call_echo</span>():<br>    echo.echo_str(<span class="hljs-string">&quot;Test&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>顶层 <code>test.py</code>中调用 <code>reverse</code>模块的<code>call_echo</code>函数</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> sound.effects <span class="hljs-keyword">import</span> reverse<br><br>reverse.call_echo()<br><br><span class="hljs-comment"># 输出</span><br>Echoing string: Test<br></code></pre></td></tr></table></figure>
+
+
+
+<p><strong>注意实现：</strong> 如果在effects目录下直接使用<code>python reverse.py</code>调用<code>echo</code>模块的函数，会发生错误：<code>ImportError: attempted relative import with no known parent package</code></p>
+<p>5、使用相对路径 <code>..</code></p>
+<p>在<code>wavread.py</code> 文件中通过相对引用，引入父包<code>sound</code>下的<code>song</code>模块</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> .. <span class="hljs-keyword">import</span> song<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">read_wav</span>(<span class="hljs-params">filename</span>):<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Reading WAV file: <span class="hljs-subst">&#123;filename&#125;</span>&quot;</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">sing_a_song</span>():<br>    song.sing()<br></code></pre></td></tr></table></figure>
+
+<p>顶层<code>test.py</code>中引入<code>wavread</code>模块</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> sound.formats <span class="hljs-keyword">import</span> wavread<br><br>wavread.sing_a_song()<br><br><span class="hljs-comment"># 输出</span><br>La la la...<br></code></pre></td></tr></table></figure>
+
+
+
+<p>6、使用相对路径引入同级包下的模块 <code>..同级包名</code> </p>
+<p>在<code>wavread.py</code> 文件中通过相对引用，引入当前模块所属包 <code>formats</code>的同级包<code>effects</code>下的<code>echo</code>模块</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> ..effects <span class="hljs-keyword">import</span> echo<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">read_wav</span>(<span class="hljs-params">filename</span>):<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Reading WAV file: <span class="hljs-subst">&#123;filename&#125;</span>&quot;</span>)<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">call_echo</span>():<br>    echo.echo_str(<span class="hljs-string">&quot;Calling from wavread&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>顶层<code>test.py</code>中引入<code>wavread</code>模块</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> sound.formats <span class="hljs-keyword">import</span> wavread<br><br>wavread.call_echo()<br><br><span class="hljs-comment"># 输出</span><br>Echoing string: Calling <span class="hljs-keyword">from</span> wavread<br></code></pre></td></tr></table></figure>
+
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Python/" class="category-chain-item">Python</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/python/input_output.html" title="Python简单输入与输出">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Python简单输入与输出</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/python/function.html" title="Python函数">
+                        <span class="hidden-mobile">Python函数</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
