@@ -1,0 +1,764 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="一、日期的解析与格式化此处介绍如何将一个字符串转为日期类型，用于数学运算；以及如何将一个日期类型按照期望的格式输出为字符串；日期的解析与格式化我们使用标准库 datetime 实现。 日期的解析和格式化使用如下两个方法：  strptime: String -&amp;gt; Time (解析字符串为时间对象) strftime: String &amp;lt;- Time (格式化时间对象为字符串)  日期的格">
+  
+  
+  
+  <title>【标准库】日期和时间 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="【标准库】日期和时间"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-01-26 19:00" pubdate>
+          2026年1月26日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          1.4k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          12 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">【标准库】日期和时间</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="一、日期的解析与格式化"><a href="#一、日期的解析与格式化" class="headerlink" title="一、日期的解析与格式化"></a>一、日期的解析与格式化</h2><p>此处介绍如何将一个字符串转为日期类型，用于数学运算；以及如何将一个日期类型按照期望的格式输出为字符串；日期的解析与格式化我们使用标准库 <code>datetime</code> 实现。</p>
+<p>日期的解析和格式化使用如下两个方法：</p>
+<ul>
+<li><strong><code>strptime</code></strong>: String -&gt; Time (解析字符串为时间对象)</li>
+<li><strong><code>strftime</code></strong>: String &lt;- Time (格式化时间对象为字符串)</li>
+</ul>
+<p>日期的格式化输出与解析需要按照一定的规则解析，主要使用到的格式指令如下：</p>
+<table>
+<thead>
+<tr>
+<th align="left">指令</th>
+<th align="left">含意</th>
+</tr>
+</thead>
+<tbody><tr>
+<td align="left"><code>%Y</code></td>
+<td align="left">年</td>
+</tr>
+<tr>
+<td align="left"><code>%m</code></td>
+<td align="left">十进制数 [01,12] 表示的月。</td>
+</tr>
+<tr>
+<td align="left"><code>%d</code></td>
+<td align="left">十进制数 [01,31] 表示的日（每月中的日）。</td>
+</tr>
+<tr>
+<td align="left"><code>%H</code></td>
+<td align="left">十进制数 [00,23] 表示的小时（24小时制）。</td>
+</tr>
+<tr>
+<td align="left"><code>%M</code></td>
+<td align="left">十进制数 [00,59] 表示的分钟。</td>
+</tr>
+<tr>
+<td align="left"><code>%S</code></td>
+<td align="left">十进制数 [00,61] 表示的秒。</td>
+</tr>
+<tr>
+<td align="left"><code>%I</code></td>
+<td align="left">十进制数 [01,12] 表示的小时（12小时制）。</td>
+</tr>
+<tr>
+<td align="left"><code>%p</code></td>
+<td align="left">本地化的 AM 或 PM 。</td>
+</tr>
+<tr>
+<td align="left"><code>%z</code></td>
+<td align="left">时区偏移以格式 +HHMM 或 -HHMM 形式的 UTC&#x2F;GMT 的正或负时差指示，其中H表示十进制小时数字，M表示小数分钟数字 [-23:59, +23:59] 。</td>
+</tr>
+<tr>
+<td align="left"><code>%a</code></td>
+<td align="left">本地化的缩写星期中每日的名称。</td>
+</tr>
+<tr>
+<td align="left"><code>%A</code></td>
+<td align="left">本地化的星期中每日的完整名称。</td>
+</tr>
+<tr>
+<td align="left"><code>%b</code></td>
+<td align="left">本地化的月缩写名称。</td>
+</tr>
+<tr>
+<td align="left"><code>%B</code></td>
+<td align="left">本地化的月完整名称。</td>
+</tr>
+</tbody></table>
+<h3 id="1、获取当前时间"><a href="#1、获取当前时间" class="headerlink" title="1、获取当前时间"></a>1、获取当前时间</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> datetime<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>datetime.today()</code></td>
+<td>返回当前的本地日期</td>
+</tr>
+<tr>
+<td><code>datetime.now(tz=None)</code></td>
+<td>返回表示当前地方时的 date 和 time 对象，<code>tz</code>代表时区信息，在<code>tz</code>未指定的情况下，类似于 <code>today()</code></td>
+</tr>
+</tbody></table>
+<p><em>借助<code>timedelta</code>获得时间偏差，在使用<code>timezone</code>包装为时区对象，使用<code>now()</code>构建时指定时区</em></p>
+<p><strong>示例：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-meta">&gt;&gt;&gt; </span><span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> datetime<br><span class="hljs-meta">&gt;&gt;&gt; </span>datetime.today()  <br>datetime.datetime(<span class="hljs-number">2026</span>, <span class="hljs-number">1</span>, <span class="hljs-number">26</span>, <span class="hljs-number">13</span>, <span class="hljs-number">21</span>, <span class="hljs-number">19</span>, <span class="hljs-number">176580</span>)<br><span class="hljs-meta">&gt;&gt;&gt; </span>datetime.now()<br>datetime.datetime(<span class="hljs-number">2026</span>, <span class="hljs-number">1</span>, <span class="hljs-number">26</span>, <span class="hljs-number">13</span>, <span class="hljs-number">21</span>, <span class="hljs-number">23</span>, <span class="hljs-number">429758</span>)<br><br><span class="hljs-comment"># 导入时区信息,获取标准utc时间</span><br><span class="hljs-meta">&gt;&gt;&gt; </span><span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> timezone<br><span class="hljs-meta">&gt;&gt;&gt; </span>datetime.now(tz=timezone.utc)  <span class="hljs-comment"># 指定时区为标准的 utc </span><br>datetime.datetime(<span class="hljs-number">2026</span>, <span class="hljs-number">1</span>, <span class="hljs-number">26</span>, <span class="hljs-number">5</span>, <span class="hljs-number">21</span>, <span class="hljs-number">50</span>, <span class="hljs-number">143631</span>, tzinfo=datetime.timezone.utc)<br><br><span class="hljs-comment"># 指定其他时区信息</span><br><span class="hljs-meta">&gt;&gt;&gt; </span><span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> timezone, timedelta<br><span class="hljs-meta">&gt;&gt;&gt; </span>beijing_tz = timezone(timedelta(hours=<span class="hljs-number">8</span>))<br><span class="hljs-meta">&gt;&gt;&gt; </span>bj_now = datetime.now(tz=beijing_tz)<br><span class="hljs-meta">&gt;&gt;&gt; </span>bj_now<br>datetime.datetime(<span class="hljs-number">2026</span>, <span class="hljs-number">1</span>, <span class="hljs-number">26</span>, <span class="hljs-number">19</span>, <span class="hljs-number">7</span>, <span class="hljs-number">9</span>, <span class="hljs-number">679998</span>, tzinfo=datetime.timezone(datetime.timedelta(seconds=<span class="hljs-number">28800</span>)))<br></code></pre></td></tr></table></figure>
+
+
+
+<h3 id="2、构建-datetime-对象"><a href="#2、构建-datetime-对象" class="headerlink" title="2、构建 datetime 对象"></a>2、构建 datetime 对象</h3><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>datetime(year, month, day, hour, miniute, second)</code></td>
+<td>指定固定值构建 <code>datetime</code>对象，也支持直接构建 <code>date</code> 或 <code>time</code></td>
+</tr>
+<tr>
+<td><code>datetime.fromtimestamp(timestamp, tz=None)</code></td>
+<td>返回 POSIX 时间戳对应的本地日期和时间，如 <code>time.time()</code>返回值</td>
+</tr>
+<tr>
+<td><code>datetime.strptime(date_string, format)</code></td>
+<td>按照指定格式解析日期字符串</td>
+</tr>
+</tbody></table>
+<p><strong>示例：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-meta">&gt;&gt;&gt; </span><span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> datetime<br><span class="hljs-meta">&gt;&gt;&gt; </span>datetime(<span class="hljs-number">2021</span>, <span class="hljs-number">12</span>, <span class="hljs-number">14</span>, <span class="hljs-number">22</span>, <span class="hljs-number">18</span>, <span class="hljs-number">48</span>)<br>datetime.datetime(<span class="hljs-number">2021</span>, <span class="hljs-number">12</span>, <span class="hljs-number">14</span>, <span class="hljs-number">22</span>, <span class="hljs-number">18</span>, <span class="hljs-number">48</span>)<br><br><span class="hljs-comment"># 构建 date 或 time</span><br><span class="hljs-meta">&gt;&gt;&gt; </span><span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> date, time<br><span class="hljs-meta">&gt;&gt;&gt; </span>date(<span class="hljs-number">2027</span>, <span class="hljs-number">2</span>, <span class="hljs-number">22</span>)<br>datetime.date(<span class="hljs-number">2027</span>, <span class="hljs-number">2</span>, <span class="hljs-number">22</span>)<br><span class="hljs-meta">&gt;&gt;&gt; </span>time(<span class="hljs-number">23</span>, <span class="hljs-number">12</span>, <span class="hljs-number">1</span>)<br>datetime.time(<span class="hljs-number">23</span>, <span class="hljs-number">12</span>, <span class="hljs-number">1</span>)<br><br><span class="hljs-comment"># 来自于时间辍</span><br><span class="hljs-meta">&gt;&gt;&gt; </span><span class="hljs-keyword">import</span> time<br><span class="hljs-meta">&gt;&gt;&gt; </span>datetime.fromtimestamp(time.time())<br>datetime.datetime(<span class="hljs-number">2026</span>, <span class="hljs-number">1</span>, <span class="hljs-number">26</span>, <span class="hljs-number">13</span>, <span class="hljs-number">30</span>, <span class="hljs-number">58</span>, <span class="hljs-number">796462</span>)<br><br><span class="hljs-comment"># 解析字符串</span><br><span class="hljs-meta">&gt;&gt;&gt; </span>datetime.strptime(<span class="hljs-string">&#x27;2025-12-01 12:23:34&#x27;</span>, <span class="hljs-string">&#x27;%Y-%m-%d %H:%M:%S&#x27;</span>)<br>datetime.datetime(<span class="hljs-number">2025</span>, <span class="hljs-number">12</span>, <span class="hljs-number">1</span>, <span class="hljs-number">12</span>, <span class="hljs-number">23</span>, <span class="hljs-number">34</span>)<br><br><span class="hljs-comment"># 带有utc时区信息</span><br><span class="hljs-meta">&gt;&gt;&gt; </span>now = datetime.strptime(<span class="hljs-string">&#x27;2026-01-26 19:10:12 +08:00&#x27;</span>, <span class="hljs-string">&#x27;%Y-%m-%d %H:%M:%S %z&#x27;</span>)<br><span class="hljs-meta">&gt;&gt;&gt; </span>now<br>datetime.datetime(<span class="hljs-number">2026</span>, <span class="hljs-number">1</span>, <span class="hljs-number">26</span>, <span class="hljs-number">19</span>, <span class="hljs-number">10</span>, <span class="hljs-number">12</span>, tzinfo=datetime.timezone(datetime.timedelta(seconds=<span class="hljs-number">28800</span>)))<br></code></pre></td></tr></table></figure>
+
+
+
+<h3 id="3、格式化输出"><a href="#3、格式化输出" class="headerlink" title="3、格式化输出"></a>3、格式化输出</h3><p>日期对象的格式化输出借助 <code>strftime</code> 方法实现。</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>datetime.strftime(format)</code></td>
+<td>按照指定格式解析日期对象</td>
+</tr>
+</tbody></table>
+<p><strong>示例：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-meta">&gt;&gt;&gt; </span>now = datetime.today()<br><span class="hljs-meta">&gt;&gt;&gt; </span>now<br>datetime.datetime(<span class="hljs-number">2026</span>, <span class="hljs-number">1</span>, <span class="hljs-number">26</span>, <span class="hljs-number">18</span>, <span class="hljs-number">38</span>, <span class="hljs-number">0</span>, <span class="hljs-number">241473</span>)<br><span class="hljs-meta">&gt;&gt;&gt; </span>now.strftime(<span class="hljs-string">&#x27;%Y-%m/%d&#x27;</span>)<br><span class="hljs-string">&#x27;2026-01/26&#x27;</span><br><span class="hljs-meta">&gt;&gt;&gt; </span>now.strftime(<span class="hljs-string">&#x27;%H:%M:%S&#x27;</span>)<br><span class="hljs-string">&#x27;18:38:00&#x27;</span><br><span class="hljs-meta">&gt;&gt;&gt; </span>now.strftime(<span class="hljs-string">&#x27;%Y-%m-%d %H:%M:%S&#x27;</span>)<br><span class="hljs-string">&#x27;2026-01-26 18:38:00&#x27;</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h2 id="二、时间的数学运算"><a href="#二、时间的数学运算" class="headerlink" title="二、时间的数学运算"></a>二、时间的数学运算</h2><p>在项目开发中，我们可能会需要比较两个日期的大小，即哪个早于或者晚于哪个日期；或者对日期进行运算，增加多少秒，多少小时，多少天等操作。</p>
+<h3 id="1、比较运算"><a href="#1、比较运算" class="headerlink" title="1、比较运算"></a>1、比较运算</h3><p><code>datetime</code>支持向相同类型的日期直接进行数学运算比较。</p>
+<p><strong>注意事项：</strong></p>
+<ul>
+<li>需要在相同类型之间比较，不同类型之间如果需要比较，首先需要进行类型转换，例如： <code>date</code>和<code>datetime</code>比较，需要先将<code>datetime</code>转为<code>date</code></li>
+<li>不要混合比较带有时区信息和无时区信息的日期实例</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>运算符</th>
+<th>描述</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&lt;</code></td>
+<td>小于</td>
+</tr>
+<tr>
+<td><code>&lt;=</code></td>
+<td>小于等于</td>
+</tr>
+<tr>
+<td><code>==</code></td>
+<td>等于</td>
+</tr>
+<tr>
+<td><code>&gt;</code></td>
+<td>大于</td>
+</tr>
+<tr>
+<td><code>&gt;=</code></td>
+<td>大于等于</td>
+</tr>
+</tbody></table>
+<p><strong>示例：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-meta">&gt;&gt;&gt; </span><span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> datetime<br><span class="hljs-meta">&gt;&gt;&gt; </span>d1 = datetime(<span class="hljs-number">2026</span>, <span class="hljs-number">1</span>, <span class="hljs-number">26</span>, <span class="hljs-number">18</span>, <span class="hljs-number">46</span>, <span class="hljs-number">0</span>)<br><span class="hljs-meta">&gt;&gt;&gt; </span>d2 = datetime(<span class="hljs-number">2026</span>, <span class="hljs-number">1</span>, <span class="hljs-number">26</span>, <span class="hljs-number">18</span>, <span class="hljs-number">46</span>, <span class="hljs-number">23</span>)<br><span class="hljs-meta">&gt;&gt;&gt; </span>d3 = datetime(<span class="hljs-number">2026</span>, <span class="hljs-number">1</span>, <span class="hljs-number">26</span>, <span class="hljs-number">18</span>, <span class="hljs-number">46</span>, <span class="hljs-number">0</span>)<br><span class="hljs-meta">&gt;&gt;&gt; </span>d1 &lt; d2<br><span class="hljs-literal">True</span><br><span class="hljs-meta">&gt;&gt;&gt; </span>d1 &lt;= d2<br><span class="hljs-literal">True</span><br><span class="hljs-meta">&gt;&gt;&gt; </span>d1 == d3<br><span class="hljs-literal">True</span><br><span class="hljs-meta">&gt;&gt;&gt; </span>d2 &gt; d3<br><span class="hljs-literal">True</span><br><span class="hljs-meta">&gt;&gt;&gt; </span>d1 &gt; d3<br><span class="hljs-literal">False</span><br><span class="hljs-meta">&gt;&gt;&gt; </span>d1 &gt;= d3<br><span class="hljs-literal">True</span><br><span class="hljs-meta">&gt;&gt;&gt; </span>d1 &lt; d3<br><span class="hljs-literal">False</span><br><span class="hljs-meta">&gt;&gt;&gt; </span>d1 &lt;= d3<br><span class="hljs-literal">True</span><br></code></pre></td></tr></table></figure>
+
+
+
+<h3 id="2、时间偏移运算"><a href="#2、时间偏移运算" class="headerlink" title="2、时间偏移运算"></a>2、时间偏移运算</h3><p>日期时间的偏移计算需要使用到 <code>timedelta</code> ,<code>timedelta</code>表示一段持续的时间。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">datetime.timedelta(days=<span class="hljs-number">0</span>, seconds=<span class="hljs-number">0</span>, microseconds=<span class="hljs-number">0</span>, milliseconds=<span class="hljs-number">0</span>, minutes=<span class="hljs-number">0</span>, hours=<span class="hljs-number">0</span>, weeks=<span class="hljs-number">0</span>)<br></code></pre></td></tr></table></figure>
+
+<p><em>如果需要将时间前移，设置值为负数或者直接使用 减号 -</em></p>
+<p><strong>示例：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-meta">&gt;&gt;&gt; </span><span class="hljs-keyword">from</span> datetime <span class="hljs-keyword">import</span> datetime, timedelta<br><span class="hljs-meta">&gt;&gt;&gt; </span>add_days = timedelta(days=<span class="hljs-number">2</span>)<br><span class="hljs-meta">&gt;&gt;&gt; </span>now = datetime.today()<br><span class="hljs-meta">&gt;&gt;&gt; </span>now<br>datetime.datetime(<span class="hljs-number">2026</span>, <span class="hljs-number">1</span>, <span class="hljs-number">26</span>, <span class="hljs-number">18</span>, <span class="hljs-number">53</span>, <span class="hljs-number">54</span>, <span class="hljs-number">744691</span>)<br><br><span class="hljs-comment"># 天数增加</span><br><span class="hljs-meta">&gt;&gt;&gt; </span>now + add_days<br>datetime.datetime(<span class="hljs-number">2026</span>, <span class="hljs-number">1</span>, <span class="hljs-number">28</span>, <span class="hljs-number">18</span>, <span class="hljs-number">53</span>, <span class="hljs-number">54</span>, <span class="hljs-number">744691</span>)<br><br><span class="hljs-comment"># 小时减小</span><br><span class="hljs-meta">&gt;&gt;&gt; </span>minus_hour = timedelta(hours=-<span class="hljs-number">3</span>)<br><span class="hljs-meta">&gt;&gt;&gt; </span>now + minus_hour<br>datetime.datetime(<span class="hljs-number">2026</span>, <span class="hljs-number">1</span>, <span class="hljs-number">26</span>, <span class="hljs-number">15</span>, <span class="hljs-number">53</span>, <span class="hljs-number">54</span>, <span class="hljs-number">744691</span>)<br><br><span class="hljs-comment"># 使用 减号 - 减小天数</span><br><span class="hljs-meta">&gt;&gt;&gt; </span>now - add_days<br>datetime.datetime(<span class="hljs-number">2026</span>, <span class="hljs-number">1</span>, <span class="hljs-number">24</span>, <span class="hljs-number">18</span>, <span class="hljs-number">53</span>, <span class="hljs-number">54</span>, <span class="hljs-number">744691</span>)<br></code></pre></td></tr></table></figure>
+
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Python/" class="category-chain-item">Python</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/python/with.html" title="上下文管理器with的使用">
+                        <span class="hidden-mobile">上下文管理器with的使用</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
