@@ -1,0 +1,917 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="urllib 是 Python 标准库中用于处理 URL 的模块，包含 urllib.request（发送请求）、urllib.parse（URL 解析和编码）、urllib.error（异常处理）三个子模块。无需安装第三方库即可发送 HTTP 请求。 一、urllib.request 发送请求1.1 urlopen() 简单请求语法格式 1urllib.request.urlopen(url,">
+  
+  
+  
+  <title>Python urllib HTTP请求指南 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Python urllib HTTP请求指南"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-24 08:30" pubdate>
+          2026年3月24日 早上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          28 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Python urllib HTTP请求指南</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p><code>urllib</code> 是 Python 标准库中用于处理 URL 的模块，包含 <code>urllib.request</code>（发送请求）、<code>urllib.parse</code>（URL 解析和编码）、<code>urllib.error</code>（异常处理）三个子模块。无需安装第三方库即可发送 HTTP 请求。</p>
+<h2 id="一、urllib-request-发送请求"><a href="#一、urllib-request-发送请求" class="headerlink" title="一、urllib.request 发送请求"></a>一、urllib.request 发送请求</h2><h3 id="1-1-urlopen-简单请求"><a href="#1-1-urlopen-简单请求" class="headerlink" title="1.1 urlopen() 简单请求"></a>1.1 urlopen() 简单请求</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">urllib.request.urlopen(url, <span class="hljs-attribute">data</span>=None, <span class="hljs-attribute">timeout</span>=None, <span class="hljs-attribute">context</span>=None)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>url</code></td>
+<td>URL 字符串或 Request 对象</td>
+<td><code>&#39;https://httpbin.org/get&#39;</code></td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td>POST 数据，需编码为字节</td>
+<td><code>b&#39;key=value&#39;</code></td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td>超时秒数</td>
+<td><code>10</code></td>
+</tr>
+<tr>
+<td><code>context</code></td>
+<td>SSL 上下文</td>
+<td><code>ssl.create_default_context()</code></td>
+</tr>
+</tbody></table>
+<p><strong>返回值</strong>：返回一个类文件对象，包含 <code>read()</code>、<code>status</code>、<code>headers</code> 属性。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> urllib.request<br><br><span class="hljs-comment"># GET 请求</span><br><span class="hljs-keyword">with</span> urllib.request.urlopen(<span class="hljs-string">&#x27;https://httpbin.org/get&#x27;</span>) <span class="hljs-keyword">as</span> response:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;状态码: <span class="hljs-subst">&#123;response.status&#125;</span>&quot;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;响应内容: <span class="hljs-subst">&#123;response.read().decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># 状态码: 200</span><br><span class="hljs-comment"># 响应内容: &#123;&quot;args&quot;: &#123;&#125;, &quot;headers&quot;: &#123;...&#125;, &quot;origin&quot;: &quot;...&quot;, &quot;url&quot;: &quot;https://httpbin.org/get&quot;&#125;</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="1-2-Request-对象构建请求"><a href="#1-2-Request-对象构建请求" class="headerlink" title="1.2 Request 对象构建请求"></a>1.2 Request 对象构建请求</h3><p><strong>语法格式</strong></p>
+<figure class="highlight oxygene"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs oxygene">urllib.request.Request(url, data=None, headers=<span class="hljs-comment">&#123;&#125;</span>, <span class="hljs-keyword">method</span>=<span class="hljs-title function_">None</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>url</code></td>
+<td>请求 URL</td>
+<td><code>&#39;https://httpbin.org/post&#39;</code></td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td>请求数据（字节）</td>
+<td><code>b&#39;key=value&#39;</code></td>
+</tr>
+<tr>
+<td><code>headers</code></td>
+<td>请求头字典</td>
+<td><code>{&#39;User-Agent&#39;: &#39;MyBot&#39;}</code></td>
+</tr>
+<tr>
+<td><code>method</code></td>
+<td>HTTP 方法</td>
+<td><code>&#39;GET&#39;</code>、<code>&#39;POST&#39;</code>、<code>&#39;PUT&#39;</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> urllib.request<br><span class="hljs-keyword">import</span> json<br><br><span class="hljs-comment"># POST JSON 请求</span><br>url = <span class="hljs-string">&#x27;https://httpbin.org/post&#x27;</span><br>data = json.dumps(&#123;<span class="hljs-string">&#x27;name&#x27;</span>: <span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;age&#x27;</span>: <span class="hljs-number">25</span>&#125;).encode(<span class="hljs-string">&#x27;utf-8&#x27;</span>)<br><br>req = urllib.request.Request(<br>    url,<br>    data=data,<br>    headers=&#123;<span class="hljs-string">&#x27;Content-Type&#x27;</span>: <span class="hljs-string">&#x27;application/json&#x27;</span>&#125;,<br>    method=<span class="hljs-string">&#x27;POST&#x27;</span><br>)<br><br><span class="hljs-keyword">with</span> urllib.request.urlopen(req) <span class="hljs-keyword">as</span> response:<br>    result = json.loads(response.read().decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>))<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;服务器收到的JSON: <span class="hljs-subst">&#123;result[<span class="hljs-string">&#x27;json&#x27;</span>]&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># 服务器收到的JSON: &#123;&#x27;name&#x27;: &#x27;Alice&#x27;, &#x27;age&#x27;: 25&#125;</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="1-3-添加请求头"><a href="#1-3-添加请求头" class="headerlink" title="1.3 添加请求头"></a>1.3 添加请求头</h3><p><strong>语法格式</strong></p>
+<figure class="highlight gauss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs gauss">Request.add_header(<span class="hljs-built_in">key</span>, value)<br>Request.add_unredirected_header(<span class="hljs-built_in">key</span>, value)<br></code></pre></td></tr></table></figure>
+
+<p><strong>说明</strong>：<code>add_header()</code> 添加的请求头会跟随重定向，<code>add_unredirected_header()</code> 不会。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> urllib.request<br><span class="hljs-keyword">import</span> json<br><br>req = urllib.request.Request(<span class="hljs-string">&#x27;https://httpbin.org/headers&#x27;</span>)<br>req.add_header(<span class="hljs-string">&#x27;User-Agent&#x27;</span>, <span class="hljs-string">&#x27;MyApp/1.0&#x27;</span>)<br>req.add_header(<span class="hljs-string">&#x27;Accept&#x27;</span>, <span class="hljs-string">&#x27;application/json&#x27;</span>)<br>req.add_header(<span class="hljs-string">&#x27;Referer&#x27;</span>, <span class="hljs-string">&#x27;https://example.com&#x27;</span>)<br><br><span class="hljs-keyword">with</span> urllib.request.urlopen(req) <span class="hljs-keyword">as</span> response:<br>    headers = json.loads(response.read().decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>))[<span class="hljs-string">&#x27;headers&#x27;</span>]<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;User-Agent: <span class="hljs-subst">&#123;headers.get(<span class="hljs-string">&#x27;User-Agent&#x27;</span>)&#125;</span>&quot;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Accept: <span class="hljs-subst">&#123;headers.get(<span class="hljs-string">&#x27;Accept&#x27;</span>)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># User-Agent: MyApp/1.0</span><br><span class="hljs-comment"># Accept: application/json</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="1-4-设置代理"><a href="#1-4-设置代理" class="headerlink" title="1.4 设置代理"></a>1.4 设置代理</h3><p><strong>语法格式</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs stylus">urllib<span class="hljs-selector-class">.request</span><span class="hljs-selector-class">.ProxyHandler</span>(proxies)<br>urllib<span class="hljs-selector-class">.request</span><span class="hljs-selector-class">.build_opener</span>(handler)<br></code></pre></td></tr></table></figure>
+
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> urllib.request<br><br><span class="hljs-comment"># 设置代理</span><br>proxies = &#123;<br>    <span class="hljs-string">&#x27;http&#x27;</span>: <span class="hljs-string">&#x27;http://proxy.example.com:8080&#x27;</span>,<br>    <span class="hljs-string">&#x27;https&#x27;</span>: <span class="hljs-string">&#x27;http://proxy.example.com:8080&#x27;</span><br>&#125;<br><br>proxy_handler = urllib.request.ProxyHandler(proxies)<br>opener = urllib.request.build_opener(proxy_handler)<br><br><span class="hljs-comment"># 使用 opener 发送请求</span><br>response = opener.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;https://httpbin.org/ip&#x27;</span>)<br><span class="hljs-built_in">print</span>(response.read().decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>))<br><br><span class="hljs-comment"># 禁用代理（覆盖环境变量）</span><br>no_proxy_handler = urllib.request.ProxyHandler(&#123;&#125;)<br>opener_no_proxy = urllib.request.build_opener(no_proxy_handler)<br></code></pre></td></tr></table></figure>
+
+<h3 id="1-5-build-opener-自定义-opener"><a href="#1-5-build-opener-自定义-opener" class="headerlink" title="1.5 build_opener() 自定义 opener"></a>1.5 build_opener() 自定义 opener</h3><p><strong>语法格式</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs stylus">urllib<span class="hljs-selector-class">.request</span><span class="hljs-selector-class">.build_opener</span>(*handlers)<br>urllib<span class="hljs-selector-class">.request</span><span class="hljs-selector-class">.install_opener</span>(opener)<br></code></pre></td></tr></table></figure>
+
+<p><strong>说明</strong>：<code>build_opener()</code> 创建 opener，<code>install_opener()</code> 将其安装为全局默认。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> urllib.request<br><br><span class="hljs-comment"># 创建带有自定义处理器的 opener</span><br>opener = urllib.request.build_opener()<br><br><span class="hljs-comment"># 添加默认处理器（代理、Cookie、重定向等）</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">CustomHandler</span>(urllib.request.BaseHandler):<br>    <span class="hljs-keyword">def</span> <span class="hljs-title function_">default_open</span>(<span class="hljs-params">self, req</span>):<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;拦截请求: <span class="hljs-subst">&#123;req.full_url&#125;</span>&quot;</span>)<br>        <span class="hljs-keyword">return</span> <span class="hljs-literal">None</span>  <span class="hljs-comment"># 返回 None 继续执行其他处理器</span><br><br>opener.add_handler(CustomHandler())<br><br><span class="hljs-comment"># 全局安装后，urlopen() 将使用此 opener</span><br>urllib.request.install_opener(opener)<br></code></pre></td></tr></table></figure>
+
+<h3 id="1-6-HTTP-基本认证"><a href="#1-6-HTTP-基本认证" class="headerlink" title="1.6 HTTP 基本认证"></a>1.6 HTTP 基本认证</h3><p><strong>语法格式</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs stylus">urllib<span class="hljs-selector-class">.request</span><span class="hljs-selector-class">.HTTPBasicAuthHandler</span>()<br>urllib<span class="hljs-selector-class">.request</span><span class="hljs-selector-class">.HTTPPasswordMgr</span>()<br>handler<span class="hljs-selector-class">.add_password</span>(realm, uri, user, password)<br></code></pre></td></tr></table></figure>
+
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> urllib.request<br><br><span class="hljs-comment"># 创建密码管理器</span><br>password_mgr = urllib.request.HTTPPasswordMgr()<br>password_mgr.add_password(<br>    realm=<span class="hljs-string">&#x27;Fake Realm&#x27;</span>,<br>    uri=<span class="hljs-string">&#x27;https://httpbin.org/basic-auth/user/passwd&#x27;</span>,<br>    user=<span class="hljs-string">&#x27;user&#x27;</span>,<br>    passwd=<span class="hljs-string">&#x27;passwd&#x27;</span><br>)<br><br><span class="hljs-comment"># 创建认证处理器</span><br>auth_handler = urllib.request.HTTPBasicAuthHandler(password_mgr)<br>opener = urllib.request.build_opener(auth_handler)<br><br><span class="hljs-comment"># 发送请求</span><br>response = opener.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;https://httpbin.org/basic-auth/user/passwd&#x27;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;状态码: <span class="hljs-subst">&#123;response.status&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(response.read().decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>))<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># 状态码: 200</span><br><span class="hljs-comment"># &#123;&quot;authenticated&quot;: true, &quot;user&quot;: &quot;user&quot;&#125;</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="1-7-处理-Cookie"><a href="#1-7-处理-Cookie" class="headerlink" title="1.7 处理 Cookie"></a>1.7 处理 Cookie</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">urllib.request.HTTPCookieProcessor(<span class="hljs-attribute">cookiejar</span>=None)<br></code></pre></td></tr></table></figure>
+
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> urllib.request<br><span class="hljs-keyword">import</span> http.cookiejar<br><br><span class="hljs-comment"># 创建 CookieJar 保存 Cookie</span><br>cookie_jar = http.cookiejar.CookieJar()<br>cookie_handler = urllib.request.HTTPCookieProcessor(cookie_jar)<br>opener = urllib.request.build_opener(cookie_handler)<br><br><span class="hljs-comment"># 第一次请求（登录）</span><br>opener.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;https://httpbin.org/cookies/set/session_id/abc123&#x27;</span>)<br><br><span class="hljs-comment"># 第二次请求（带 Cookie）</span><br>opener.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;https://httpbin.org/cookies&#x27;</span>)<br><br><span class="hljs-comment"># 查看 Cookie</span><br><span class="hljs-keyword">for</span> cookie <span class="hljs-keyword">in</span> cookie_jar:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">&#123;cookie.name&#125;</span> = <span class="hljs-subst">&#123;cookie.value&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># session_id = abc123</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="1-8-urlretrieve-下载文件"><a href="#1-8-urlretrieve-下载文件" class="headerlink" title="1.8 urlretrieve() 下载文件"></a>1.8 urlretrieve() 下载文件</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">urllib.request.urlretrieve(url, <span class="hljs-attribute">filename</span>=None, <span class="hljs-attribute">reporthook</span>=None, <span class="hljs-attribute">data</span>=None)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>url</code></td>
+<td>下载链接</td>
+<td><code>&#39;https://httpbin.org/image/png&#39;</code></td>
+</tr>
+<tr>
+<td><code>filename</code></td>
+<td>保存路径，None 则为临时文件</td>
+<td><code>&#39;/path/to/file&#39;</code></td>
+</tr>
+<tr>
+<td><code>reporthook</code></td>
+<td>下载进度回调函数</td>
+<td><code>hook_func</code></td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td>POST 数据</td>
+<td><code>None</code></td>
+</tr>
+</tbody></table>
+<p><strong>返回值</strong>：元组 <code>(filename, headers)</code></p>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> urllib.request<br><br><span class="hljs-comment"># 下载图片</span><br>url = <span class="hljs-string">&#x27;https://httpbin.org/image/png&#x27;</span><br>local_filename, headers = urllib.request.urlretrieve(url, <span class="hljs-string">&#x27;/tmp/test.png&#x27;</span>)<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;保存至: <span class="hljs-subst">&#123;local_filename&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;文件大小: <span class="hljs-subst">&#123;headers.get(<span class="hljs-string">&#x27;Content-Length&#x27;</span>)&#125;</span> bytes&quot;</span>)<br><br><span class="hljs-comment"># 清理临时文件</span><br>urllib.request.urlcleanup()<br></code></pre></td></tr></table></figure>
+
+<h2 id="二、urllib-parse-URL-解析与编码"><a href="#二、urllib-parse-URL-解析与编码" class="headerlink" title="二、urllib.parse URL 解析与编码"></a>二、urllib.parse URL 解析与编码</h2><h3 id="2-1-urlsplit-URL-分解"><a href="#2-1-urlsplit-URL-分解" class="headerlink" title="2.1 urlsplit() URL 分解"></a>2.1 urlsplit() URL 分解</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">urllib.parse.urlsplit(urlstring, <span class="hljs-attribute">scheme</span>=None, <span class="hljs-attribute">allow_fragments</span>=<span class="hljs-literal">True</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>返回值</strong>：SplitResult 命名元组</p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>scheme</code></td>
+<td>协议</td>
+</tr>
+<tr>
+<td><code>netloc</code></td>
+<td>网络位置（含端口）</td>
+</tr>
+<tr>
+<td><code>path</code></td>
+<td>路径</td>
+</tr>
+<tr>
+<td><code>query</code></td>
+<td>查询参数</td>
+</tr>
+<tr>
+<td><code>fragment</code></td>
+<td>片段标识符</td>
+</tr>
+<tr>
+<td><code>hostname</code></td>
+<td>主机名（仅主机）</td>
+</tr>
+<tr>
+<td><code>port</code></td>
+<td>端口号</td>
+</tr>
+<tr>
+<td><code>username</code></td>
+<td>用户名</td>
+</tr>
+<tr>
+<td><code>password</code></td>
+<td>密码</td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> urllib.parse <span class="hljs-keyword">import</span> urlsplit<br><br>url = <span class="hljs-string">&#x27;https://user:pass@example.com:8080/path?query=1#section&#x27;</span><br>result = urlsplit(url)<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;scheme: <span class="hljs-subst">&#123;result.scheme&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;hostname: <span class="hljs-subst">&#123;result.hostname&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;port: <span class="hljs-subst">&#123;result.port&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;path: <span class="hljs-subst">&#123;result.path&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;query: <span class="hljs-subst">&#123;result.query&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;username: <span class="hljs-subst">&#123;result.username&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;password: <span class="hljs-subst">&#123;result.password&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># scheme: https</span><br><span class="hljs-comment"># hostname: example.com</span><br><span class="hljs-comment"># port: 8080</span><br><span class="hljs-comment"># path: /path</span><br><span class="hljs-comment"># query: query=1</span><br><span class="hljs-comment"># username: user</span><br><span class="hljs-comment"># password: pass</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-2-urlparse-URL-分解（含-params）"><a href="#2-2-urlparse-URL-分解（含-params）" class="headerlink" title="2.2 urlparse() URL 分解（含 params）"></a>2.2 urlparse() URL 分解（含 params）</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">urllib.parse.urlparse(urlstring, <span class="hljs-attribute">scheme</span>=None, <span class="hljs-attribute">allow_fragments</span>=<span class="hljs-literal">True</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>返回值</strong>：ParseResult 命名元组，比 urlsplit 多一个 <code>params</code> 属性。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> urllib.parse <span class="hljs-keyword">import</span> urlparse<br><br><span class="hljs-comment"># 注意：现代 URL 语法中 params 已很少使用</span><br>url = <span class="hljs-string">&#x27;http://example.com/path;params?query=1#frag&#x27;</span><br>result = urlparse(url)<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;scheme: <span class="hljs-subst">&#123;result.scheme&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;netloc: <span class="hljs-subst">&#123;result.netloc&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;path: <span class="hljs-subst">&#123;result.path&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;params: <span class="hljs-subst">&#123;result.params&#125;</span>&quot;</span>)  <span class="hljs-comment"># 历史遗留字段</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;query: <span class="hljs-subst">&#123;result.query&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># scheme: http</span><br><span class="hljs-comment"># netloc: example.com</span><br><span class="hljs-comment"># path: /path</span><br><span class="hljs-comment"># params: params</span><br><span class="hljs-comment"># query: query=1</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-3-urlencode-查询参数编码"><a href="#2-3-urlencode-查询参数编码" class="headerlink" title="2.3 urlencode() 查询参数编码"></a>2.3 urlencode() 查询参数编码</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">urllib.parse.urlencode(query, <span class="hljs-attribute">doseq</span>=<span class="hljs-literal">False</span>, <span class="hljs-attribute">safe</span>=<span class="hljs-string">&#x27;&#x27;</span>, <span class="hljs-attribute">quote_via</span>=quote_plus)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>query</code></td>
+<td>字典或元组列表</td>
+<td><code>{&#39;name&#39;: &#39;Alice&#39;, &#39;age&#39;: 25}</code></td>
+</tr>
+<tr>
+<td><code>doseq</code></td>
+<td>序列值是否展开为多个参数</td>
+<td><code>True</code></td>
+</tr>
+<tr>
+<td><code>safe</code></td>
+<td>不转义的字符</td>
+<td><code>&#39;&#39;</code></td>
+</tr>
+<tr>
+<td><code>quote_via</code></td>
+<td>编码函数</td>
+<td><code>quote</code>（保留空格为 %20）</td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> urllib.parse <span class="hljs-keyword">import</span> urlencode, quote, quote_plus<br><br><span class="hljs-comment"># 字典编码</span><br>params = &#123;<span class="hljs-string">&#x27;name&#x27;</span>: <span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;city&#x27;</span>: <span class="hljs-string">&#x27;New York&#x27;</span>&#125;<br>query_string = urlencode(params)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;urlencode: <span class="hljs-subst">&#123;query_string&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 序列值展开</span><br>params_multi = &#123;<span class="hljs-string">&#x27;tag&#x27;</span>: [<span class="hljs-string">&#x27;python&#x27;</span>, <span class="hljs-string">&#x27;http&#x27;</span>]&#125;<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;doseq=True: <span class="hljs-subst">&#123;urlencode(params_multi, doseq=<span class="hljs-literal">True</span>)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 使用 quote（空格转义为 %20）</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;quote: <span class="hljs-subst">&#123;quote(<span class="hljs-string">&#x27;hello world&#x27;</span>)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 使用 quote_plus（空格转义为 +）</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;quote_plus: <span class="hljs-subst">&#123;quote_plus(<span class="hljs-string">&#x27;hello world&#x27;</span>)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># urlencode: name=Alice&amp;city=New+York</span><br><span class="hljs-comment"># doseq=True: tag=python&amp;tag=http</span><br><span class="hljs-comment"># quote: hello%20world</span><br><span class="hljs-comment"># quote_plus: hello+world</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-4-quote-URL-编码"><a href="#2-4-quote-URL-编码" class="headerlink" title="2.4 quote() URL 编码"></a>2.4 quote() URL 编码</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs routeros">urllib.parse.quote(string, <span class="hljs-attribute">safe</span>=<span class="hljs-string">&#x27;/&#x27;</span>, <span class="hljs-attribute">encoding</span>=None, <span class="hljs-attribute">errors</span>=None)<br>urllib.parse.quote_plus(string, <span class="hljs-attribute">safe</span>=<span class="hljs-string">&#x27;&#x27;</span>, <span class="hljs-attribute">encoding</span>=None, <span class="hljs-attribute">errors</span>=None)<br></code></pre></td></tr></table></figure>
+
+<p><strong>说明</strong>：<code>quote()</code> 默认不编码 <code>/</code>，<code>quote_plus()</code> 将空格转为 <code>+</code>。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> urllib.parse <span class="hljs-keyword">import</span> quote, quote_plus, unquote, unquote_plus<br><br><span class="hljs-comment"># 编码特殊字符</span><br>text = <span class="hljs-string">&#x27;/path/to file?name=Alice&amp;age=25&#x27;</span><br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;quote: <span class="hljs-subst">&#123;quote(text)&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;quote_plus: <span class="hljs-subst">&#123;quote_plus(text)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 编码中文</span><br>chinese = <span class="hljs-string">&#x27;你好世界&#x27;</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;中文编码: <span class="hljs-subst">&#123;quote(chinese)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 解码</span><br>encoded = <span class="hljs-string">&#x27;hello%20world&#x27;</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;unquote: <span class="hljs-subst">&#123;unquote(encoded)&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;unquote_plus: <span class="hljs-subst">&#123;hello+world&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># quote: /path/to%20file?name%3DAlice&amp;age%3D25</span><br><span class="hljs-comment"># quote_plus: %2Fpath%2Fto+file%3Dname%3DAlice%26age%3D25</span><br><span class="hljs-comment"># 中文编码: %E4%BD%A0%E5%A5%BD%E4%B8%96%E7%95%8C</span><br><span class="hljs-comment"># unquote: hello world</span><br><span class="hljs-comment"># unquote_plus: hello world</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-5-parse-qs-查询字符串解析"><a href="#2-5-parse-qs-查询字符串解析" class="headerlink" title="2.5 parse_qs() 查询字符串解析"></a>2.5 parse_qs() 查询字符串解析</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs routeros">urllib.parse.parse_qs(qs, <span class="hljs-attribute">keep_blank_values</span>=<span class="hljs-literal">False</span>, <span class="hljs-attribute">encoding</span>=<span class="hljs-string">&#x27;utf-8&#x27;</span>)<br>urllib.parse.parse_qsl(qs, <span class="hljs-attribute">keep_blank_values</span>=<span class="hljs-literal">False</span>, <span class="hljs-attribute">encoding</span>=<span class="hljs-string">&#x27;utf-8&#x27;</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>返回值</strong>：<code>parse_qs</code> 返回字典，<code>parse_qsl</code> 返回列表。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> urllib.parse <span class="hljs-keyword">import</span> parse_qs, parse_qsl<br><br>query_string = <span class="hljs-string">&#x27;name=Alice&amp;age=25&amp;city=NYC&amp;tag=python&amp;tag=http&#x27;</span><br><br><span class="hljs-comment"># 返回字典</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;parse_qs: <span class="hljs-subst">&#123;parse_qs(query_string)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 返回列表</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;parse_qsl: <span class="hljs-subst">&#123;parse_qsl(query_string)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 保留空值</span><br>query_with_blank = <span class="hljs-string">&#x27;name=Alice&amp;age=&amp;city=NYC&#x27;</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;保留空值: <span class="hljs-subst">&#123;parse_qs(query_with_blank, keep_blank_values=<span class="hljs-literal">True</span>)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># parse_qs: &#123;&#x27;name&#x27;: [&#x27;Alice&#x27;], &#x27;age&#x27;: [&#x27;25&#x27;], &#x27;city&#x27;: [&#x27;NYC&#x27;], &#x27;tag&#x27;: [&#x27;python&#x27;, &#x27;http&#x27;]&#125;</span><br><span class="hljs-comment"># parse_qsl: [(&#x27;name&#x27;, &#x27;Alice&#x27;), (&#x27;age&#x27;, &#x27;25&#x27;), (&#x27;city&#x27;, &#x27;NYC&#x27;), (&#x27;tag&#x27;, &#x27;python&#x27;), (&#x27;tag&#x27;, &#x27;http&#x27;)]</span><br><span class="hljs-comment"># 保留空值: &#123;&#x27;name&#x27;: [&#x27;Alice&#x27;], &#x27;age&#x27;: [&#x27;&#x27;], &#x27;city&#x27;: [&#x27;NYC&#x27;]&#125;</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-6-urljoin-URL-拼接"><a href="#2-6-urljoin-URL-拼接" class="headerlink" title="2.6 urljoin() URL 拼接"></a>2.6 urljoin() URL 拼接</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">urllib.parse.urljoin(base, url, <span class="hljs-attribute">allow_fragments</span>=<span class="hljs-literal">True</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>说明</strong>：基于 base URL 拼接相对 URL。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> urllib.parse <span class="hljs-keyword">import</span> urljoin<br><br>base = <span class="hljs-string">&#x27;https://example.com/path/page.html&#x27;</span><br><br><span class="hljs-comment"># 相对路径</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;相对路径: <span class="hljs-subst">&#123;urljoin(base, <span class="hljs-string">&#x27;about.html&#x27;</span>)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 绝对路径</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;绝对路径: <span class="hljs-subst">&#123;urljoin(base, <span class="hljs-string">&#x27;/about.html&#x27;</span>)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 绝对 URL</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;绝对URL: <span class="hljs-subst">&#123;urljoin(base, <span class="hljs-string">&#x27;https://other.com/page&#x27;</span>)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 上级目录</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;上级目录: <span class="hljs-subst">&#123;urljoin(base, <span class="hljs-string">&#x27;../contact.html&#x27;</span>)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># 相对路径: https://example.com/path/about.html</span><br><span class="hljs-comment"># 绝对路径: https://example.com/about.html</span><br><span class="hljs-comment"># 绝对URL: https://other.com/page</span><br><span class="hljs-comment"># 上级目录: https://example.com/contact.html</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-7-urlunsplit-URL-拼接（反向）"><a href="#2-7-urlunsplit-URL-拼接（反向）" class="headerlink" title="2.7 urlunsplit() URL 拼接（反向）"></a>2.7 urlunsplit() URL 拼接（反向）</h3><p><strong>语法格式</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus">urllib<span class="hljs-selector-class">.parse</span><span class="hljs-selector-class">.urlunsplit</span>(parts)<br></code></pre></td></tr></table></figure>
+
+<p><strong>说明</strong>：将 urlsplit 结果重新组合为 URL。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> urllib.parse <span class="hljs-keyword">import</span> urlsplit, urlunsplit<br><br>url = <span class="hljs-string">&#x27;https://example.com/path?query=1#section&#x27;</span><br>parts = urlsplit(url)<br><br><span class="hljs-comment"># 修改部分组件</span><br>new_parts = (parts.scheme, parts.netloc, <span class="hljs-string">&#x27;/newpath&#x27;</span>, parts.query, <span class="hljs-string">&#x27;&#x27;</span>)<br>new_url = urlunsplit(new_parts)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;新URL: <span class="hljs-subst">&#123;new_url&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># 新URL: https://example.com/newpath?query=1</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-8-urldefrag-分离片段"><a href="#2-8-urldefrag-分离片段" class="headerlink" title="2.8 urldefrag() 分离片段"></a>2.8 urldefrag() 分离片段</h3><p><strong>语法格式</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus">urllib<span class="hljs-selector-class">.parse</span><span class="hljs-selector-class">.urldefrag</span>(url)<br></code></pre></td></tr></table></figure>
+
+<p><strong>返回值</strong>：DefragResult 命名元组 <code>(url, fragment)</code></p>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> urllib.parse <span class="hljs-keyword">import</span> urldefrag<br><br>url = <span class="hljs-string">&#x27;https://example.com/page#section1&#x27;</span><br>base_url, fragment = urldefrag(url)<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;基础URL: <span class="hljs-subst">&#123;base_url&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;片段: <span class="hljs-subst">&#123;fragment&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># 基础URL: https://example.com/page</span><br><span class="hljs-comment"># 片段: section1</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="三、urllib-error-异常处理"><a href="#三、urllib-error-异常处理" class="headerlink" title="三、urllib.error 异常处理"></a>三、urllib.error 异常处理</h2><h3 id="3-1-URLError-网络错误"><a href="#3-1-URLError-网络错误" class="headerlink" title="3.1 URLError 网络错误"></a>3.1 URLError 网络错误</h3><p><strong>语法格式</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus">urllib<span class="hljs-selector-class">.error</span><span class="hljs-selector-class">.URLError</span>(reason)<br></code></pre></td></tr></table></figure>
+
+<p><strong>说明</strong>：网络连接问题的基类异常，<code>reason</code> 属性包含具体错误信息。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> urllib.request<br><span class="hljs-keyword">import</span> urllib.error<br><br><span class="hljs-keyword">try</span>:<br>    urllib.request.urlopen(<span class="hljs-string">&#x27;https://invalid-domain-12345.com&#x27;</span>, timeout=<span class="hljs-number">5</span>)<br><span class="hljs-keyword">except</span> urllib.error.URLError <span class="hljs-keyword">as</span> e:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;错误类型: <span class="hljs-subst">&#123;<span class="hljs-built_in">type</span>(e.reason)&#125;</span>&quot;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;错误信息: <span class="hljs-subst">&#123;e.reason&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 输出（可能）</span><br><span class="hljs-comment"># 错误类型: &lt;class &#x27;socket.gaierror&#x27;&gt;</span><br><span class="hljs-comment"># 错误信息: [Errno -2] Name or service not known</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="3-2-HTTPError-HTTP-错误"><a href="#3-2-HTTPError-HTTP-错误" class="headerlink" title="3.2 HTTPError HTTP 错误"></a>3.2 HTTPError HTTP 错误</h3><p><strong>语法格式</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus">urllib<span class="hljs-selector-class">.error</span><span class="hljs-selector-class">.HTTPError</span>(url, <span class="hljs-selector-tag">code</span>, msg, hdrs, fp)<br></code></pre></td></tr></table></figure>
+
+<p><strong>属性说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>code</code></td>
+<td>HTTP 状态码</td>
+</tr>
+<tr>
+<td><code>reason</code></td>
+<td>错误原因描述</td>
+</tr>
+<tr>
+<td><code>headers</code></td>
+<td>响应头</td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td>请求 URL</td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> urllib.request<br><span class="hljs-keyword">import</span> urllib.error<br><span class="hljs-keyword">import</span> json<br><br><span class="hljs-keyword">try</span>:<br>    <span class="hljs-comment"># 请求一个不存在的路径</span><br>    urllib.request.urlopen(<span class="hljs-string">&#x27;https://httpbin.org/status/404&#x27;</span>, timeout=<span class="hljs-number">5</span>)<br><span class="hljs-keyword">except</span> urllib.error.HTTPError <span class="hljs-keyword">as</span> e:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;状态码: <span class="hljs-subst">&#123;e.code&#125;</span>&quot;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;原因: <span class="hljs-subst">&#123;e.reason&#125;</span>&quot;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;URL: <span class="hljs-subst">&#123;e.url&#125;</span>&quot;</span>)<br>    <br>    <span class="hljs-comment"># 读取错误响应体</span><br>    <span class="hljs-keyword">try</span>:<br>        error_body = json.loads(e.read().decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>))<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;响应内容: <span class="hljs-subst">&#123;error_body&#125;</span>&quot;</span>)<br>    <span class="hljs-keyword">except</span>:<br>        <span class="hljs-keyword">pass</span><br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># 状态码: 404</span><br><span class="hljs-comment"># 原因: NOT FOUND</span><br><span class="hljs-comment"># URL: https://httpbin.org/status/404</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="3-3-异常处理流程"><a href="#3-3-异常处理流程" class="headerlink" title="3.3 异常处理流程"></a>3.3 异常处理流程</h3><p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> urllib.request<br><span class="hljs-keyword">import</span> urllib.error<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">fetch_url</span>(<span class="hljs-params">url</span>):<br>    <span class="hljs-string">&quot;&quot;&quot;统一的异常处理示例&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">try</span>:<br>        <span class="hljs-keyword">with</span> urllib.request.urlopen(url, timeout=<span class="hljs-number">10</span>) <span class="hljs-keyword">as</span> response:<br>            <span class="hljs-keyword">return</span> &#123;<br>                <span class="hljs-string">&#x27;status&#x27;</span>: response.status,<br>                <span class="hljs-string">&#x27;data&#x27;</span>: response.read().decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>)<br>            &#125;<br>    <span class="hljs-keyword">except</span> urllib.error.HTTPError <span class="hljs-keyword">as</span> e:<br>        <span class="hljs-comment"># HTTP 错误（4xx, 5xx）</span><br>        <span class="hljs-keyword">return</span> &#123;<br>            <span class="hljs-string">&#x27;error&#x27;</span>: <span class="hljs-string">&#x27;HTTP_ERROR&#x27;</span>,<br>            <span class="hljs-string">&#x27;code&#x27;</span>: e.code,<br>            <span class="hljs-string">&#x27;reason&#x27;</span>: e.reason<br>        &#125;<br>    <span class="hljs-keyword">except</span> urllib.error.URLError <span class="hljs-keyword">as</span> e:<br>        <span class="hljs-comment"># 网络错误（连接失败、超时等）</span><br>        <span class="hljs-keyword">return</span> &#123;<br>            <span class="hljs-string">&#x27;error&#x27;</span>: <span class="hljs-string">&#x27;URL_ERROR&#x27;</span>,<br>            <span class="hljs-string">&#x27;reason&#x27;</span>: <span class="hljs-built_in">str</span>(e.reason)<br>        &#125;<br>    <span class="hljs-keyword">except</span> Exception <span class="hljs-keyword">as</span> e:<br>        <span class="hljs-comment"># 其他错误</span><br>        <span class="hljs-keyword">return</span> &#123;<br>            <span class="hljs-string">&#x27;error&#x27;</span>: <span class="hljs-string">&#x27;UNKNOWN&#x27;</span>,<br>            <span class="hljs-string">&#x27;reason&#x27;</span>: <span class="hljs-built_in">str</span>(e)<br>        &#125;<br><br><span class="hljs-comment"># 测试</span><br><span class="hljs-built_in">print</span>(fetch_url(<span class="hljs-string">&#x27;https://httpbin.org/get&#x27;</span>))<br><span class="hljs-built_in">print</span>(fetch_url(<span class="hljs-string">&#x27;https://httpbin.org/status/500&#x27;</span>))<br><span class="hljs-built_in">print</span>(fetch_url(<span class="hljs-string">&#x27;https://invalid-domain.com&#x27;</span>))<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># &#123;&#x27;status&#x27;: 200, &#x27;data&#x27;: &#x27;&#123;...&#125;&#x27;&#125;</span><br><span class="hljs-comment"># &#123;&#x27;error&#x27;: &#x27;HTTP_ERROR&#x27;, &#x27;code&#x27;: 500, &#x27;reason&#x27;: &#x27;INTERNAL SERVER ERROR&#x27;&#125;</span><br><span class="hljs-comment"># &#123;&#x27;error&#x27;: &#x27;URL_ERROR&#x27;, &#x27;reason&#x27;: &#x27;...&#x27;&#125;</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="四、完整请求示例"><a href="#四、完整请求示例" class="headerlink" title="四、完整请求示例"></a>四、完整请求示例</h2><h3 id="4-1-GET-请求"><a href="#4-1-GET-请求" class="headerlink" title="4.1 GET 请求"></a>4.1 GET 请求</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> urllib.request<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">get_request</span>(<span class="hljs-params">url, params=<span class="hljs-literal">None</span>, headers=<span class="hljs-literal">None</span></span>):<br>    <span class="hljs-string">&quot;&quot;&quot;发送 GET 请求&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">if</span> params:<br>        <span class="hljs-keyword">from</span> urllib.parse <span class="hljs-keyword">import</span> urlencode<br>        url = <span class="hljs-string">f&quot;<span class="hljs-subst">&#123;url&#125;</span>?<span class="hljs-subst">&#123;urlencode(params)&#125;</span>&quot;</span><br>    <br>    req = urllib.request.Request(url)<br>    <span class="hljs-keyword">if</span> headers:<br>        <span class="hljs-keyword">for</span> key, value <span class="hljs-keyword">in</span> headers.items():<br>            req.add_header(key, value)<br>    <br>    <span class="hljs-keyword">with</span> urllib.request.urlopen(req) <span class="hljs-keyword">as</span> response:<br>        <span class="hljs-keyword">return</span> &#123;<br>            <span class="hljs-string">&#x27;status&#x27;</span>: response.status,<br>            <span class="hljs-string">&#x27;headers&#x27;</span>: <span class="hljs-built_in">dict</span>(response.headers),<br>            <span class="hljs-string">&#x27;body&#x27;</span>: response.read().decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>)<br>        &#125;<br><br><span class="hljs-comment"># 使用</span><br>result = get_request(<br>    <span class="hljs-string">&#x27;https://httpbin.org/get&#x27;</span>,<br>    params=&#123;<span class="hljs-string">&#x27;key&#x27;</span>: <span class="hljs-string">&#x27;value&#x27;</span>&#125;,<br>    headers=&#123;<span class="hljs-string">&#x27;Accept&#x27;</span>: <span class="hljs-string">&#x27;application/json&#x27;</span>&#125;<br>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;状态: <span class="hljs-subst">&#123;result[<span class="hljs-string">&#x27;status&#x27;</span>]&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-2-POST-请求"><a href="#4-2-POST-请求" class="headerlink" title="4.2 POST 请求"></a>4.2 POST 请求</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> urllib.request<br><span class="hljs-keyword">import</span> urllib.parse<br><span class="hljs-keyword">import</span> json<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">post_request</span>(<span class="hljs-params">url, data=<span class="hljs-literal">None</span>, json_data=<span class="hljs-literal">None</span>, headers=<span class="hljs-literal">None</span></span>):<br>    <span class="hljs-string">&quot;&quot;&quot;发送 POST 请求&quot;&quot;&quot;</span><br>    <span class="hljs-keyword">if</span> json_data:<br>        data = json.dumps(json_data).encode(<span class="hljs-string">&#x27;utf-8&#x27;</span>)<br>        content_type = <span class="hljs-string">&#x27;application/json&#x27;</span><br>    <span class="hljs-keyword">elif</span> data:<br>        <span class="hljs-keyword">if</span> <span class="hljs-built_in">isinstance</span>(data, <span class="hljs-built_in">dict</span>):<br>            data = urllib.parse.urlencode(data).encode(<span class="hljs-string">&#x27;utf-8&#x27;</span>)<br>        <span class="hljs-keyword">else</span>:<br>            data = data.encode(<span class="hljs-string">&#x27;utf-8&#x27;</span>)<br>        content_type = <span class="hljs-string">&#x27;application/x-www-form-urlencoded&#x27;</span><br>    <br>    req = urllib.request.Request(url, data=data)<br>    req.add_header(<span class="hljs-string">&#x27;Content-Type&#x27;</span>, content_type)<br>    <br>    <span class="hljs-keyword">if</span> headers:<br>        <span class="hljs-keyword">for</span> key, value <span class="hljs-keyword">in</span> headers.items():<br>            req.add_header(key, value)<br>    <br>    <span class="hljs-keyword">with</span> urllib.request.urlopen(req) <span class="hljs-keyword">as</span> response:<br>        <span class="hljs-keyword">return</span> &#123;<br>            <span class="hljs-string">&#x27;status&#x27;</span>: response.status,<br>            <span class="hljs-string">&#x27;body&#x27;</span>: json.loads(response.read().decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>))<br>        &#125;<br><br><span class="hljs-comment"># 使用</span><br>result = post_request(<br>    <span class="hljs-string">&#x27;https://httpbin.org/post&#x27;</span>,<br>    json_data=&#123;<span class="hljs-string">&#x27;name&#x27;</span>: <span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;age&#x27;</span>: <span class="hljs-number">25</span>&#125;<br>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;服务器响应: <span class="hljs-subst">&#123;result[<span class="hljs-string">&#x27;body&#x27;</span>][<span class="hljs-string">&#x27;json&#x27;</span>]&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 输出</span><br><span class="hljs-comment"># 服务器响应: &#123;&#x27;name&#x27;: &#x27;Alice&#x27;, &#x27;age&#x27;: 25&#125;</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="4-3-文件上传"><a href="#4-3-文件上传" class="headerlink" title="4.3 文件上传"></a>4.3 文件上传</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> urllib.request<br><span class="hljs-keyword">import</span> urllib.parse<br><span class="hljs-keyword">import</span> json<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">upload_file</span>(<span class="hljs-params">url, field_name, file_content, filename, extra_fields=<span class="hljs-literal">None</span></span>):<br>    <span class="hljs-string">&quot;&quot;&quot;上传文件（multipart/form-data）&quot;&quot;&quot;</span><br>    boundary = <span class="hljs-string">&#x27;----WebKitFormBoundary7MA4YWxkTrZu0gW&#x27;</span><br>    <br>    body = <span class="hljs-string">b&#x27;&#x27;</span><br>    <br>    <span class="hljs-comment"># 添加额外字段</span><br>    <span class="hljs-keyword">if</span> extra_fields:<br>        <span class="hljs-keyword">for</span> key, value <span class="hljs-keyword">in</span> extra_fields.items():<br>            body += <span class="hljs-string">f&#x27;--<span class="hljs-subst">&#123;boundary&#125;</span>\r\n&#x27;</span>.encode()<br>            body += <span class="hljs-string">f&#x27;Content-Disposition: form-data; name=&quot;<span class="hljs-subst">&#123;key&#125;</span>&quot;\r\n\r\n&#x27;</span>.encode()<br>            body += <span class="hljs-string">f&#x27;<span class="hljs-subst">&#123;value&#125;</span>\r\n&#x27;</span>.encode()<br>    <br>    <span class="hljs-comment"># 添加文件字段</span><br>    body += <span class="hljs-string">f&#x27;--<span class="hljs-subst">&#123;boundary&#125;</span>\r\n&#x27;</span>.encode()<br>    body += <span class="hljs-string">f&#x27;Content-Disposition: form-data; name=&quot;<span class="hljs-subst">&#123;field_name&#125;</span>&quot;; filename=&quot;<span class="hljs-subst">&#123;filename&#125;</span>&quot;\r\n&#x27;</span>.encode()<br>    body += <span class="hljs-string">b&#x27;Content-Type: application/octet-stream\r\n\r\n&#x27;</span><br>    body += file_content<br>    body += <span class="hljs-string">b&#x27;\r\n&#x27;</span><br>    <br>    <span class="hljs-comment"># 结束边界</span><br>    body += <span class="hljs-string">f&#x27;--<span class="hljs-subst">&#123;boundary&#125;</span>--\r\n&#x27;</span>.encode()<br>    <br>    req = urllib.request.Request(url, data=body)<br>    req.add_header(<span class="hljs-string">&#x27;Content-Type&#x27;</span>, <span class="hljs-string">f&#x27;multipart/form-data; boundary=<span class="hljs-subst">&#123;boundary&#125;</span>&#x27;</span>)<br>    <br>    <span class="hljs-keyword">with</span> urllib.request.urlopen(req) <span class="hljs-keyword">as</span> response:<br>        <span class="hljs-keyword">return</span> json.loads(response.read().decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>))<br><br><span class="hljs-comment"># 使用</span><br>result = upload_file(<br>    <span class="hljs-string">&#x27;https://httpbin.org/post&#x27;</span>,<br>    field_name=<span class="hljs-string">&#x27;file&#x27;</span>,<br>    file_content=<span class="hljs-string">b&#x27;Hello, this is file content!&#x27;</span>,<br>    filename=<span class="hljs-string">&#x27;test.txt&#x27;</span>,<br>    extra_fields=&#123;<span class="hljs-string">&#x27;description&#x27;</span>: <span class="hljs-string">&#x27;A test file&#x27;</span>&#125;<br>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;上传成功: <span class="hljs-subst">&#123;result[<span class="hljs-string">&#x27;files&#x27;</span>]&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Python/" class="category-chain-item">Python</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Python/" class="print-no-link">#Python</a>
+      
+        <a href="/tags/HTTP/" class="print-no-link">#HTTP</a>
+      
+        <a href="/tags/urllib/" class="print-no-link">#urllib</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/03/24/rust/Rust%20notify%20%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E7%9B%91%E6%8E%A7/" title="Rust notify 文件系统监控使用指南">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Rust notify 文件系统监控使用指南</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/03/24/python/Python%20concurrent.futures%20%E5%B9%B6%E8%A1%8C%E4%BB%BB%E5%8A%A1%E6%89%A7%E8%A1%8C/" title="Python concurrent.futures 并行任务执行">
+                        <span class="hidden-mobile">Python concurrent.futures 并行任务执行</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

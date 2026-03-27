@@ -1,0 +1,1106 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="CSV（Comma Separated Values）格式是电子表格和数据库中最常见的输入输出文件格式。Python的csv模块提供了读取和写入CSV格式表格数据的功能，让程序员可以专注于数据处理而无需关心CSV格式的细节。 一、reader和writer对象csv模块的reader和writer对象用于读取和写入序列形式的数据。 1. csv.reader()函数csv.reader()返回一个">
+  
+  
+  
+  <title>Python CSV文件读写 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Python CSV文件读写"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-23 19:45" pubdate>
+          2026年3月23日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          28 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Python CSV文件读写</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>CSV（Comma Separated Values）格式是电子表格和数据库中最常见的输入输出文件格式。Python的<code>csv</code>模块提供了读取和写入CSV格式表格数据的功能，让程序员可以专注于数据处理而无需关心CSV格式的细节。</p>
+<h2 id="一、reader和writer对象"><a href="#一、reader和writer对象" class="headerlink" title="一、reader和writer对象"></a>一、reader和writer对象</h2><p><code>csv</code>模块的<code>reader</code>和<code>writer</code>对象用于读取和写入序列形式的数据。</p>
+<h3 id="1-csv-reader-函数"><a href="#1-csv-reader-函数" class="headerlink" title="1. csv.reader()函数"></a>1. csv.reader()函数</h3><p><code>csv.reader()</code>返回一个reader对象，用于读取CSV文件中的行。</p>
+<p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">csv.reader(csvfile, <span class="hljs-attribute">dialect</span>=<span class="hljs-string">&#x27;excel&#x27;</span>, *<span class="hljs-number">*f</span>mtparams)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>csvfile</code></td>
+<td>CSV文件（必须是可迭代对象）</td>
+<td><code>csv.reader(f)</code></td>
+</tr>
+<tr>
+<td><code>dialect</code></td>
+<td>CSV变种格式</td>
+<td><code>dialect=&#39;excel&#39;</code></td>
+</tr>
+<tr>
+<td><code>delimiter</code></td>
+<td>分隔符</td>
+<td><code>delimiter=&#39;,&#39;</code></td>
+</tr>
+<tr>
+<td><code>quotechar</code></td>
+<td>引号字符</td>
+<td><code>quotechar=&#39;&quot;&#39;</code></td>
+</tr>
+<tr>
+<td><code>quoting</code></td>
+<td>引号模式</td>
+<td><code>quoting=csv.QUOTE_MINIMAL</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><span class="hljs-keyword">import</span> io<br><br><span class="hljs-comment"># 从字符串读取CSV</span><br>csv_data = <span class="hljs-string">&quot;name,age,city\nAlice,30,Beijing\nBob,25,Shanghai&quot;</span><br>reader = csv.reader(io.StringIO(csv_data))<br><span class="hljs-keyword">for</span> row <span class="hljs-keyword">in</span> reader:<br>    <span class="hljs-built_in">print</span>(row)<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n--- 使用自定义分隔符 ---&quot;</span>)<br><span class="hljs-comment"># 使用分号作为分隔符</span><br>csv_semicolon = <span class="hljs-string">&quot;name;age;city\nAlice;30;Beijing\nBob;25;Shanghai&quot;</span><br>reader = csv.reader(io.StringIO(csv_semicolon), delimiter=<span class="hljs-string">&#x27;;&#x27;</span>)<br><span class="hljs-keyword">for</span> row <span class="hljs-keyword">in</span> reader:<br>    <span class="hljs-built_in">print</span>(row)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs css"><span class="hljs-selector-attr">[<span class="hljs-string">&#x27;name&#x27;</span>, <span class="hljs-string">&#x27;age&#x27;</span>, <span class="hljs-string">&#x27;city&#x27;</span>]</span><br><span class="hljs-selector-attr">[<span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;30&#x27;</span>, <span class="hljs-string">&#x27;Beijing&#x27;</span>]</span><br><span class="hljs-selector-attr">[<span class="hljs-string">&#x27;Bob&#x27;</span>, <span class="hljs-string">&#x27;25&#x27;</span>, <span class="hljs-string">&#x27;Shanghai&#x27;</span>]</span><br><br>--- 使用自定义分隔符 ---<br><span class="hljs-selector-attr">[<span class="hljs-string">&#x27;name&#x27;</span>, <span class="hljs-string">&#x27;age&#x27;</span>, <span class="hljs-string">&#x27;city&#x27;</span>]</span><br><span class="hljs-selector-attr">[<span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;30&#x27;</span>, <span class="hljs-string">&#x27;Beijing&#x27;</span>]</span><br><span class="hljs-selector-attr">[<span class="hljs-string">&#x27;Bob&#x27;</span>, <span class="hljs-string">&#x27;25&#x27;</span>, <span class="hljs-string">&#x27;Shanghai&#x27;</span>]</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-csv-writer-函数"><a href="#2-csv-writer-函数" class="headerlink" title="2. csv.writer()函数"></a>2. csv.writer()函数</h3><p><code>csv.writer()</code>返回一个writer对象，用于将数据写入CSV文件。</p>
+<p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">csv.writer(csvfile, <span class="hljs-attribute">dialect</span>=<span class="hljs-string">&#x27;excel&#x27;</span>, *<span class="hljs-number">*f</span>mtparams)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>csvfile</code></td>
+<td>CSV文件（必须有write方法）</td>
+<td><code>csv.writer(f)</code></td>
+</tr>
+<tr>
+<td><code>dialect</code></td>
+<td>CSV变种格式</td>
+<td><code>dialect=&#39;excel&#39;</code></td>
+</tr>
+<tr>
+<td><code>delimiter</code></td>
+<td>分隔符</td>
+<td><code>delimiter=&#39;,&#39;</code></td>
+</tr>
+<tr>
+<td><code>quotechar</code></td>
+<td>引号字符</td>
+<td><code>quotechar=&#39;&quot;&#39;</code></td>
+</tr>
+<tr>
+<td><code>quoting</code></td>
+<td>引号模式</td>
+<td><code>quoting=csv.QUOTE_ALL</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><span class="hljs-keyword">import</span> io<br><br><span class="hljs-comment"># 写入CSV字符串</span><br>output = io.StringIO()<br>writer = csv.writer(output)<br><br><span class="hljs-comment"># 写入单行</span><br>writer.writerow([<span class="hljs-string">&#x27;Name&#x27;</span>, <span class="hljs-string">&#x27;Age&#x27;</span>, <span class="hljs-string">&#x27;City&#x27;</span>])<br>writer.writerow([<span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-number">30</span>, <span class="hljs-string">&#x27;Beijing&#x27;</span>])<br>writer.writerow([<span class="hljs-string">&#x27;Bob&#x27;</span>, <span class="hljs-number">25</span>, <span class="hljs-string">&#x27;Shanghai&#x27;</span>])<br><br><span class="hljs-comment"># 获取写入的内容</span><br><span class="hljs-built_in">print</span>(output.getvalue())<br><br><span class="hljs-comment"># 写入多行</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n--- 批量写入 ---&quot;</span>)<br>output2 = io.StringIO()<br>writer2 = csv.writer(output2)<br>data = [<br>    [<span class="hljs-string">&#x27;Product&#x27;</span>, <span class="hljs-string">&#x27;Price&#x27;</span>, <span class="hljs-string">&#x27;Stock&#x27;</span>],<br>    [<span class="hljs-string">&#x27;Apple&#x27;</span>, <span class="hljs-number">3.5</span>, <span class="hljs-number">100</span>],<br>    [<span class="hljs-string">&#x27;Banana&#x27;</span>, <span class="hljs-number">2.0</span>, <span class="hljs-number">200</span>]<br>]<br>writer2.writerows(data)<br><span class="hljs-built_in">print</span>(output2.getvalue())<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight autohotkey"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs autohotkey"><span class="hljs-built_in">Name,</span>Age,City<br><span class="hljs-built_in">Alice,</span><span class="hljs-number">30</span>,Beijing<br><span class="hljs-built_in">Bob,</span><span class="hljs-number">25</span>,Shanghai<br><br>--- 批量写入 ---<br><span class="hljs-built_in">Product,</span>Price,Stock<br><span class="hljs-built_in">Apple,</span><span class="hljs-number">3.5</span>,<span class="hljs-number">100</span><br><span class="hljs-built_in">Banana,</span><span class="hljs-number">2.0</span>,<span class="hljs-number">200</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="3-Reader对象属性"><a href="#3-Reader对象属性" class="headerlink" title="3. Reader对象属性"></a>3. Reader对象属性</h3><p><strong>语法格式</strong></p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">reader.<span class="hljs-keyword">dialect </span>       <span class="hljs-comment"># 变种描述（只读）</span><br>reader.line_num      <span class="hljs-comment"># 已读取的行数</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>属性说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dialect</code></td>
+<td>变种描述（只读）</td>
+<td><code>reader.dialect</code></td>
+</tr>
+<tr>
+<td><code>line_num</code></td>
+<td>已读取的行数</td>
+<td><code>reader.line_num</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><span class="hljs-keyword">import</span> io<br><br>csv_data = <span class="hljs-string">&quot;line1\nline2\nline3\nline4&quot;</span><br>reader = csv.reader(io.StringIO(csv_data))<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;初始行号: <span class="hljs-subst">&#123;reader.line_num&#125;</span>&quot;</span>)<br><span class="hljs-keyword">for</span> row <span class="hljs-keyword">in</span> reader:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;行 <span class="hljs-subst">&#123;reader.line_num&#125;</span>: <span class="hljs-subst">&#123;row&#125;</span>&quot;</span>)<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;\n变种信息: <span class="hljs-subst">&#123;reader.dialect&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs less">初始行号: <span class="hljs-number">0</span><br>行 <span class="hljs-number">1</span>: <span class="hljs-selector-attr">[<span class="hljs-string">&#x27;line1&#x27;</span>]</span><br>行 <span class="hljs-number">2</span>: <span class="hljs-selector-attr">[<span class="hljs-string">&#x27;line2&#x27;</span>]</span><br>行 <span class="hljs-number">3</span>: <span class="hljs-selector-attr">[<span class="hljs-string">&#x27;line3&#x27;</span>]</span><br>行 <span class="hljs-number">4</span>: <span class="hljs-selector-attr">[<span class="hljs-string">&#x27;line4&#x27;</span>]</span><br><br>变种信息: <span class="hljs-selector-tag">excel</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="4-Writer对象方法"><a href="#4-Writer对象方法" class="headerlink" title="4. Writer对象方法"></a>4. Writer对象方法</h3><p><strong>语法格式</strong></p>
+<figure class="highlight stan"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs stan">writer.writerow(<span class="hljs-built_in">row</span>)      <span class="hljs-comment"># 写入单行</span><br>writer.writerows(<span class="hljs-built_in">rows</span>)    <span class="hljs-comment"># 写入多行</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>方法说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>writerow(row)</code></td>
+<td>写入单行（列表或元组）</td>
+<td><code>writer.writerow([&#39;A&#39;, &#39;B&#39;])</code></td>
+</tr>
+<tr>
+<td><code>writerows(rows)</code></td>
+<td>批量写入多行</td>
+<td><code>writer.writerows([[&#39;A&#39;], [&#39;B&#39;]])</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><span class="hljs-keyword">import</span> io<br><br>output = io.StringIO()<br>writer = csv.writer(output)<br><br><span class="hljs-comment"># writerow写入单行</span><br>writer.writerow([<span class="hljs-string">&#x27;ID&#x27;</span>, <span class="hljs-string">&#x27;Name&#x27;</span>, <span class="hljs-string">&#x27;Score&#x27;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;writerow写入:&quot;</span>)<br><span class="hljs-built_in">print</span>(output.getvalue())<br><br><span class="hljs-comment"># writerows批量写入</span><br>output2 = io.StringIO()<br>writer2 = csv.writer(output2)<br>writer2.writerows([<br>    [<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-number">95</span>],<br>    [<span class="hljs-number">2</span>, <span class="hljs-string">&#x27;Bob&#x27;</span>, <span class="hljs-number">87</span>],<br>    [<span class="hljs-number">3</span>, <span class="hljs-string">&#x27;Charlie&#x27;</span>, <span class="hljs-number">92</span>]<br>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;writerows批量写入:&quot;</span>)<br><span class="hljs-built_in">print</span>(output2.getvalue())<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">writerow</span>写入:<br><span class="hljs-attribute">ID</span>,Name,Score<br><br><span class="hljs-attribute">writerows</span>批量写入:<br><span class="hljs-attribute">1</span>,Alice,<span class="hljs-number">95</span><br><span class="hljs-attribute">2</span>,Bob,<span class="hljs-number">87</span><br><span class="hljs-attribute">3</span>,Charlie,<span class="hljs-number">92</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="二、字典形式读写"><a href="#二、字典形式读写" class="headerlink" title="二、字典形式读写"></a>二、字典形式读写</h2><p><code>DictReader</code>和<code>DictWriter</code>类允许以字典形式读写CSV数据，使用字段名作为键。</p>
+<h3 id="1-csv-DictReader类"><a href="#1-csv-DictReader类" class="headerlink" title="1. csv.DictReader类"></a>1. csv.DictReader类</h3><p><code>DictReader</code>将每行数据映射为一个字典，键由<code>fieldnames</code>参数指定。</p>
+<p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">csv.DictReader(f, <span class="hljs-attribute">fieldnames</span>=None, <span class="hljs-attribute">restkey</span>=None, <span class="hljs-attribute">restval</span>=None, **kwargs)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>f</code></td>
+<td>CSV文件</td>
+<td><code>csv.DictReader(f)</code></td>
+</tr>
+<tr>
+<td><code>fieldnames</code></td>
+<td>字段名列表</td>
+<td><code>fieldnames=[&#39;name&#39;, &#39;age&#39;]</code></td>
+</tr>
+<tr>
+<td><code>restkey</code></td>
+<td>多余字段的键名</td>
+<td><code>restkey=&#39;extra&#39;</code></td>
+</tr>
+<tr>
+<td><code>restval</code></td>
+<td>缺失字段的值</td>
+<td><code>restval=&#39;N/A&#39;</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><span class="hljs-keyword">import</span> io<br><br><span class="hljs-comment"># 字典形式读取</span><br>csv_data = <span class="hljs-string">&quot;&quot;&quot;name,age,city</span><br><span class="hljs-string">Alice,30,Beijing</span><br><span class="hljs-string">Bob,25,Shanghai</span><br><span class="hljs-string">Charlie,35,Guangzhou&quot;&quot;&quot;</span><br><br>reader = csv.DictReader(io.StringIO(csv_data))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;DictReader读取结果:&quot;</span>)<br><span class="hljs-keyword">for</span> row <span class="hljs-keyword">in</span> reader:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;  <span class="hljs-subst">&#123;row&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 读取后访问字典</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n--- 访问字典值 ---&quot;</span>)<br>reader2 = csv.DictReader(io.StringIO(csv_data))<br><span class="hljs-keyword">for</span> row <span class="hljs-keyword">in</span> reader2:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;  姓名: <span class="hljs-subst">&#123;row[<span class="hljs-string">&#x27;name&#x27;</span>]&#125;</span>, 城市: <span class="hljs-subst">&#123;row[<span class="hljs-string">&#x27;city&#x27;</span>]&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 指定fieldnames</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n--- 指定fieldnames ---&quot;</span>)<br>csv_no_header = <span class="hljs-string">&quot;Alice,30,Beijing\nBob,25,Shanghai&quot;</span><br>reader3 = csv.DictReader(io.StringIO(csv_no_header), fieldnames=[<span class="hljs-string">&#x27;Name&#x27;</span>, <span class="hljs-string">&#x27;Age&#x27;</span>, <span class="hljs-string">&#x27;City&#x27;</span>])<br><span class="hljs-keyword">for</span> row <span class="hljs-keyword">in</span> reader3:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;  <span class="hljs-subst">&#123;row&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs lua">DictReader读取结果:<br>  &#123;<span class="hljs-string">&#x27;name&#x27;</span>: <span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;age&#x27;</span>: <span class="hljs-string">&#x27;30&#x27;</span>, <span class="hljs-string">&#x27;city&#x27;</span>: <span class="hljs-string">&#x27;Beijing&#x27;</span>&#125;<br>  &#123;<span class="hljs-string">&#x27;name&#x27;</span>: <span class="hljs-string">&#x27;Bob&#x27;</span>, <span class="hljs-string">&#x27;age&#x27;</span>: <span class="hljs-string">&#x27;25&#x27;</span>, <span class="hljs-string">&#x27;city&#x27;</span>: <span class="hljs-string">&#x27;Shanghai&#x27;</span>&#125;<br>  &#123;<span class="hljs-string">&#x27;name&#x27;</span>: <span class="hljs-string">&#x27;Charlie&#x27;</span>, <span class="hljs-string">&#x27;age&#x27;</span>: <span class="hljs-string">&#x27;35&#x27;</span>, <span class="hljs-string">&#x27;city&#x27;</span>: <span class="hljs-string">&#x27;Guangzhou&#x27;</span>&#125;<br><br><span class="hljs-comment">--- 访问字典值 ---</span><br>  姓名: Alice, 城市: Beijing<br>  姓名: Bob, 城市: Shanghai<br>  姓名: Charlie, 城市: Guangzhou<br><br><span class="hljs-comment">--- 指定fieldnames ---</span><br>  &#123;<span class="hljs-string">&#x27;Name&#x27;</span>: <span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;Age&#x27;</span>: <span class="hljs-string">&#x27;30&#x27;</span>, <span class="hljs-string">&#x27;City&#x27;</span>: <span class="hljs-string">&#x27;Beijing&#x27;</span>&#125;<br>  &#123;<span class="hljs-string">&#x27;Name&#x27;</span>: <span class="hljs-string">&#x27;Bob&#x27;</span>, <span class="hljs-string">&#x27;Age&#x27;</span>: <span class="hljs-string">&#x27;25&#x27;</span>, <span class="hljs-string">&#x27;City&#x27;</span>: <span class="hljs-string">&#x27;Shanghai&#x27;</span>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-csv-DictWriter类"><a href="#2-csv-DictWriter类" class="headerlink" title="2. csv.DictWriter类"></a>2. csv.DictWriter类</h3><p><code>DictWriter</code>将字典映射到CSV行输出。</p>
+<p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">csv.DictWriter(f, fieldnames, <span class="hljs-attribute">restval</span>=None, <span class="hljs-attribute">extrasaction</span>=<span class="hljs-string">&#x27;raise&#x27;</span>, **kwargs)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>f</code></td>
+<td>CSV文件</td>
+<td><code>csv.DictWriter(f, fields)</code></td>
+</tr>
+<tr>
+<td><code>fieldnames</code></td>
+<td>字段名列表</td>
+<td><code>fieldnames=[&#39;name&#39;, &#39;age&#39;]</code></td>
+</tr>
+<tr>
+<td><code>restval</code></td>
+<td>缺失字段的值</td>
+<td><code>restval=&#39;N/A&#39;</code></td>
+</tr>
+<tr>
+<td><code>extrasaction</code></td>
+<td>额外键操作</td>
+<td><code>extrasaction=&#39;ignore&#39;</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><span class="hljs-keyword">import</span> io<br><br><span class="hljs-comment"># 字典形式写入</span><br>output = io.StringIO()<br>fieldnames = [<span class="hljs-string">&#x27;name&#x27;</span>, <span class="hljs-string">&#x27;age&#x27;</span>, <span class="hljs-string">&#x27;city&#x27;</span>]<br>writer = csv.DictWriter(output, fieldnames=fieldnames)<br><br><span class="hljs-comment"># 写入表头</span><br>writer.writeheader()<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;写入表头:&quot;</span>)<br><span class="hljs-built_in">print</span>(output.getvalue())<br><br><span class="hljs-comment"># 写入数据行</span><br>writer.writerow(&#123;<span class="hljs-string">&#x27;name&#x27;</span>: <span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;age&#x27;</span>: <span class="hljs-number">30</span>, <span class="hljs-string">&#x27;city&#x27;</span>: <span class="hljs-string">&#x27;Beijing&#x27;</span>&#125;)<br>writer.writerow(&#123;<span class="hljs-string">&#x27;name&#x27;</span>: <span class="hljs-string">&#x27;Bob&#x27;</span>, <span class="hljs-string">&#x27;age&#x27;</span>: <span class="hljs-number">25</span>, <span class="hljs-string">&#x27;city&#x27;</span>: <span class="hljs-string">&#x27;Shanghai&#x27;</span>&#125;)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;写入数据:&quot;</span>)<br><span class="hljs-built_in">print</span>(output.getvalue())<br><br><span class="hljs-comment"># 处理缺失字段</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n--- 处理缺失字段 ---&quot;</span>)<br>output2 = io.StringIO()<br>writer2 = csv.DictWriter(output2, fieldnames=[<span class="hljs-string">&#x27;name&#x27;</span>, <span class="hljs-string">&#x27;age&#x27;</span>, <span class="hljs-string">&#x27;city&#x27;</span>, <span class="hljs-string">&#x27;gender&#x27;</span>])<br>writer2.writeheader()<br>writer2.writerow(&#123;<span class="hljs-string">&#x27;name&#x27;</span>: <span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;age&#x27;</span>: <span class="hljs-number">30</span>&#125;)  <span class="hljs-comment"># 缺少city和gender</span><br><span class="hljs-built_in">print</span>(output2.getvalue())<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight autohotkey"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs autohotkey"><span class="hljs-title">写入表头:</span><br><span class="hljs-built_in">name,</span>age,city<br><br><span class="hljs-title">写入数据:</span><br><span class="hljs-built_in">name,</span>age,city<br><span class="hljs-built_in">Alice,</span><span class="hljs-number">30</span>,Beijing<br><span class="hljs-built_in">Bob,</span><span class="hljs-number">25</span>,Shanghai<br><br>--- 处理缺失字段 ---<br><span class="hljs-built_in">name,</span>age,city,gender<br><span class="hljs-built_in">Alice,</span><span class="hljs-number">30</span>,,<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-DictWriter-writeheader-方法"><a href="#3-DictWriter-writeheader-方法" class="headerlink" title="3. DictWriter.writeheader()方法"></a>3. DictWriter.writeheader()方法</h3><p><strong>语法格式</strong></p>
+<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs scss">writer<span class="hljs-selector-class">.writeheader</span>()<br></code></pre></td></tr></table></figure>
+
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><span class="hljs-keyword">import</span> io<br><br>output = io.StringIO()<br>fieldnames = [<span class="hljs-string">&#x27;ID&#x27;</span>, <span class="hljs-string">&#x27;Name&#x27;</span>, <span class="hljs-string">&#x27;Score&#x27;</span>]<br>writer = csv.DictWriter(output, fieldnames=fieldnames)<br><br>writer.writeheader()<br>writer.writerow(&#123;<span class="hljs-string">&#x27;ID&#x27;</span>: <span class="hljs-number">1</span>, <span class="hljs-string">&#x27;Name&#x27;</span>: <span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;Score&#x27;</span>: <span class="hljs-number">95</span>&#125;)<br><span class="hljs-built_in">print</span>(output.getvalue())<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight sqf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sqf">ID,<span class="hljs-built_in">Name</span>,<span class="hljs-built_in">Score</span><br><span class="hljs-number">1</span>,Alice,<span class="hljs-number">95</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="三、变种与格式参数"><a href="#三、变种与格式参数" class="headerlink" title="三、变种与格式参数"></a>三、变种与格式参数</h2><p><code>Dialect</code>类定义了CSV文件的格式属性，包括分隔符、引号处理等。</p>
+<h3 id="1-预定义变种"><a href="#1-预定义变种" class="headerlink" title="1. 预定义变种"></a>1. 预定义变种</h3><p><strong>语法格式</strong></p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs 1c">csv.excel          <span class="hljs-meta"># Excel CSV格式</span><br>csv.excel_tab      <span class="hljs-meta"># Excel制表符分隔</span><br>csv.unix_dialect   <span class="hljs-meta"># UNIX CSV格式</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>变种说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>变种</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>excel</code></td>
+<td>Excel CSV格式</td>
+<td><code>dialect=&#39;excel&#39;</code></td>
+</tr>
+<tr>
+<td><code>excel_tab</code></td>
+<td>Excel制表符分隔</td>
+<td><code>dialect=&#39;excel-tab&#39;</code></td>
+</tr>
+<tr>
+<td><code>unix</code></td>
+<td>UNIX CSV格式</td>
+<td><code>dialect=&#39;unix&#39;</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><br><span class="hljs-comment"># 查看所有注册的变种</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;注册的变种:&quot;</span>, csv.list_dialects())<br><br><span class="hljs-comment"># 使用excel变种（默认）</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n--- excel变种 ---&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;delimiter: <span class="hljs-subst">&#123;csv.excel.delimiter&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;quotechar: <span class="hljs-subst">&#123;csv.excel.quotechar&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 使用unix变种</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n--- unix变种 ---&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;delimiter: <span class="hljs-subst">&#123;csv.unix_dialect.delimiter&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;lineterminator: <span class="hljs-subst">&#123;csv.unix_dialect.lineterminator&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight ldif"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs ldif">注册的变种: [&#x27;excel&#x27;, &#x27;excel-tab&#x27;, &#x27;unix&#x27;]<br><br><span class="hljs-literal">-</span>-- excel变种 ---<br><span class="hljs-attribute">delimiter</span>: ,<br><span class="hljs-attribute">quotechar</span>: &quot;<br><br><span class="hljs-literal">-</span>-- unix变种 ---<br><span class="hljs-attribute">delimiter</span>: ,<br><span class="hljs-attribute">lineterminator</span>: <br></code></pre></td></tr></table></figure>
+
+<h3 id="2-格式参数"><a href="#2-格式参数" class="headerlink" title="2. 格式参数"></a>2. 格式参数</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">csv.reader(csvfile, <span class="hljs-attribute">delimiter</span>=<span class="hljs-string">&#x27;,&#x27;</span>, <span class="hljs-attribute">quotechar</span>=<span class="hljs-string">&#x27;&quot;&#x27;</span>, <span class="hljs-attribute">quoting</span>=csv.QUOTE_MINIMAL, <span class="hljs-built_in">..</span>.)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>delimiter</code></td>
+<td>分隔符（单字符）</td>
+<td><code>delimiter=&#39;,&#39;</code></td>
+</tr>
+<tr>
+<td><code>doublequote</code></td>
+<td>引号内双写引号</td>
+<td><code>doublequote=True</code></td>
+</tr>
+<tr>
+<td><code>escapechar</code></td>
+<td>转义字符</td>
+<td><code>escapechar=&#39;\\&#39;</code></td>
+</tr>
+<tr>
+<td><code>lineterminator</code></td>
+<td>行结束符</td>
+<td><code>lineterminator=&#39;\r\n&#39;</code></td>
+</tr>
+<tr>
+<td><code>quotechar</code></td>
+<td>引号字符</td>
+<td><code>quotechar=&#39;&quot;&#39;</code></td>
+</tr>
+<tr>
+<td><code>quoting</code></td>
+<td>引号模式</td>
+<td><code>quoting=csv.QUOTE_ALL</code></td>
+</tr>
+<tr>
+<td><code>skipinitialspace</code></td>
+<td>忽略分隔符后的空格</td>
+<td><code>skipinitialspace=False</code></td>
+</tr>
+<tr>
+<td><code>strict</code></td>
+<td>输入错误时抛出异常</td>
+<td><code>strict=False</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><span class="hljs-keyword">import</span> io<br><br><span class="hljs-comment"># 自定义分隔符</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;--- 自定义分隔符 ---&quot;</span>)<br>output = io.StringIO()<br>writer = csv.writer(output, delimiter=<span class="hljs-string">&#x27;;&#x27;</span>)<br>writer.writerow([<span class="hljs-string">&#x27;A&#x27;</span>, <span class="hljs-string">&#x27;B&#x27;</span>, <span class="hljs-string">&#x27;C&#x27;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;分隔符为&#x27;;&#x27;: <span class="hljs-subst">&#123;output.getvalue()&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 使用单引号</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n--- 自定义引号 ---&quot;</span>)<br>output3 = io.StringIO()<br>writer3 = csv.writer(output3, quotechar=<span class="hljs-string">&quot;&#x27;&quot;</span>, quoting=csv.QUOTE_ALL)<br>writer3.writerow([<span class="hljs-string">&#x27;Hello&#x27;</span>, <span class="hljs-string">&#x27;World&#x27;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;使用单引号: <span class="hljs-subst">&#123;output3.getvalue()&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 自定义转义字符</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n--- 自定义转义字符 ---&quot;</span>)<br>output4 = io.StringIO()<br>writer4 = csv.writer(output4, escapechar=<span class="hljs-string">&#x27;\\&#x27;</span>, quoting=csv.QUOTE_NONE)<br>writer4.writerow([<span class="hljs-string">&#x27;field with, comma&#x27;</span>, <span class="hljs-string">&#x27;another field&#x27;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;使用转义字符: <span class="hljs-subst">&#123;output4.getvalue()&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs livecodeserver"><span class="hljs-comment">--- 自定义分隔符 ---</span><br>分隔符为<span class="hljs-string">&#x27;;&#x27;</span>: A;B;C<br><br><span class="hljs-comment">--- 自定义引号 ---</span><br>使用单引号: <span class="hljs-string">&#x27;Hello&#x27;</span>,<span class="hljs-string">&#x27;World&#x27;</span><br><br><span class="hljs-comment">--- 自定义转义字符 ---</span><br>使用转义字符: field <span class="hljs-keyword">with</span>\, <span class="hljs-literal">comma</span>,another field<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-引号模式常量"><a href="#3-引号模式常量" class="headerlink" title="3. 引号模式常量"></a>3. 引号模式常量</h3><p><strong>语法格式</strong></p>
+<figure class="highlight q"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs q"><span class="hljs-built_in">csv</span>.QUOTE_ALL       # 所有字段加引号<br><span class="hljs-built_in">csv</span>.QUOTE_MINIMAL   # 仅对特殊字符加引号<br><span class="hljs-built_in">csv</span>.QUOTE_NONNUMERIC<br><span class="hljs-built_in">csv</span>.QUOTE_NONE<br><span class="hljs-built_in">csv</span>.QUOTE_NOTNULL<br><span class="hljs-built_in">csv</span>.QUOTE_STRINGS<br></code></pre></td></tr></table></figure>
+
+<p><strong>常量说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>常量</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>QUOTE_ALL</code></td>
+<td>所有字段加引号</td>
+<td><code>quoting=csv.QUOTE_ALL</code></td>
+</tr>
+<tr>
+<td><code>QUOTE_MINIMAL</code></td>
+<td>仅对特殊字符加引号</td>
+<td><code>quoting=csv.QUOTE_MINIMAL</code></td>
+</tr>
+<tr>
+<td><code>QUOTE_NONNUMERIC</code></td>
+<td>非数字字段加引号</td>
+<td><code>quoting=csv.QUOTE_NONNUMERIC</code></td>
+</tr>
+<tr>
+<td><code>QUOTE_NONE</code></td>
+<td>不加引号</td>
+<td><code>quoting=csv.QUOTE_NONE</code></td>
+</tr>
+<tr>
+<td><code>QUOTE_NOTNULL</code></td>
+<td>非None字段加引号</td>
+<td><code>quoting=csv.QUOTE_NOTNULL</code></td>
+</tr>
+<tr>
+<td><code>QUOTE_STRINGS</code></td>
+<td>字符串字段加引号</td>
+<td><code>quoting=csv.QUOTE_STRINGS</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><span class="hljs-keyword">import</span> io<br><br>data = [<span class="hljs-string">&#x27;Normal text&#x27;</span>, <span class="hljs-string">&#x27;Text with, comma&#x27;</span>, <span class="hljs-string">&#x27;123&#x27;</span>, <span class="hljs-literal">None</span>, <span class="hljs-string">&#x27;&#x27;</span>]<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;--- 不同引号模式对比 ---&quot;</span>)<br>modes = [<br>    (<span class="hljs-string">&#x27;QUOTE_ALL&#x27;</span>, csv.QUOTE_ALL),<br>    (<span class="hljs-string">&#x27;QUOTE_MINIMAL&#x27;</span>, csv.QUOTE_MINIMAL),<br>    (<span class="hljs-string">&#x27;QUOTE_NONNUMERIC&#x27;</span>, csv.QUOTE_NONNUMERIC),<br>    (<span class="hljs-string">&#x27;QUOTE_NONE&#x27;</span>, csv.QUOTE_NONE),<br>]<br><br><span class="hljs-keyword">for</span> name, mode <span class="hljs-keyword">in</span> modes:<br>    output = io.StringIO()<br>    writer = csv.writer(output, quoting=mode)<br>    writer.writerow(data)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">&#123;name&#125;</span>: <span class="hljs-subst">&#123;output.getvalue().strip()&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight vbnet"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs vbnet">--- 不同引号模式对比 ---<br><span class="hljs-symbol">QUOTE_ALL:</span> <span class="hljs-string">&quot;Normal text&quot;</span>,<span class="hljs-string">&quot;Text with, comma&quot;</span>,<span class="hljs-string">&quot;123&quot;</span>,<span class="hljs-string">&quot;&quot;</span>,<span class="hljs-string">&quot;&quot;</span><br><span class="hljs-symbol">QUOTE_MINIMAL:</span> Normal <span class="hljs-keyword">text</span>,<span class="hljs-string">&quot;Text with, comma&quot;</span>,<span class="hljs-number">123</span>,,<br><span class="hljs-symbol">QUOTE_NONNUMERIC:</span> <span class="hljs-string">&quot;Normal text&quot;</span>,<span class="hljs-string">&quot;Text with, comma&quot;</span>,<span class="hljs-number">123</span>,,<br><span class="hljs-symbol">QUOTE_NONE:</span> Normal <span class="hljs-keyword">text</span>,<span class="hljs-keyword">Text</span> <span class="hljs-keyword">with</span>\, comma,<span class="hljs-number">123</span>,,<br></code></pre></td></tr></table></figure>
+
+<h2 id="四、Sniffer类"><a href="#四、Sniffer类" class="headerlink" title="四、Sniffer类"></a>四、Sniffer类</h2><p><code>Sniffer</code>类用于推断CSV文件的格式，适用于不知道CSV格式的情况。</p>
+<h3 id="1-sniff-方法"><a href="#1-sniff-方法" class="headerlink" title="1. sniff()方法"></a>1. sniff()方法</h3><p><strong>语法格式</strong></p>
+<figure class="highlight jboss-cli"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs jboss-cli">csv.Sniffer<span class="hljs-params">()</span><span class="hljs-string">.sniff</span><span class="hljs-params">(sample, <span class="hljs-attr">delimiters</span>=None)</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>方法说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>sniff(sample, delimiters)</code></td>
+<td>推断CSV格式，返回Dialect对象</td>
+<td><code>Sniffer().sniff(data)</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><span class="hljs-keyword">import</span> io<br><br><span class="hljs-comment"># 推断分隔符</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;--- 推断格式 ---&quot;</span>)<br>sample1 = <span class="hljs-string">&quot;name;age;city\nAlice;30;Beijing\nBob;25;Shanghai&quot;</span><br>dialect = csv.Sniffer().sniff(sample1, delimiters=<span class="hljs-string">&#x27;;,&#x27;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;推断的分隔符: &#x27;<span class="hljs-subst">&#123;dialect.delimiter&#125;</span>&#x27;&quot;</span>)<br><br><span class="hljs-comment"># 实际使用</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n--- 实际使用推断的格式 ---&quot;</span>)<br>reader = csv.reader(io.StringIO(sample1), dialect=dialect)<br><span class="hljs-keyword">for</span> row <span class="hljs-keyword">in</span> reader:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;  <span class="hljs-subst">&#123;row&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight prolog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs prolog">--- 推断格式 ---<br>推断的分隔符: <span class="hljs-string">&#x27;;&#x27;</span><br><br>--- 实际使用推断的格式 ---<br>  [<span class="hljs-string">&#x27;name&#x27;</span>, <span class="hljs-string">&#x27;age&#x27;</span>, <span class="hljs-string">&#x27;city&#x27;</span>]<br>  [<span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;30&#x27;</span>, <span class="hljs-string">&#x27;Beijing&#x27;</span>]<br>  [<span class="hljs-string">&#x27;Bob&#x27;</span>, <span class="hljs-string">&#x27;25&#x27;</span>, <span class="hljs-string">&#x27;Shanghai&#x27;</span>]<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-has-header-方法"><a href="#2-has-header-方法" class="headerlink" title="2. has_header()方法"></a>2. has_header()方法</h3><p><strong>语法格式</strong></p>
+<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs scss">csv<span class="hljs-selector-class">.Sniffer</span>()<span class="hljs-selector-class">.has_header</span>(sample)<br></code></pre></td></tr></table></figure>
+
+<p><strong>方法说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>has_header(sample)</code></td>
+<td>检测CSV是否包含表头行</td>
+<td><code>Sniffer().has_header(data)</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><span class="hljs-keyword">import</span> io<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;--- 检测表头 ---&quot;</span>)<br><span class="hljs-comment"># 有表头的数据</span><br>sample_with_header = <span class="hljs-string">&quot;name,age,city\nAlice,30,Beijing&quot;</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;有表头: <span class="hljs-subst">&#123;csv.Sniffer().has_header(sample_with_header)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 无表头的数据</span><br>sample_no_header = <span class="hljs-string">&quot;Alice,30,Beijing\nBob,25,Shanghai&quot;</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;无表头: <span class="hljs-subst">&#123;csv.Sniffer().has_header(sample_no_header)&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs ada"><span class="hljs-comment">--- 检测表头 ---</span><br>有表头: <span class="hljs-literal">True</span><br>无表头: <span class="hljs-literal">False</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="五、变种注册"><a href="#五、变种注册" class="headerlink" title="五、变种注册"></a>五、变种注册</h2><p><code>csv</code>模块允许注册自定义变种，方便重复使用特定格式。</p>
+<h3 id="1-变种管理函数"><a href="#1-变种管理函数" class="headerlink" title="1. 变种管理函数"></a>1. 变种管理函数</h3><p><strong>语法格式</strong></p>
+<figure class="highlight q"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs q"><span class="hljs-built_in">csv</span>.register_dialect(name, dialect, **fmtparams)<br><span class="hljs-built_in">csv</span>.unregister_dialect(name)<br><span class="hljs-built_in">csv</span>.get_dialect(name)<br><span class="hljs-built_in">csv</span>.list_dialects()<br></code></pre></td></tr></table></figure>
+
+<p><strong>函数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>register_dialect(name, dialect)</code></td>
+<td>注册新变种</td>
+<td>&#96;register_dialect(‘custom’, delimiter&#x3D;’</td>
+</tr>
+<tr>
+<td><code>unregister_dialect(name)</code></td>
+<td>删除变种</td>
+<td><code>unregister_dialect(&#39;custom&#39;)</code></td>
+</tr>
+<tr>
+<td><code>get_dialect(name)</code></td>
+<td>获取变种</td>
+<td><code>get_dialect(&#39;excel&#39;)</code></td>
+</tr>
+<tr>
+<td><code>list_dialects()</code></td>
+<td>列出所有变种</td>
+<td><code>list_dialects()</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><span class="hljs-keyword">import</span> io<br><br><span class="hljs-comment"># 注册自定义变种</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;--- 注册自定义变种 ---&quot;</span>)<br>csv.register_dialect(<span class="hljs-string">&#x27;custom&#x27;</span>, delimiter=<span class="hljs-string">&#x27;|&#x27;</span>, quoting=csv.QUOTE_ALL)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;注册后变种: <span class="hljs-subst">&#123;csv.list_dialects()&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 使用自定义变种</span><br>output = io.StringIO()<br>writer = csv.writer(output, dialect=<span class="hljs-string">&#x27;custom&#x27;</span>)<br>writer.writerow([<span class="hljs-string">&#x27;Field1&#x27;</span>, <span class="hljs-string">&#x27;Field2&#x27;</span>, <span class="hljs-string">&#x27;Field3&#x27;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;使用自定义变种: <span class="hljs-subst">&#123;output.getvalue()&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 获取变种信息</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n--- 获取变种 ---&quot;</span>)<br>dialect = csv.get_dialect(<span class="hljs-string">&#x27;custom&#x27;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;分隔符: &#x27;<span class="hljs-subst">&#123;dialect.delimiter&#125;</span>&#x27;&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;引号模式: <span class="hljs-subst">&#123;dialect.quoting&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 删除变种</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n--- 删除变种 ---&quot;</span>)<br>csv.unregister_dialect(<span class="hljs-string">&#x27;custom&#x27;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;删除后变种: <span class="hljs-subst">&#123;csv.list_dialects()&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs ada"><span class="hljs-comment">--- 注册自定义变种 ---</span><br>注册后变种: [<span class="hljs-symbol">&#x27;excel</span>&#x27;, <span class="hljs-symbol">&#x27;excel</span>-tab&#x27;, <span class="hljs-symbol">&#x27;unix</span>&#x27;, <span class="hljs-symbol">&#x27;custom</span>&#x27;]<br>使用自定义变种: <span class="hljs-string">&quot;Field1&quot;</span>|<span class="hljs-string">&quot;Field2&quot;</span>|<span class="hljs-string">&quot;Field3&quot;</span><br><br><span class="hljs-comment">--- 获取变种 ---</span><br>分隔符: <span class="hljs-string">&#x27;|&#x27;</span><br>引号模式: <span class="hljs-number">1</span><br><br><span class="hljs-comment">--- 删除变种 ---</span><br>删除后变种: [<span class="hljs-symbol">&#x27;excel</span>&#x27;, <span class="hljs-symbol">&#x27;excel</span>-tab&#x27;, <span class="hljs-symbol">&#x27;unix</span>&#x27;]<br></code></pre></td></tr></table></figure>
+
+<h2 id="六、字段大小限制"><a href="#六、字段大小限制" class="headerlink" title="六、字段大小限制"></a>六、字段大小限制</h2><p><code>csv</code>模块提供了控制字段大小的功能。</p>
+<h3 id="1-field-size-limit-函数"><a href="#1-field-size-limit-函数" class="headerlink" title="1. field_size_limit()函数"></a>1. field_size_limit()函数</h3><p><strong>语法格式</strong></p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">csv.field_size_limit(<span class="hljs-keyword">limit</span>=<span class="hljs-keyword">None</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>函数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>field_size_limit(limit)</code></td>
+<td>获取或设置最大字段大小</td>
+<td><code>field_size_limit(1024*1024)</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><br><span class="hljs-comment"># 获取当前限制</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;--- 字段大小限制 ---&quot;</span>)<br>current_limit = csv.field_size_limit()<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;当前限制: <span class="hljs-subst">&#123;current_limit&#125;</span> bytes&quot;</span>)<br><br><span class="hljs-comment"># 设置新限制</span><br>csv.field_size_limit(<span class="hljs-number">1024</span> * <span class="hljs-number">1024</span>)  <span class="hljs-comment"># 1MB</span><br>new_limit = csv.field_size_limit()<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;新限制: <span class="hljs-subst">&#123;new_limit&#125;</span> bytes&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs livecodeserver"><span class="hljs-comment">--- 字段大小限制 ---</span><br>当前限制: <span class="hljs-number">131072</span> <span class="hljs-keyword">bytes</span><br>新限制: <span class="hljs-number">1048576</span> <span class="hljs-keyword">bytes</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="七、常见问题与注意事项"><a href="#七、常见问题与注意事项" class="headerlink" title="七、常见问题与注意事项"></a>七、常见问题与注意事项</h2><h3 id="1-文件打开方式"><a href="#1-文件打开方式" class="headerlink" title="1. 文件打开方式"></a>1. 文件打开方式</h3><p>读取CSV文件时，建议使用<code>newline=&#39;&#39;</code>避免行分隔符问题：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><br><span class="hljs-comment"># 正确方式</span><br><span class="hljs-comment"># with open(&#x27;data.csv&#x27;, &#x27;r&#x27;, newline=&#x27;&#x27;) as f:</span><br><span class="hljs-comment">#     reader = csv.reader(f)</span><br><span class="hljs-comment">#     for row in reader:</span><br><span class="hljs-comment">#         print(row)</span><br><br><span class="hljs-comment"># 写入CSV文件</span><br><span class="hljs-comment"># with open(&#x27;output.csv&#x27;, &#x27;w&#x27;, newline=&#x27;&#x27;) as f:</span><br><span class="hljs-comment">#     writer = csv.writer(f)</span><br><span class="hljs-comment">#     writer.writerow([&#x27;header1&#x27;, &#x27;header2&#x27;])</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-编码问题"><a href="#2-编码问题" class="headerlink" title="2. 编码问题"></a>2. 编码问题</h3><p>处理非UTF-8编码的CSV文件时，指定编码：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><br><span class="hljs-comment"># 读取GBK编码的CSV文件</span><br><span class="hljs-comment"># with open(&#x27;data_gbk.csv&#x27;, &#x27;r&#x27;, newline=&#x27;&#x27;, encoding=&#x27;gbk&#x27;) as f:</span><br><span class="hljs-comment">#     reader = csv.reader(f)</span><br><span class="hljs-comment">#     for row in reader:</span><br><span class="hljs-comment">#         print(row)</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="3-错误处理"><a href="#3-错误处理" class="headerlink" title="3. 错误处理"></a>3. 错误处理</h3><p>使用<code>csv.Error</code>捕获和处理CSV格式错误：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> csv<br><span class="hljs-keyword">import</span> io<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;--- 错误处理 ---&quot;</span>)<br>invalid_csv = <span class="hljs-string">&quot;a,b,c\n1,2\nx,y,z,w&quot;</span><br><br><span class="hljs-keyword">try</span>:<br>    reader = csv.reader(io.StringIO(invalid_csv))<br>    <span class="hljs-keyword">for</span> row <span class="hljs-keyword">in</span> reader:<br>        <span class="hljs-built_in">print</span>(row)<br><span class="hljs-keyword">except</span> csv.Error <span class="hljs-keyword">as</span> e:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;CSV错误: <span class="hljs-subst">&#123;e&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs css">--- 错误处理 ---<br><span class="hljs-selector-attr">[<span class="hljs-string">&#x27;a&#x27;</span>, <span class="hljs-string">&#x27;b&#x27;</span>, <span class="hljs-string">&#x27;c&#x27;</span>]</span><br><span class="hljs-selector-attr">[<span class="hljs-string">&#x27;1&#x27;</span>, <span class="hljs-string">&#x27;2&#x27;</span>]</span><br><span class="hljs-selector-attr">[<span class="hljs-string">&#x27;x&#x27;</span>, <span class="hljs-string">&#x27;y&#x27;</span>, <span class="hljs-string">&#x27;z&#x27;</span>, <span class="hljs-string">&#x27;w&#x27;</span>]</span><br></code></pre></td></tr></table></figure>
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Python/" class="category-chain-item">Python</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Python/" class="print-no-link">#Python</a>
+      
+        <a href="/tags/CSV/" class="print-no-link">#CSV</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86/" class="print-no-link">#数据处理</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/03/23/python/Python%E5%91%BD%E4%BB%A4%E8%A1%8C%E5%8F%82%E6%95%B0%E8%A7%A3%E6%9E%90/" title="Python命令行参数解析">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Python命令行参数解析</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/python/compression.html" title="Python文件压缩与解压">
+                        <span class="hidden-mobile">Python文件压缩与解压</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

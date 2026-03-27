@@ -1,0 +1,1087 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="decimal 模块提供了对快速且正确舍入的十进制浮点运算的支持。与 float 数据类型相比，它具有精度高、无误差累积的优势，非常适合金融计算等需要精确表示的场景。 一、Decimal 基础1. Decimal 简介和优势语法格式 1Decimal(value)  优势说明    优势 说明 示例    精确表示 十进制数可完全精确表示 Decimal(&amp;#39;1.1&amp;#39;)   无误差累">
+  
+  
+  
+  <title>【标准库】decimal模块 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="【标准库】decimal模块"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-23 19:30" pubdate>
+          2026年3月23日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.7k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          23 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">【标准库】decimal模块</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p><code>decimal</code> 模块提供了对快速且正确舍入的十进制浮点运算的支持。与 <code>float</code> 数据类型相比，它具有精度高、无误差累积的优势，非常适合金融计算等需要精确表示的场景。</p>
+<h2 id="一、Decimal-基础"><a href="#一、Decimal-基础" class="headerlink" title="一、Decimal 基础"></a>一、<code>Decimal</code> 基础</h2><h3 id="1-Decimal-简介和优势"><a href="#1-Decimal-简介和优势" class="headerlink" title="1. Decimal 简介和优势"></a>1. Decimal 简介和优势</h3><p><strong>语法格式</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">Decimal</span><span class="hljs-params">(value)</span></span><br></code></pre></td></tr></table></figure>
+
+<p><strong>优势说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>优势</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>精确表示</td>
+<td>十进制数可完全精确表示</td>
+<td><code>Decimal(&#39;1.1&#39;)</code></td>
+</tr>
+<tr>
+<td>无误差累积</td>
+<td>算术运算精确</td>
+<td><code>0.1 + 0.1 + 0.1 - 0.3</code></td>
+</tr>
+<tr>
+<td>保留有效位</td>
+<td>1.30 + 1.20 &#x3D; 2.50</td>
+<td><code>Decimal(&#39;1.30&#39;)</code></td>
+</tr>
+<tr>
+<td>可控精度</td>
+<td>默认28位</td>
+<td><code>getcontext().prec = 10</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> decimal <span class="hljs-keyword">import</span> Decimal<br><br><span class="hljs-comment"># 与float对比：精度问题</span><br>a = <span class="hljs-number">1.1</span><br>b = <span class="hljs-number">2.2</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;float运算: <span class="hljs-subst">&#123;a + b&#125;</span>&quot;</span>)  <span class="hljs-comment"># 3.3000000000000003</span><br><br><span class="hljs-comment"># 使用Decimal</span><br>d1 = Decimal(<span class="hljs-string">&#x27;1.1&#x27;</span>)<br>d2 = Decimal(<span class="hljs-string">&#x27;2.2&#x27;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Decimal运算: <span class="hljs-subst">&#123;d1 + d2&#125;</span>&quot;</span>)  <span class="hljs-comment"># 3.3</span><br><br><span class="hljs-comment"># 误差累积问题</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;float: 0.1 + 0.1 + 0.1 - 0.3 = <span class="hljs-subst">&#123;<span class="hljs-number">0.1</span> + <span class="hljs-number">0.1</span> + <span class="hljs-number">0.1</span> - <span class="hljs-number">0.3</span>&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Decimal: <span class="hljs-subst">&#123;Decimal(<span class="hljs-string">&#x27;0.1&#x27;</span>) + Decimal(<span class="hljs-string">&#x27;0.1&#x27;</span>) + Decimal(<span class="hljs-string">&#x27;0.1&#x27;</span>) - Decimal(<span class="hljs-string">&#x27;0.3&#x27;</span>)&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 有效位保留</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Decimal(&#x27;1.30&#x27;) + Decimal(&#x27;1.20&#x27;) = <span class="hljs-subst">&#123;Decimal(<span class="hljs-string">&#x27;1.30&#x27;</span>) + Decimal(<span class="hljs-string">&#x27;1.20&#x27;</span>)&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">float</span>运算: <span class="hljs-number">3</span>.<span class="hljs-number">3000000000000003</span><br><span class="hljs-attribute">Decimal</span>运算: <span class="hljs-number">3</span>.<span class="hljs-number">3</span><br><span class="hljs-attribute">float</span>: <span class="hljs-number">0</span>.<span class="hljs-number">1</span> + <span class="hljs-number">0</span>.<span class="hljs-number">1</span> + <span class="hljs-number">0</span>.<span class="hljs-number">1</span> - <span class="hljs-number">0</span>.<span class="hljs-number">3</span> = <span class="hljs-number">5</span>.<span class="hljs-number">551115123125783</span>e-<span class="hljs-number">17</span><br><span class="hljs-attribute">Decimal</span>: <span class="hljs-number">0</span>.<span class="hljs-number">00</span><br><span class="hljs-attribute">Decimal</span>(&#x27;<span class="hljs-number">1</span>.<span class="hljs-number">30</span>&#x27;) + Decimal(&#x27;<span class="hljs-number">1</span>.<span class="hljs-number">20</span>&#x27;) = <span class="hljs-number">2</span>.<span class="hljs-number">50</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-创建-Decimal-对象"><a href="#2-创建-Decimal-对象" class="headerlink" title="2. 创建 Decimal 对象"></a>2. 创建 Decimal 对象</h3><p><strong>语法格式</strong></p>
+<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs scss">Decimal(value)<br>Decimal<span class="hljs-selector-class">.from_float</span>(f)<br>Decimal<span class="hljs-selector-class">.from_number</span>(n)<br></code></pre></td></tr></table></figure>
+
+<p><strong>构造函数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>构造函数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Decimal(value)</code></td>
+<td>从整数、字符串、浮点数或元组创建</td>
+<td><code>Decimal(&#39;3.14&#39;)</code></td>
+</tr>
+<tr>
+<td><code>Decimal.from_float(f)</code></td>
+<td>从浮点数创建</td>
+<td><code>Decimal.from_float(3.14)</code></td>
+</tr>
+<tr>
+<td><code>Decimal.from_number(n)</code></td>
+<td>从数字创建</td>
+<td><code>Decimal.from_number(3.14)</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> decimal <span class="hljs-keyword">import</span> Decimal<br><br><span class="hljs-comment"># 从字符串创建（推荐）</span><br>d1 = Decimal(<span class="hljs-string">&#x27;3.14&#x27;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;字符串: <span class="hljs-subst">&#123;d1&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 从整数创建</span><br>d2 = Decimal(<span class="hljs-number">10</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;整数: <span class="hljs-subst">&#123;d2&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 从浮点数创建（会损失精度）</span><br>d3 = Decimal(<span class="hljs-number">3.14</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;浮点数: <span class="hljs-subst">&#123;d3&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 使用from_float</span><br>d4 = Decimal.from_float(<span class="hljs-number">3.14</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;from_float: <span class="hljs-subst">&#123;d4&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 使用from_number</span><br>d5 = Decimal.from_number(<span class="hljs-number">3.14</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;from_number: <span class="hljs-subst">&#123;d5&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 从元组创建 (符号, 数字元组, 指数)</span><br>d6 = Decimal((<span class="hljs-number">0</span>, (<span class="hljs-number">3</span>, <span class="hljs-number">1</span>, <span class="hljs-number">4</span>), -<span class="hljs-number">2</span>))  <span class="hljs-comment"># 符号0正1负</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;元组: <span class="hljs-subst">&#123;d6&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 特殊值</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;正无穷: <span class="hljs-subst">&#123;Decimal(<span class="hljs-string">&#x27;Infinity&#x27;</span>)&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;负无穷: <span class="hljs-subst">&#123;Decimal(<span class="hljs-string">&#x27;-Infinity&#x27;</span>)&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;NaN: <span class="hljs-subst">&#123;Decimal(<span class="hljs-string">&#x27;NaN&#x27;</span>)&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;负零: <span class="hljs-subst">&#123;Decimal(<span class="hljs-string">&#x27;-0&#x27;</span>)&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">字符串: 3.14</span><br><span class="hljs-section">整数: 10</span><br><span class="hljs-section">浮点数: 3.140000000000000124344978758017532527446746826171875</span><br><span class="hljs-section">from_float: 3.140000000000000124344978758017532527446746826171875</span><br><span class="hljs-section">from_number: 3.14</span><br><span class="hljs-section">元组: 3.14</span><br><span class="hljs-section">正无穷: Infinity</span><br><span class="hljs-section">负无穷: -Infinity</span><br><span class="hljs-section">NaN: NaN</span><br><span class="hljs-section">负零: -0</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="二、Decimal-算术运算"><a href="#二、Decimal-算术运算" class="headerlink" title="二、Decimal 算术运算"></a>二、Decimal 算术运算</h2><h3 id="1-基本算术运算"><a href="#1-基本算术运算" class="headerlink" title="1. 基本算术运算"></a>1. 基本算术运算</h3><p><strong>语法格式</strong></p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs awk">d1 + d2      <span class="hljs-comment"># 加法</span><br>d1 - d2      <span class="hljs-comment"># 减法</span><br>d1 * d2      <span class="hljs-comment"># 乘法</span><br>d1 / d2      <span class="hljs-comment"># 除法</span><br>d1 <span class="hljs-regexp">//</span> d2     <span class="hljs-comment"># 整除</span><br>d1 % d2      <span class="hljs-comment"># 取余</span><br>d1 ** d2     <span class="hljs-comment"># 幂运算</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>运算说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>运算</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>+</code></td>
+<td>加法</td>
+<td><code>Decimal(&#39;1&#39;) + Decimal(&#39;2&#39;)</code></td>
+</tr>
+<tr>
+<td><code>-</code></td>
+<td>减法</td>
+<td><code>Decimal(&#39;5&#39;) - Decimal(&#39;3&#39;)</code></td>
+</tr>
+<tr>
+<td><code>*</code></td>
+<td>乘法</td>
+<td><code>Decimal(&#39;2&#39;) * Decimal(&#39;3&#39;)</code></td>
+</tr>
+<tr>
+<td><code>/</code></td>
+<td>除法</td>
+<td><code>Decimal(&#39;10&#39;) / Decimal(&#39;3&#39;)</code></td>
+</tr>
+<tr>
+<td><code>//</code></td>
+<td>整除</td>
+<td><code>Decimal(&#39;10&#39;) // Decimal(&#39;3&#39;)</code></td>
+</tr>
+<tr>
+<td><code>%</code></td>
+<td>取余</td>
+<td><code>Decimal(&#39;10&#39;) % Decimal(&#39;3&#39;)</code></td>
+</tr>
+<tr>
+<td><code>**</code></td>
+<td>幂运算</td>
+<td><code>Decimal(&#39;2&#39;) ** Decimal(&#39;3&#39;)</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> decimal <span class="hljs-keyword">import</span> Decimal<br><br>d1 = Decimal(<span class="hljs-string">&#x27;10&#x27;</span>)<br>d2 = Decimal(<span class="hljs-string">&#x27;3&#x27;</span>)<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;加法: <span class="hljs-subst">&#123;d1&#125;</span> + <span class="hljs-subst">&#123;d2&#125;</span> = <span class="hljs-subst">&#123;d1 + d2&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;减法: <span class="hljs-subst">&#123;d1&#125;</span> - <span class="hljs-subst">&#123;d2&#125;</span> = <span class="hljs-subst">&#123;d1 - d2&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;乘法: <span class="hljs-subst">&#123;d1&#125;</span> * <span class="hljs-subst">&#123;d2&#125;</span> = <span class="hljs-subst">&#123;d1 * d2&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;除法: <span class="hljs-subst">&#123;d1&#125;</span> / <span class="hljs-subst">&#123;d2&#125;</span> = <span class="hljs-subst">&#123;d1 / d2&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;整除: <span class="hljs-subst">&#123;d1&#125;</span> // <span class="hljs-subst">&#123;d2&#125;</span> = <span class="hljs-subst">&#123;d1 // d2&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;取余: <span class="hljs-subst">&#123;d1&#125;</span> % <span class="hljs-subst">&#123;d2&#125;</span> = <span class="hljs-subst">&#123;d1 % d2&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;幂运算: <span class="hljs-subst">&#123;d2&#125;</span> ** 2 = <span class="hljs-subst">&#123;d2 ** <span class="hljs-number">2</span>&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs tap">加法:<span class="hljs-number"> 10 </span>+<span class="hljs-number"> 3 </span>= 13<br>减法:<span class="hljs-number"> 10 </span>-<span class="hljs-number"> 3 </span>= 7<br>乘法:<span class="hljs-number"> 10 </span>*<span class="hljs-number"> 3 </span>= 30<br>除法:<span class="hljs-number"> 10 </span>/<span class="hljs-number"> 3 </span>= 3.333333333333333333333333333<br>整除:<span class="hljs-number"> 10 </span>//<span class="hljs-number"> 3 </span>= 3<br>取余:<span class="hljs-number"> 10 </span>%<span class="hljs-number"> 3 </span>= 1<br>幂运算:<span class="hljs-number"> 3 </span>**<span class="hljs-number"> 2 </span>= 9<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-比较运算"><a href="#2-比较运算" class="headerlink" title="2. 比较运算"></a>2. 比较运算</h3><p><strong>语法格式</strong></p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs makefile">d1 == d2     <span class="hljs-comment"># 相等</span><br>d1 != d2     <span class="hljs-comment"># 不等</span><br>d1 &lt; d2      <span class="hljs-comment"># 小于</span><br>d1 &lt;= d2     <span class="hljs-comment"># 小于等于</span><br>d1 &gt; d2      <span class="hljs-comment"># 大于</span><br>d1 &gt;= d2     <span class="hljs-comment"># 大于等于</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>比较运算说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>运算</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>==</code></td>
+<td>相等</td>
+<td><code>Decimal(&#39;1&#39;) == Decimal(&#39;1&#39;)</code></td>
+</tr>
+<tr>
+<td><code>!=</code></td>
+<td>不等</td>
+<td><code>Decimal(&#39;1&#39;) != Decimal(&#39;2&#39;)</code></td>
+</tr>
+<tr>
+<td><code>&lt;</code></td>
+<td>小于</td>
+<td><code>Decimal(&#39;1&#39;) &lt; Decimal(&#39;2&#39;)</code></td>
+</tr>
+<tr>
+<td><code>&lt;=</code></td>
+<td>小于等于</td>
+<td><code>Decimal(&#39;1&#39;) &lt;= Decimal(&#39;1&#39;)</code></td>
+</tr>
+<tr>
+<td><code>&gt;</code></td>
+<td>大于</td>
+<td><code>Decimal(&#39;2&#39;) &gt; Decimal(&#39;1&#39;)</code></td>
+</tr>
+<tr>
+<td><code>&gt;=</code></td>
+<td>大于等于</td>
+<td><code>Decimal(&#39;2&#39;) &gt;= Decimal(&#39;1&#39;)</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> decimal <span class="hljs-keyword">import</span> Decimal<br><br>a = Decimal(<span class="hljs-string">&#x27;1.0&#x27;</span>)<br>b = Decimal(<span class="hljs-string">&#x27;1.00&#x27;</span>)<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;1.0 == 1.00: <span class="hljs-subst">&#123;a == b&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;1.0 != 1.00: <span class="hljs-subst">&#123;a != b&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># NaN比较</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;NaN比较: Decimal(&#x27;NaN&#x27;) == Decimal(&#x27;NaN&#x27;) = <span class="hljs-subst">&#123;Decimal(<span class="hljs-string">&#x27;NaN&#x27;</span>) == Decimal(<span class="hljs-string">&#x27;NaN&#x27;</span>)&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;NaN is qNaN: <span class="hljs-subst">&#123;Decimal(<span class="hljs-string">&#x27;NaN&#x27;</span>).is_qnan()&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<h2 id="三、Decimal-常用方法"><a href="#三、Decimal-常用方法" class="headerlink" title="三、Decimal 常用方法"></a>三、Decimal 常用方法</h2><h3 id="1-数值操作方法"><a href="#1-数值操作方法" class="headerlink" title="1. 数值操作方法"></a>1. 数值操作方法</h3><p><strong>语法格式</strong></p>
+<figure class="highlight arcade"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs arcade">d.<span class="hljs-built_in">abs</span>()<br>d.quantize(<span class="hljs-built_in">exp</span>, rounding=<span class="hljs-built_in">None</span>)<br>d.<span class="hljs-built_in">floor</span>()<br>d.<span class="hljs-built_in">ceil</span>()<br>d.to_integral_value(rounding=<span class="hljs-built_in">None</span>)<br>d.<span class="hljs-built_in">round</span>(precision=<span class="hljs-built_in">None</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>方法说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>abs()</code></td>
+<td>绝对值</td>
+<td><code>Decimal(&#39;-5&#39;).abs()</code></td>
+</tr>
+<tr>
+<td><code>quantize(exp)</code></td>
+<td>量化到指定精度</td>
+<td><code>d.quantize(Decimal(&#39;0.01&#39;))</code></td>
+</tr>
+<tr>
+<td><code>floor()</code></td>
+<td>向下取整</td>
+<td><code>Decimal(&#39;3.7&#39;).floor()</code></td>
+</tr>
+<tr>
+<td><code>ceil()</code></td>
+<td>向上取整</td>
+<td><code>Decimal(&#39;3.2&#39;).ceil()</code></td>
+</tr>
+<tr>
+<td><code>to_integral_value()</code></td>
+<td>转整数</td>
+<td><code>d.to_integral_value()</code></td>
+</tr>
+<tr>
+<td><code>round(precision)</code></td>
+<td>四舍五入</td>
+<td><code>d.round(2)</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> decimal <span class="hljs-keyword">import</span> Decimal, ROUND_FLOOR, ROUND_CEILING<br><br>d = Decimal(<span class="hljs-string">&#x27;3.14159&#x27;</span>)<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;绝对值: abs(<span class="hljs-subst">&#123;d&#125;</span>) = <span class="hljs-subst">&#123;<span class="hljs-built_in">abs</span>(d)&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;量化: quantize(0.01) = <span class="hljs-subst">&#123;d.quantize(Decimal(<span class="hljs-string">&#x27;0.01&#x27;</span>))&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;量化: quantize(0.0001) = <span class="hljs-subst">&#123;d.quantize(Decimal(<span class="hljs-string">&#x27;0.0001&#x27;</span>))&#125;</span>&quot;</span>)<br><br>d2 = Decimal(<span class="hljs-string">&#x27;3.7&#x27;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;向下取整: floor(<span class="hljs-subst">&#123;d2&#125;</span>) = <span class="hljs-subst">&#123;d2.to_integral_value(rounding=ROUND_FLOOR)&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;向上取整: ceil(<span class="hljs-subst">&#123;d2&#125;</span>) = <span class="hljs-subst">&#123;d2.to_integral_value(rounding=ROUND_CEILING)&#125;</span>&quot;</span>)<br><br>d3 = Decimal(<span class="hljs-string">&#x27;123.456&#x27;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;四舍五入: round(<span class="hljs-subst">&#123;d3&#125;</span>, 1) = <span class="hljs-subst">&#123;d3.__round__(<span class="hljs-number">1</span>)&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;四舍五入: round(<span class="hljs-subst">&#123;d3&#125;</span>, 2) = <span class="hljs-subst">&#123;d3.__round__(<span class="hljs-number">2</span>)&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs css">绝对值: <span class="hljs-built_in">abs</span>(<span class="hljs-number">3.14159</span>) = <span class="hljs-number">3.14159</span><br>量化: <span class="hljs-built_in">quantize</span>(<span class="hljs-number">0.01</span>) = <span class="hljs-number">3.14</span><br>量化: <span class="hljs-built_in">quantize</span>(<span class="hljs-number">0.0001</span>) = <span class="hljs-number">3.1416</span><br>向下取整: <span class="hljs-built_in">floor</span>(<span class="hljs-number">3.7</span>) = <span class="hljs-number">3</span><br>向上取整: <span class="hljs-built_in">ceil</span>(<span class="hljs-number">3.7</span>) = <span class="hljs-number">4</span><br>四舍五入: <span class="hljs-built_in">round</span>(<span class="hljs-number">123.456</span>, <span class="hljs-number">1</span>) = <span class="hljs-number">123.5</span><br>四舍五入: <span class="hljs-built_in">round</span>(<span class="hljs-number">123.456</span>, <span class="hljs-number">2</span>) = <span class="hljs-number">123.46</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-查询方法"><a href="#2-查询方法" class="headerlink" title="2. 查询方法"></a>2. 查询方法</h3><p><strong>语法格式</strong></p>
+<figure class="highlight ceylon"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs ceylon">d.<span class="hljs-keyword">is</span><span class="hljs-number">_f</span>inite()<br>d.<span class="hljs-keyword">is</span><span class="hljs-number">_</span>infinite()<br>d.<span class="hljs-keyword">is</span><span class="hljs-number">_n</span>an()<br>d.<span class="hljs-keyword">is</span><span class="hljs-number">_</span>zero()<br>d.<span class="hljs-keyword">is</span><span class="hljs-number">_</span>signed()<br>d.<span class="hljs-keyword">is</span><span class="hljs-number">_n</span>ormal()<br>d.<span class="hljs-keyword">is</span><span class="hljs-number">_</span>subnormal()<br></code></pre></td></tr></table></figure>
+
+<p><strong>方法说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>is_finite()</code></td>
+<td>是否有限</td>
+<td><code>Decimal(&#39;1&#39;).is_finite()</code></td>
+</tr>
+<tr>
+<td><code>is_infinite()</code></td>
+<td>是否无穷</td>
+<td><code>Decimal(&#39;Infinity&#39;).is_infinite()</code></td>
+</tr>
+<tr>
+<td><code>is_nan()</code></td>
+<td>是否NaN</td>
+<td><code>Decimal(&#39;NaN&#39;).is_nan()</code></td>
+</tr>
+<tr>
+<td><code>is_zero()</code></td>
+<td>是否零</td>
+<td><code>Decimal(&#39;0&#39;).is_zero()</code></td>
+</tr>
+<tr>
+<td><code>is_signed()</code></td>
+<td>是否负数</td>
+<td><code>Decimal(&#39;-5&#39;).is_signed()</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> decimal <span class="hljs-keyword">import</span> Decimal<br><br>values = [<br>    Decimal(<span class="hljs-string">&#x27;1&#x27;</span>),<br>    Decimal(<span class="hljs-string">&#x27;0&#x27;</span>),<br>    Decimal(<span class="hljs-string">&#x27;-5&#x27;</span>),<br>    Decimal(<span class="hljs-string">&#x27;Infinity&#x27;</span>),<br>    Decimal(<span class="hljs-string">&#x27;-Infinity&#x27;</span>),<br>    Decimal(<span class="hljs-string">&#x27;NaN&#x27;</span>),<br>    Decimal(<span class="hljs-string">&#x27;sNaN&#x27;</span>),<br>]<br><br><span class="hljs-keyword">for</span> v <span class="hljs-keyword">in</span> values:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">&#123;<span class="hljs-built_in">str</span>(v):<span class="hljs-number">12</span>&#125;</span> 有限:<span class="hljs-subst">&#123;v.is_finite()&#125;</span> 无穷:<span class="hljs-subst">&#123;v.is_infinite()&#125;</span> NaN:<span class="hljs-subst">&#123;v.is_nan()&#125;</span> 零:<span class="hljs-subst">&#123;v.is_zero()&#125;</span> 负:<span class="hljs-subst">&#123;v.is_signed()&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-格式化方法"><a href="#3-格式化方法" class="headerlink" title="3. 格式化方法"></a>3. 格式化方法</h3><p><strong>语法格式</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs stylus">d<span class="hljs-selector-class">.to_eng_string</span>()<br><span class="hljs-function"><span class="hljs-title">format</span><span class="hljs-params">(d, <span class="hljs-string">&#x27;f&#x27;</span>)</span></span><br><span class="hljs-function"><span class="hljs-title">str</span><span class="hljs-params">(d)</span></span><br><span class="hljs-function"><span class="hljs-title">repr</span><span class="hljs-params">(d)</span></span><br></code></pre></td></tr></table></figure>
+
+<p><strong>方法说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>to_eng_string()</code></td>
+<td>工程字符串</td>
+<td><code>d.to_eng_string()</code></td>
+</tr>
+<tr>
+<td><code>format(d, &#39;f&#39;)</code></td>
+<td>定点格式</td>
+<td><code>format(d, &#39;f&#39;)</code></td>
+</tr>
+<tr>
+<td><code>str(d)</code></td>
+<td>字符串</td>
+<td><code>str(d)</code></td>
+</tr>
+<tr>
+<td><code>repr(d)</code></td>
+<td>表达式字符串</td>
+<td><code>repr(d)</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> decimal <span class="hljs-keyword">import</span> Decimal<br><br>d = Decimal(<span class="hljs-string">&#x27;1.23E+5&#x27;</span>)<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;原始: <span class="hljs-subst">&#123;d&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;to_eng_string: <span class="hljs-subst">&#123;d.to_eng_string()&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;定点格式: <span class="hljs-subst">&#123;<span class="hljs-built_in">format</span>(d, <span class="hljs-string">&#x27;f&#x27;</span>)&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;str: <span class="hljs-subst">&#123;<span class="hljs-built_in">str</span>(d)&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;repr: <span class="hljs-subst">&#123;<span class="hljs-built_in">repr</span>(d)&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<h2 id="四、上下文和精度控制"><a href="#四、上下文和精度控制" class="headerlink" title="四、上下文和精度控制"></a>四、上下文和精度控制</h2><h3 id="1-获取和设置上下文"><a href="#1-获取和设置上下文" class="headerlink" title="1. 获取和设置上下文"></a>1. 获取和设置上下文</h3><p><strong>语法格式</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">getcontext</span><span class="hljs-params">()</span></span><br><span class="hljs-function"><span class="hljs-title">setcontext</span><span class="hljs-params">(context)</span></span><br><span class="hljs-function"><span class="hljs-title">localcontext</span><span class="hljs-params">()</span></span><br>Decimal<span class="hljs-selector-class">.localcontext</span>()<br></code></pre></td></tr></table></figure>
+
+<p><strong>函数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>getcontext()</code></td>
+<td>获取当前上下文</td>
+<td><code>getcontext().prec</code></td>
+</tr>
+<tr>
+<td><code>setcontext(context)</code></td>
+<td>设置上下文</td>
+<td><code>setcontext(new_context)</code></td>
+</tr>
+<tr>
+<td><code>localcontext()</code></td>
+<td>获取本地上下文管理器</td>
+<td><code>with localcontext():</code></td>
+</tr>
+<tr>
+<td><code>Decimal.localcontext()</code></td>
+<td>同上（模块方法）</td>
+<td><code>with Decimal.localcontext():</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> decimal <span class="hljs-keyword">import</span> Decimal, getcontext, setcontext, Context<br><br><span class="hljs-comment"># 获取当前上下文</span><br>ctx = getcontext()<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;当前精度: <span class="hljs-subst">&#123;ctx.prec&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;当前舍入模式: <span class="hljs-subst">&#123;ctx.rounding&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 修改精度</span><br>ctx.prec = <span class="hljs-number">6</span><br>d = Decimal(<span class="hljs-string">&#x27;1&#x27;</span>) / Decimal(<span class="hljs-string">&#x27;3&#x27;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;精度6位: 1/3 = <span class="hljs-subst">&#123;d&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 恢复精度</span><br>ctx.prec = <span class="hljs-number">28</span><br>d = Decimal(<span class="hljs-string">&#x27;1&#x27;</span>) / Decimal(<span class="hljs-string">&#x27;3&#x27;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;精度28位: 1/3 = <span class="hljs-subst">&#123;d&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-舍入模式"><a href="#2-舍入模式" class="headerlink" title="2. 舍入模式"></a>2. 舍入模式</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs routeros">ctx.rounding = ROUND_HALF_UP<br>d.quantize(exp, <span class="hljs-attribute">rounding</span>=ROUND_HALF_UP)<br></code></pre></td></tr></table></figure>
+
+<p><strong>舍入模式说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ROUND_CEILING</code></td>
+<td>永远向上舍入</td>
+<td><code>Decimal(&#39;1.1&#39;).quantize(1, &#39;CEILING&#39;)</code></td>
+</tr>
+<tr>
+<td><code>ROUND_FLOOR</code></td>
+<td>永远向下舍入</td>
+<td><code>Decimal(&#39;1.9&#39;).quantize(1, &#39;FLOOR&#39;)</code></td>
+</tr>
+<tr>
+<td><code>ROUND_DOWN</code></td>
+<td>截断</td>
+<td><code>Decimal(&#39;1.9&#39;).quantize(1, &#39;DOWN&#39;)</code></td>
+</tr>
+<tr>
+<td><code>ROUND_UP</code></td>
+<td>总是舍入</td>
+<td><code>Decimal(&#39;1.1&#39;).quantize(1, &#39;UP&#39;)</code></td>
+</tr>
+<tr>
+<td><code>ROUND_HALF_UP</code></td>
+<td>四舍五入</td>
+<td><code>Decimal(&#39;1.5&#39;).quantize(1, &#39;HALF_UP&#39;)</code></td>
+</tr>
+<tr>
+<td><code>ROUND_HALF_DOWN</code></td>
+<td>五舍六入</td>
+<td><code>Decimal(&#39;1.5&#39;).quantize(1, &#39;HALF_DOWN&#39;)</code></td>
+</tr>
+<tr>
+<td><code>ROUND_HALF_EVEN</code></td>
+<td>银行家舍入</td>
+<td><code>Decimal(&#39;1.5&#39;).quantize(1, &#39;HALF_EVEN&#39;)</code></td>
+</tr>
+<tr>
+<td><code>ROUND_05UP</code></td>
+<td>末位为0或5则向上</td>
+<td>特殊用法</td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> decimal <span class="hljs-keyword">import</span> Decimal<br><span class="hljs-keyword">from</span> decimal <span class="hljs-keyword">import</span> ROUND_HALF_UP, ROUND_HALF_DOWN, ROUND_HALF_EVEN<br><br><span class="hljs-comment"># 比较不同舍入模式</span><br>value = Decimal(<span class="hljs-string">&#x27;2.5&#x27;</span>)<br><br>modes = [<br>    (<span class="hljs-string">&#x27;ROUND_DOWN&#x27;</span>, <span class="hljs-string">&#x27;ROUND_DOWN&#x27;</span>),<br>    (<span class="hljs-string">&#x27;ROUND_UP&#x27;</span>, <span class="hljs-string">&#x27;ROUND_UP&#x27;</span>),<br>    (<span class="hljs-string">&#x27;ROUND_HALF_UP&#x27;</span>, <span class="hljs-string">&#x27;ROUND_HALF_UP&#x27;</span>),<br>    (<span class="hljs-string">&#x27;ROUND_HALF_DOWN&#x27;</span>, <span class="hljs-string">&#x27;ROUND_HALF_DOWN&#x27;</span>),<br>    (<span class="hljs-string">&#x27;ROUND_HALF_EVEN&#x27;</span>, <span class="hljs-string">&#x27;ROUND_HALF_EVEN&#x27;</span>),<br>    (<span class="hljs-string">&#x27;ROUND_CEILING&#x27;</span>, <span class="hljs-string">&#x27;ROUND_CEILING&#x27;</span>),<br>    (<span class="hljs-string">&#x27;ROUND_FLOOR&#x27;</span>, <span class="hljs-string">&#x27;ROUND_FLOOR&#x27;</span>),<br>]<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;值: <span class="hljs-subst">&#123;value&#125;</span>&quot;</span>)<br><span class="hljs-keyword">for</span> name, mode <span class="hljs-keyword">in</span> modes:<br>    result = value.quantize(Decimal(<span class="hljs-string">&#x27;1&#x27;</span>), rounding=mode)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;  <span class="hljs-subst">&#123;name:<span class="hljs-number">18</span>&#125;</span>: <span class="hljs-subst">&#123;result&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-自定义上下文"><a href="#3-自定义上下文" class="headerlink" title="3. 自定义上下文"></a>3. 自定义上下文</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">Context(<span class="hljs-attribute">prec</span>=None, <span class="hljs-attribute">rounding</span>=None, <span class="hljs-attribute">Emin</span>=None, <span class="hljs-attribute">Emax</span>=None, <span class="hljs-attribute">capitals</span>=None, <span class="hljs-built_in">..</span>.)<br></code></pre></td></tr></table></figure>
+
+<p><strong>上下文参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>prec</code></td>
+<td>精度</td>
+<td>28</td>
+</tr>
+<tr>
+<td><code>rounding</code></td>
+<td>舍入模式</td>
+<td>ROUND_HALF_EVEN</td>
+</tr>
+<tr>
+<td><code>Emin</code></td>
+<td>最小指数</td>
+<td>-999999</td>
+</tr>
+<tr>
+<td><code>Emax</code></td>
+<td>最大指数</td>
+<td>999999</td>
+</tr>
+<tr>
+<td><code>capitals</code></td>
+<td>指数大写E</td>
+<td>1</td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> decimal <span class="hljs-keyword">import</span> Decimal, Context, localcontext<br><br><span class="hljs-comment"># 创建高精度上下文</span><br>high_precision = Context(prec=<span class="hljs-number">50</span>)<br>low_precision = Context(prec=<span class="hljs-number">5</span>)<br><br><span class="hljs-comment"># 使用 localcontext 设置上下文</span><br><span class="hljs-keyword">with</span> localcontext(low_precision):<br>    d1 = Decimal(<span class="hljs-string">&#x27;1&#x27;</span>) / Decimal(<span class="hljs-string">&#x27;3&#x27;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;低精度(5位): 1/3 = <span class="hljs-subst">&#123;d1&#125;</span>&quot;</span>)<br><br><span class="hljs-keyword">with</span> localcontext(high_precision):<br>    d2 = Decimal(<span class="hljs-string">&#x27;1&#x27;</span>) / Decimal(<span class="hljs-string">&#x27;3&#x27;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;高精度(50位): 1/3 = <span class="hljs-subst">&#123;d2&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 嵌套使用</span><br><span class="hljs-keyword">with</span> localcontext(low_precision):<br>    result = Decimal(<span class="hljs-string">&#x27;1&#x27;</span>) / Decimal(<span class="hljs-string">&#x27;3&#x27;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;\n内部计算结果: <span class="hljs-subst">&#123;result&#125;</span>&quot;</span>)<br>    <span class="hljs-keyword">with</span> localcontext(high_precision):<br>        precise = Decimal(<span class="hljs-string">&#x27;1&#x27;</span>) / Decimal(<span class="hljs-string">&#x27;3&#x27;</span>)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;临时高精度: 1/3 = <span class="hljs-subst">&#123;precise&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<h2 id="五、信号和异常处理"><a href="#五、信号和异常处理" class="headerlink" title="五、信号和异常处理"></a>五、信号和异常处理</h2><h3 id="1-信号类型"><a href="#1-信号类型" class="headerlink" title="1. 信号类型"></a>1. 信号类型</h3><p><strong>语法格式</strong></p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">try</span><span class="hljs-punctuation">:</span><br>    <span class="hljs-comment"># 操作</span><br><span class="hljs-attribute">except signals.InvalidOperation</span><span class="hljs-punctuation">:</span><br>    <span class="hljs-comment"># 处理</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>信号类型说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>信号</th>
+<th>说明</th>
+<th>触发条件</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>InvalidOperation</code></td>
+<td>无效操作</td>
+<td>0&#x2F;0, sqrt(-1)</td>
+</tr>
+<tr>
+<td><code>DivisionByZero</code></td>
+<td>除零</td>
+<td>1&#x2F;0</td>
+</tr>
+<tr>
+<td><code>Overflow</code></td>
+<td>溢出</td>
+<td>结果太大</td>
+</tr>
+<tr>
+<td><code>Underflow</code></td>
+<td>下溢</td>
+<td>结果太小</td>
+</tr>
+<tr>
+<td><code>Subnormal</code></td>
+<td>次正规</td>
+<td>结果次正规</td>
+</tr>
+<tr>
+<td><code>Inexact</code></td>
+<td>不精确</td>
+<td>舍入导致精度丢失</td>
+</tr>
+<tr>
+<td><code>Rounded</code></td>
+<td>已舍入</td>
+<td>计算被舍入</td>
+</tr>
+<tr>
+<td><code>Clamped</code></td>
+<td>被限制</td>
+<td>指数被修改</td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> decimal <span class="hljs-keyword">import</span> Decimal, InvalidOperation, DivisionByZero<br><br><span class="hljs-comment"># InvalidOperation</span><br><span class="hljs-keyword">try</span>:<br>    result = Decimal(<span class="hljs-string">&#x27;0&#x27;</span>) / Decimal(<span class="hljs-string">&#x27;0&#x27;</span>)<br><span class="hljs-keyword">except</span> InvalidOperation <span class="hljs-keyword">as</span> e:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;InvalidOperation: <span class="hljs-subst">&#123;e&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># DivisionByZero</span><br><span class="hljs-keyword">try</span>:<br>    result = Decimal(<span class="hljs-string">&#x27;1&#x27;</span>) / Decimal(<span class="hljs-string">&#x27;0&#x27;</span>)<br><span class="hljs-keyword">except</span> DivisionByZero <span class="hljs-keyword">as</span> e:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;DivisionByZero: <span class="hljs-subst">&#123;e&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 处理NaN</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;NaN运算: Decimal(&#x27;NaN&#x27;) + 1 = <span class="hljs-subst">&#123;Decimal(<span class="hljs-string">&#x27;NaN&#x27;</span>) + <span class="hljs-number">1</span>&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-监控标志"><a href="#2-监控标志" class="headerlink" title="2. 监控标志"></a>2. 监控标志</h3><p><strong>语法格式</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs stylus"><span class="hljs-function"><span class="hljs-title">getcontext</span><span class="hljs-params">()</span></span><span class="hljs-selector-class">.flags</span><span class="hljs-selector-attr">[signal]</span> = False<br><span class="hljs-function"><span class="hljs-title">getcontext</span><span class="hljs-params">()</span></span><span class="hljs-selector-class">.trap_errors</span><span class="hljs-selector-attr">[signal]</span> = True<br></code></pre></td></tr></table></figure>
+
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> decimal <span class="hljs-keyword">import</span> Decimal, getcontext, DivisionByZero<br><br>ctx = getcontext()<br><br><span class="hljs-comment"># 清除所有标志</span><br><span class="hljs-keyword">for</span> flag <span class="hljs-keyword">in</span> ctx.flags:<br>    ctx.flags[flag] = <span class="hljs-literal">False</span><br><br><span class="hljs-comment"># 触发除零（trap_errors 未开启时会抛出异常）</span><br><span class="hljs-keyword">try</span>:<br>    result = Decimal(<span class="hljs-string">&#x27;1&#x27;</span>) / Decimal(<span class="hljs-string">&#x27;0&#x27;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;结果: <span class="hljs-subst">&#123;result&#125;</span>&quot;</span>)<br><span class="hljs-keyword">except</span> DivisionByZero:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;捕获到 DivisionByZero 异常&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;DivisionByZero标志: <span class="hljs-subst">&#123;ctx.flags[DivisionByZero]&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-金融计算示例"><a href="#3-金融计算示例" class="headerlink" title="3. 金融计算示例"></a>3. 金融计算示例</h3><p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">from</span> decimal <span class="hljs-keyword">import</span> Decimal, ROUND_HALF_UP<br><br><span class="hljs-comment"># 货币计算</span><br>price = Decimal(<span class="hljs-string">&#x27;19.99&#x27;</span>)<br>tax_rate = Decimal(<span class="hljs-string">&#x27;0.08&#x27;</span>)<br>quantity = Decimal(<span class="hljs-string">&#x27;3&#x27;</span>)<br><br><span class="hljs-comment"># 计算含税总价</span><br>subtotal = price * quantity<br>tax = subtotal * tax_rate<br>total = subtotal + tax<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;单价: $<span class="hljs-subst">&#123;price&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;数量: <span class="hljs-subst">&#123;quantity&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;小计: $<span class="hljs-subst">&#123;subtotal&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;税(8%): $<span class="hljs-subst">&#123;tax.quantize(Decimal(<span class="hljs-string">&#x27;0.01&#x27;</span>), ROUND_HALF_UP)&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;总计: $<span class="hljs-subst">&#123;total.quantize(Decimal(<span class="hljs-string">&#x27;0.01&#x27;</span>), ROUND_HALF_UP)&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">单价: $19.99</span><br><span class="hljs-section">数量: 3</span><br><span class="hljs-section">小计: $59.97</span><br><span class="hljs-section">税(8%): $4.80</span><br><span class="hljs-section">总计: $64.77</span><br></code></pre></td></tr></table></figure>
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Python/" class="category-chain-item">Python</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/python/compression.html" title="Python文件压缩与解压">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Python文件压缩与解压</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/python/regex-guide.html" title="Python正则表达式指南">
+                        <span class="hidden-mobile">Python正则表达式指南</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,1446 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="一、数值类型MySQL 8.4 支持完整的 SQL 数值类型，包括整数、定点数、浮点数和位值类型。所有数值类型都可以有可选的 UNSIGNED 属性来指定无符号范围。 1.1 整数类型整数类型（Integer Types）包括 TINYINT、SMALLINT、MEDIUMINT、INT、BIGINT 五种，语法如下： 1col_name &amp;#123; TINYINT | SMALLINT | M">
+  
+  
+  
+  <title>MySQL 8.4 数据类型 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="MySQL 8.4 数据类型"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-25 08:50" pubdate>
+          2026年3月25日 早上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          37 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">MySQL 8.4 数据类型</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="一、数值类型"><a href="#一、数值类型" class="headerlink" title="一、数值类型"></a>一、数值类型</h2><p>MySQL 8.4 支持完整的 SQL 数值类型，包括整数、定点数、浮点数和位值类型。所有数值类型都可以有可选的 <code>UNSIGNED</code> 属性来指定无符号范围。</p>
+<h3 id="1-1-整数类型"><a href="#1-1-整数类型" class="headerlink" title="1.1 整数类型"></a>1.1 整数类型</h3><p>整数类型（Integer Types）包括 <code>TINYINT</code>、<code>SMALLINT</code>、<code>MEDIUMINT</code>、<code>INT</code>、<code>BIGINT</code> 五种，语法如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name &#123; TINYINT <span class="hljs-operator">|</span> <span class="hljs-type">SMALLINT</span> <span class="hljs-operator">|</span> MEDIUMINT <span class="hljs-operator">|</span> <span class="hljs-type">INT</span> <span class="hljs-operator">|</span> <span class="hljs-type">INTEGER</span> <span class="hljs-operator">|</span> <span class="hljs-type">BIGINT</span> &#125; [UNSIGNED]<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>有符号范围</th>
+<th>无符号范围</th>
+<th>存储字节</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>TINYINT</code></td>
+<td><code>-128 ~ 127</code></td>
+<td><code>0 ~ 255</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>SMALLINT</code></td>
+<td><code>-32768 ~ 32767</code></td>
+<td><code>0 ~ 65535</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>MEDIUMINT</code></td>
+<td><code>-8388608 ~ 8388607</code></td>
+<td><code>0 ~ 16777215</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>INT</code> &#x2F; <code>INTEGER</code></td>
+<td><code>-2147483648 ~ 2147483647</code></td>
+<td><code>0 ~ 4294967295</code></td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>BIGINT</code></td>
+<td><code>-2^63 ~ 2^63-1</code></td>
+<td><code>0 ~ 2^64-1</code></td>
+<td>8</td>
+</tr>
+</tbody></table>
+<p><strong>创建表示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> int_examples (<br>    id <span class="hljs-type">INT</span> AUTO_INCREMENT <span class="hljs-keyword">PRIMARY KEY</span>,<br>    tiny_col TINYINT UNSIGNED,<br>    big_col <span class="hljs-type">BIGINT</span><br>);<br></code></pre></td></tr></table></figure>
+
+<p><strong>插入数据验证范围：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">INSERT INTO</span> int_examples (tiny_col, big_col) <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">255</span>, <span class="hljs-number">9223372036854775807</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> int_examples;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>-----------<span class="hljs-code">+---------------------+</span><br><span class="hljs-section">| id | tiny_col  | big_col             |</span><br><span class="hljs-section">+----+-----------+---------------------+</span><br><span class="hljs-section">|  1 |       255 | 9223372036854775807 |</span><br><span class="hljs-section">+----+-----------+---------------------+</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="1-1-1-SERIAL-属性"><a href="#1-1-1-SERIAL-属性" class="headerlink" title="1.1.1 SERIAL 属性"></a>1.1.1 SERIAL 属性</h4><p><code>SERIAL</code> 是独立的数据类型，等价于 <code>BIGINT UNSIGNED NOT NULL AUTO_INCREMENT</code>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name SERIAL<br><span class="hljs-comment">-- 等价于</span><br><span class="hljs-comment">-- col_name BIGINT UNSIGNED NOT NULL AUTO_INCREMENT</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>注意</strong>：<code>SERIAL</code> 隐含 <code>NOT NULL</code>，且 MySQL 会自动为其添加 <code>UNIQUE</code> 约束，因此不能在同一列上重复声明 <code>PRIMARY KEY</code>。</p>
+</blockquote>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> serial_demo (<br>    id SERIAL,<br>    name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>)<br>);<br><span class="hljs-keyword">INSERT INTO</span> serial_demo (name) <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&#x27;Alice&#x27;</span>), (<span class="hljs-string">&#x27;Bob&#x27;</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> serial_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>-------+<br><span class="hljs-section">| id | name  |</span><br><span class="hljs-section">+----+-------+</span><br>|  1 | Alice |<br><span class="hljs-section">|  2 | Bob   |</span><br><span class="hljs-section">+----+-------+</span><br>2 rows in set (0.00 sec)<br></code></pre></td></tr></table></figure>
+
+<h4 id="1-1-2-整数类型默认值与生成列"><a href="#1-1-2-整数类型默认值与生成列" class="headerlink" title="1.1.2 整数类型默认值与生成列"></a>1.1.2 整数类型默认值与生成列</h4><p>数值类型列支持字面量默认值和表达式默认值，以及生成列（Generated Column）语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name data_type GENERATED ALWAYS <span class="hljs-keyword">AS</span> (expr) [VIRTUAL <span class="hljs-operator">|</span> STORED]<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>GENERATED ALWAYS AS (expr)</code></td>
+<td>定义表达式生成列，<code>expr</code> 可引用同一表中其他列</td>
+</tr>
+<tr>
+<td><code>VIRTUAL</code>（默认）</td>
+<td>表达式在读取时实时计算，不占用额外存储</td>
+</tr>
+<tr>
+<td><code>STORED</code></td>
+<td>表达式在写入时计算并持久化存储，支持索引</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>生成列限制</strong>：<code>expr</code> 中只能引用同一行的列，不能使用子查询、存储函数或非确定性函数（如 <code>NOW()</code>、<code>RAND()</code>）。</p>
+</blockquote>
+<p><strong>创建表示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> num_default_demo (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    score <span class="hljs-type">INT</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-number">0</span>,<br>    rating <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">3</span>,<span class="hljs-number">1</span>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-number">5.0</span>,<br>    multiplier <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">5</span>,<span class="hljs-number">2</span>) GENERATED ALWAYS <span class="hljs-keyword">AS</span> (score <span class="hljs-operator">*</span> <span class="hljs-number">1.5</span>) STORED<br>);<br><span class="hljs-keyword">INSERT INTO</span> num_default_demo (id, score) <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-number">80</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> num_default_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>-------<span class="hljs-code">+--------+</span>--------------+<br><span class="hljs-section">| id | score | rating | multiplier   |</span><br><span class="hljs-section">+----+-------+--------+--------------+</span><br><span class="hljs-section">|  1 |    80 |    5.0 |       120.00 |</span><br><span class="hljs-section">+----+-------+--------+--------------+</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="1-1-4-整数类型存储需求"><a href="#1-1-4-整数类型存储需求" class="headerlink" title="1.1.4 整数类型存储需求"></a>1.1.4 整数类型存储需求</h4><table>
+<thead>
+<tr>
+<th>类型</th>
+<th>存储字节</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>TINYINT</code></td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>SMALLINT</code></td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>MEDIUMINT</code></td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>INT</code> &#x2F; <code>INTEGER</code></td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>BIGINT</code></td>
+<td>8</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="1-2-定点类型（DECIMAL-NUMERIC）"><a href="#1-2-定点类型（DECIMAL-NUMERIC）" class="headerlink" title="1.2 定点类型（DECIMAL &#x2F; NUMERIC）"></a>1.2 定点类型（DECIMAL &#x2F; NUMERIC）</h3><p><code>DECIMAL</code> 和 <code>NUMERIC</code> 用于存储精确数值，适用于货币金额等需要高精度的场景。语法如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name <span class="hljs-type">DECIMAL</span>(<span class="hljs-keyword">precision</span>, scale) [UNSIGNED]<br></code></pre></td></tr></table></figure>
+
+<p>其中 <code>precision</code> 为总位数（1<del>65），<code>scale</code> 为小数位数（0</del>30），且 <code>scale ≤ precision</code>。</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>DECIMAL(10, 2)</code></td>
+<td>总共10位数字，2位小数</td>
+<td><code>12345678.12</code></td>
+</tr>
+<tr>
+<td><code>DECIMAL(5, 0)</code></td>
+<td>整数，5位</td>
+<td><code>99999</code></td>
+</tr>
+<tr>
+<td><code>DECIMAL(3, 2)</code></td>
+<td>小数部分占2位</td>
+<td><code>9.99</code></td>
+</tr>
+</tbody></table>
+<p><strong>创建表示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> decimal_demo (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    price <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">10</span>, <span class="hljs-number">2</span>) <span class="hljs-keyword">NOT NULL</span>,<br>    quantity <span class="hljs-type">INT</span><br>);<br><span class="hljs-keyword">INSERT INTO</span> decimal_demo <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-number">99.99</span>, <span class="hljs-number">5</span>), (<span class="hljs-number">2</span>, <span class="hljs-number">1234.50</span>, <span class="hljs-number">2</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> decimal_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>---------<span class="hljs-code">+----------+</span><br><span class="hljs-section">| id | price   | quantity |</span><br><span class="hljs-section">+----+---------+----------+</span><br>|  1 |   99.99 |        5 |<br><span class="hljs-section">|  2 | 1234.50 |        2 |</span><br><span class="hljs-section">+----+---------+----------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>类型计算示例（精确性验证）：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> price <span class="hljs-operator">*</span> quantity <span class="hljs-keyword">AS</span> total <span class="hljs-keyword">FROM</span> decimal_demo <span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br><span class="hljs-keyword">SELECT</span> price <span class="hljs-keyword">FROM</span> decimal_demo <span class="hljs-keyword">WHERE</span> price <span class="hljs-operator">=</span> <span class="hljs-number">99.99</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+---------+</span><br><span class="hljs-section">| total   |</span><br><span class="hljs-section">+---------+</span><br><span class="hljs-section">| 499.95  |</span><br><span class="hljs-section">+---------+</span><br>1 row in set (0.00 sec)<br><br><span class="hljs-code">+---------+</span><br><span class="hljs-section">| price   |</span><br><span class="hljs-section">+---------+</span><br><span class="hljs-section">|   99.99 |</span><br><span class="hljs-section">+---------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>DECIMAL 存储需求</strong>：MySQL 8.4 采用二进制压缩格式存储 DECIMAL 值，整数部分和小数部分分别计算后相加。每 9 位数字占 4 字节，剩余 1~8 位数字按以下规则计字节：</p>
+<table>
+<thead>
+<tr>
+<th>剩余位数</th>
+<th>0</th>
+<th>1</th>
+<th>2</th>
+<th>3</th>
+<th>4</th>
+<th>5</th>
+<th>6</th>
+<th>7</th>
+<th>8</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>存储字节</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>2</td>
+<td>2</td>
+<td>3</td>
+<td>3</td>
+<td>4</td>
+<td>4</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>计算公式</strong>：存储 &#x3D; <code>ceil(整数位数 / 9) × 4 + ceil(小数位数 / 9) × 4</code>，其中 <code>ceil(x)</code> 为向上取整。</p>
+</blockquote>
+<p>常用类型存储对照：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>整数位</th>
+<th>小数位</th>
+<th>整数部分存储</th>
+<th>小数部分存储</th>
+<th>总计</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>DECIMAL(3,0)</code></td>
+<td>3</td>
+<td>0</td>
+<td>2 字节（3位→2字节）</td>
+<td>0</td>
+<td>2 字节</td>
+</tr>
+<tr>
+<td><code>DECIMAL(5,2)</code></td>
+<td>3</td>
+<td>2</td>
+<td>2 字节</td>
+<td>1 字节（2位→1字节）</td>
+<td>3 字节</td>
+</tr>
+<tr>
+<td><code>DECIMAL(9,0)</code></td>
+<td>9</td>
+<td>0</td>
+<td>4 字节（9位整除）</td>
+<td>0</td>
+<td>4 字节</td>
+</tr>
+<tr>
+<td><code>DECIMAL(10,2)</code></td>
+<td>8</td>
+<td>2</td>
+<td>4 字节</td>
+<td>1 字节</td>
+<td><strong>5 字节</strong></td>
+</tr>
+<tr>
+<td><code>DECIMAL(10,5)</code></td>
+<td>5</td>
+<td>5</td>
+<td>3 字节（5位→3字节）</td>
+<td>3 字节</td>
+<td>6 字节</td>
+</tr>
+<tr>
+<td><code>DECIMAL(15,2)</code></td>
+<td>13</td>
+<td>2</td>
+<td>6 字节（13位→6字节）</td>
+<td>1 字节</td>
+<td>7 字节</td>
+</tr>
+<tr>
+<td><code>DECIMAL(18,0)</code></td>
+<td>18</td>
+<td>0</td>
+<td>8 字节（18位→8字节）</td>
+<td>0</td>
+<td>8 字节</td>
+</tr>
+<tr>
+<td><code>DECIMAL(20,5)</code></td>
+<td>15</td>
+<td>5</td>
+<td>7 字节（15位→7字节）</td>
+<td>3 字节</td>
+<td><strong>10 字节</strong></td>
+</tr>
+<tr>
+<td><code>DECIMAL(28,0)</code></td>
+<td>28</td>
+<td>0</td>
+<td>12 字节</td>
+<td>0</td>
+<td>12 字节</td>
+</tr>
+<tr>
+<td><code>DECIMAL(65,30)</code></td>
+<td>35</td>
+<td>30</td>
+<td>16 字节（35位→16字节）</td>
+<td>16 字节（30位→16字节）</td>
+<td>32 字节</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="1-3-浮点类型"><a href="#1-3-浮点类型" class="headerlink" title="1.3 浮点类型"></a>1.3 浮点类型</h3><p>浮点类型用于存储近似数值，包括 <code>FLOAT</code> 和 <code>DOUBLE</code> 两种。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name <span class="hljs-type">FLOAT</span>(<span class="hljs-keyword">precision</span>) [UNSIGNED]<br>col_name <span class="hljs-keyword">DOUBLE</span> [UNSIGNED]<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>存储字节</th>
+<th>精度</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>FLOAT</code></td>
+<td>4</td>
+<td>~7 位十进制</td>
+<td>可指定 <code>FLOAT(p)</code>，<code>p ≤ 24</code> 时为单精度</td>
+</tr>
+<tr>
+<td><code>DOUBLE</code></td>
+<td>8</td>
+<td>~15 位十进制</td>
+<td><code>DOUBLE PRECISION</code> 的别名</td>
+</tr>
+</tbody></table>
+<p><strong>创建表示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> float_demo (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    rate <span class="hljs-type">FLOAT</span>(<span class="hljs-number">10</span>, <span class="hljs-number">4</span>),<br>    ratio <span class="hljs-keyword">DOUBLE</span><br>);<br><span class="hljs-keyword">INSERT INTO</span> float_demo <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-number">3.14159265</span>, <span class="hljs-number">3.141592653589793</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> float_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>------------<span class="hljs-code">+--------------------+</span><br><span class="hljs-section">| id | rate       | ratio              |</span><br><span class="hljs-section">+----+------------+--------------------+</span><br><span class="hljs-section">|  1 |  3.1416    | 3.141592653589793  |</span><br><span class="hljs-section">+----+------------+--------------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>近似值问题示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">CAST</span>(<span class="hljs-string">&#x27;0.1&#x27;</span> <span class="hljs-keyword">AS</span> <span class="hljs-type">FLOAT</span>) <span class="hljs-operator">+</span> <span class="hljs-number">0.1</span> <span class="hljs-operator">+</span> <span class="hljs-number">0.1</span> <span class="hljs-operator">-</span> <span class="hljs-number">0.3</span> <span class="hljs-keyword">AS</span> float_sum;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">CAST</span>(<span class="hljs-string">&#x27;0.1&#x27;</span> <span class="hljs-keyword">AS</span> <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">1</span>,<span class="hljs-number">1</span>)) <span class="hljs-operator">+</span> <span class="hljs-number">0.1</span> <span class="hljs-operator">+</span> <span class="hljs-number">0.1</span> <span class="hljs-operator">-</span> <span class="hljs-number">0.3</span> <span class="hljs-keyword">AS</span> decimal_sum;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------------------------------------------+</span><br><span class="hljs-section">| float_sum                                |</span><br><span class="hljs-section">+------------------------------------------+</span><br><span class="hljs-section">| 0.0000000014901161415892261             |</span><br><span class="hljs-section">+------------------------------------------+</span><br>1 row in set (0.00 sec)<br><br><span class="hljs-code">+---------------+</span><br><span class="hljs-section">| decimal_sum   |</span><br><span class="hljs-section">+---------------+</span><br><span class="hljs-section">|           0.0 |</span><br><span class="hljs-section">+---------------+</span><br>1 row in set (0.00 sec)<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ 浮点数值计算存在精度误差，涉及精确比较或货币计算时优先使用 <code>DECIMAL</code>。</p>
+</blockquote>
+<hr>
+<h3 id="1-4-位值类型（BIT）"><a href="#1-4-位值类型（BIT）" class="headerlink" title="1.4 位值类型（BIT）"></a>1.4 位值类型（BIT）</h3><p><code>BIT</code> 类型用于存储位域值（Bit-Value Type）。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name BIT(M)<br></code></pre></td></tr></table></figure>
+
+<p><code>M</code> 指定位数，范围 1~64，默认为 1。</p>
+<p><strong>创建表示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> bit_demo (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    flags BIT(<span class="hljs-number">8</span>)<br>);<br><span class="hljs-keyword">INSERT INTO</span> bit_demo <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, b<span class="hljs-string">&#x27;01010101&#x27;</span>), (<span class="hljs-number">2</span>, <span class="hljs-number">255</span>);<br><span class="hljs-keyword">SELECT</span> id, flags, BIN(flags), HEX(flags) <span class="hljs-keyword">FROM</span> bit_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>-------<span class="hljs-code">+-----------+</span>------------+<br><span class="hljs-section">| id | flags | BIN(flags)| HEX(flags) |</span><br><span class="hljs-section">+----+-------+-----------+------------+</span><br>|  1 |    85 | 1010101   | 55         |<br><span class="hljs-section">|  2 |   255 | 11111111  | FF         |</span><br><span class="hljs-section">+----+-------+-----------+------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>位运算示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> flags, flags <span class="hljs-operator">&amp;</span> b<span class="hljs-string">&#x27;01000000&#x27;</span>, flags <span class="hljs-operator">|</span> b<span class="hljs-string">&#x27;00000001&#x27;</span> <span class="hljs-keyword">FROM</span> bit_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-------+</span>---------------------<span class="hljs-code">+----------------------+</span><br><span class="hljs-section">| flags | flags &amp; b&#x27;01000000&#x27; | flags|b&#x27;00000001&#x27;    |</span><br><span class="hljs-section">+-------+---------------------+----------------------+</span><br>|    85 |                  64 |                   85 |<br><span class="hljs-section">|   255 |                  64 |                  255 |</span><br><span class="hljs-section">+-------+---------------------+----------------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>BIT 存储需求</strong>：约 <code>(M+7)/8</code> 字节。例如 <code>BIT(8)</code> 占用 1 字节，<code>BIT(16)</code> 占用 2 字节。</p>
+<hr>
+<h2 id="二、日期和时间类型"><a href="#二、日期和时间类型" class="headerlink" title="二、日期和时间类型"></a>二、日期和时间类型</h2><p>MySQL 8.4 的日期和时间类型包括 <code>DATE</code>、<code>TIME</code>、<code>DATETIME</code>、<code>TIMESTAMP</code>、<code>YEAR</code> 五种，用于存储日期、时间或两者的组合。</p>
+<h3 id="2-1-DATE-类型"><a href="#2-1-DATE-类型" class="headerlink" title="2.1 DATE 类型"></a>2.1 DATE 类型</h3><p><code>DATE</code> 类型用于存储日期值，格式为 <code>&#39;YYYY-MM-DD&#39;</code>，范围 <code>&#39;1000-01-01&#39; ~ &#39;9999-12-31&#39;</code>。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name <span class="hljs-type">DATE</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> date_demo (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    birth_date <span class="hljs-type">DATE</span><br>);<br><span class="hljs-keyword">INSERT INTO</span> date_demo <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;1995-07-15&#x27;</span>), (<span class="hljs-number">2</span>, <span class="hljs-string">&#x27;2000-01-01&#x27;</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> date_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>------------+<br><span class="hljs-section">| id | birth_date |</span><br><span class="hljs-section">+----+------------+</span><br>|  1 | 1995-07-15 |<br><span class="hljs-section">|  2 | 2000-01-01 |</span><br><span class="hljs-section">+----+------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>日期函数示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> CURDATE(), DATEDIFF(<span class="hljs-string">&#x27;2026-03-25&#x27;</span>, birth_date) <span class="hljs-keyword">AS</span> days_lived <span class="hljs-keyword">FROM</span> date_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------------+</span>-------------+<br><span class="hljs-section">| CURDATE()  | days_lived  |</span><br><span class="hljs-section">+------------+-------------+</span><br>| 2026-03-25 |      11215  |<br><span class="hljs-section">| 2026-03-25 |       9584  |</span><br><span class="hljs-section">+------------+-------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>DATE 存储需求</strong>：固定 3 字节。</p>
+<hr>
+<h3 id="2-2-TIME-类型"><a href="#2-2-TIME-类型" class="headerlink" title="2.2 TIME 类型"></a>2.2 TIME 类型</h3><p><code>TIME</code> 类型用于存储时间值或时间间隔，格式为 <code>&#39;HH:MM:SS&#39;</code> 或 <code>&#39;HHH:MM:SS&#39;</code>（支持负值和大范围）。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name <span class="hljs-type">TIME</span> [(fsp)]<br></code></pre></td></tr></table></figure>
+
+<p><code>fsp</code> 为小数秒精度，范围 0~6。</p>
+<table>
+<thead>
+<tr>
+<th>格式</th>
+<th>示例</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&#39;HH:MM:SS&#39;</code></td>
+<td><code>&#39;12:30:45&#39;</code></td>
+<td>正常时间</td>
+</tr>
+<tr>
+<td><code>&#39;HHH:MM:SS&#39;</code></td>
+<td><code>&#39;123:45:00&#39;</code></td>
+<td>超过24小时的间隔</td>
+</tr>
+<tr>
+<td><code>&#39;-HH:MM:SS&#39;</code></td>
+<td><code>&#39;-12:00:00&#39;</code></td>
+<td>负时间间隔</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>理解 TIME 的双重语义</strong>：MySQL 中 <code>TIME</code> 既可以表示<strong>一天内的时间点</strong>（如 <code>08:30:00</code>），也可以表示<strong>时间长度&#x2F;间隔</strong>（如项目工时 <code>100:00:00</code>）。这种双重语义是理解超24小时和负值的关键。</p>
+</blockquote>
+<p><strong>超过24小时的间隔</strong>：用于记录时间长度而非时刻。<code>100:00:00</code> 表示 100 小时的时长，可用于工时统计、项目累计耗时、倒班周期等场景。小时部分不限于 0~23。</p>
+<p><strong>负时间间隔</strong>：表示”向前或向后”的相对时间差，常用于计算结果为负的场景。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- TIMEDIFF 计算两个时间点的差值，结果可能为负</span><br><span class="hljs-keyword">SELECT</span> TIMEDIFF(<span class="hljs-string">&#x27;06:00:00&#x27;</span>, <span class="hljs-string">&#x27;08:00:00&#x27;</span>) <span class="hljs-keyword">AS</span> time_diff;<br><span class="hljs-keyword">SELECT</span> TIMEDIFF(<span class="hljs-string">&#x27;23:00:00&#x27;</span>, <span class="hljs-string">&#x27;08:30:00&#x27;</span>) <span class="hljs-keyword">AS</span> work_hours;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-------------+</span><br><span class="hljs-section">| time_diff   |</span><br><span class="hljs-section">+-------------+</span><br><span class="hljs-section">| -02:00:00  |</span><br><span class="hljs-section">+-------------+</span><br>1 row in set (0.00 sec)<br><br><span class="hljs-code">+------------+</span><br><span class="hljs-section">| work_hours |</span><br><span class="hljs-section">+------------+</span><br><span class="hljs-section">| 14:30:00   |</span><br><span class="hljs-section">+------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> time_demo (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    duration <span class="hljs-type">TIME</span>(<span class="hljs-number">3</span>)<br>);<br><span class="hljs-keyword">INSERT INTO</span> time_demo <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;02:30:45.123&#x27;</span>), (<span class="hljs-number">2</span>, <span class="hljs-string">&#x27;100:00:00&#x27;</span>), (<span class="hljs-number">3</span>, <span class="hljs-string">&#x27;-01:30:00&#x27;</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> time_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>---------------+<br><span class="hljs-section">| id | duration      |</span><br><span class="hljs-section">+----+---------------+</span><br>|  1 | 02:30:45.123  |<br>|  2 | 100:00:00.000 |<br><span class="hljs-section">|  3 | -01:30:00.000 |</span><br><span class="hljs-section">+----+---------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>TIME 存储需求</strong>：3 字节 + 0~3 字节（fsp）。<code>TIME(0)</code> 占 3 字节，<code>TIME(6)</code> 占 9 字节。</p>
+<hr>
+<h3 id="2-3-DATETIME-和-TIMESTAMP-类型"><a href="#2-3-DATETIME-和-TIMESTAMP-类型" class="headerlink" title="2.3 DATETIME 和 TIMESTAMP 类型"></a>2.3 DATETIME 和 TIMESTAMP 类型</h3><p><code>DATETIME</code> 和 <code>TIMESTAMP</code> 都用于存储日期和时间的组合值，但行为上有重要区别：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name DATETIME [(fsp)]<br>col_name <span class="hljs-type">TIMESTAMP</span> [(fsp)]<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th><code>DATETIME</code></th>
+<th><code>TIMESTAMP</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>范围</td>
+<td><code>&#39;1000-01-01 00:00:00.000000&#39; ~ &#39;9999-12-31 23:59:59.999999&#39;</code></td>
+<td><code>&#39;1970-01-01 00:00:01.000000&#39; ~ &#39;2038-01-19 03:14:07.999999&#39;</code></td>
+</tr>
+<tr>
+<td>时区</td>
+<td>不受时区影响</td>
+<td>存储时转为 UTC，读取时转回本地时区</td>
+</tr>
+<tr>
+<td>自动更新</td>
+<td>需显式设置</td>
+<td>列可设 <code>DEFAULT CURRENT_TIMESTAMP</code> 和 <code>ON UPDATE CURRENT_TIMESTAMP</code></td>
+</tr>
+<tr>
+<td>存储</td>
+<td>固定 5 字节（不含fsp）</td>
+<td>固定 4 字节（不含fsp）</td>
+</tr>
+</tbody></table>
+<p><strong>创建表示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> datetime_demo (<br>    id <span class="hljs-type">INT</span> AUTO_INCREMENT <span class="hljs-keyword">PRIMARY KEY</span>,<br>    created_at <span class="hljs-type">TIMESTAMP</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span>,<br>    updated_at <span class="hljs-type">TIMESTAMP</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span> <span class="hljs-keyword">ON</span> <span class="hljs-keyword">UPDATE</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span>,<br>    event_time DATETIME<br>);<br><span class="hljs-keyword">INSERT INTO</span> datetime_demo (event_time) <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&#x27;2026-03-25 10:00:00&#x27;</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> datetime_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>---------------------<span class="hljs-code">+---------------------+</span>---------------------+<br><span class="hljs-section">| id | created_at          | updated_at          | event_time          |</span><br><span class="hljs-section">+----+---------------------+---------------------+---------------------+</span><br><span class="hljs-section">|  1 | 2026-03-25 08:54:00 | 2026-03-25 08:54:00 | 2026-03-25 10:00:00 |</span><br><span class="hljs-section">+----+---------------------+---------------------+---------------------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>时区行为验证</strong>：设置会话时区后，<code>TIMESTAMP</code> 值会自动转换，而 <code>DATETIME</code> 保持不变。</p>
+</blockquote>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> TIME_ZONE <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;+06:00&#x27;</span>;<br><span class="hljs-keyword">SELECT</span> NOW(), FROM_UNIXTIME(UNIX_TIMESTAMP()) <span class="hljs-keyword">AS</span> ts_test;<br></code></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="2-4-自动初始化与自动更新"><a href="#2-4-自动初始化与自动更新" class="headerlink" title="2.4 自动初始化与自动更新"></a>2.4 自动初始化与自动更新</h3><p>在 MySQL 8.4 中，<code>TIMESTAMP</code> 和 <code>DATETIME</code> 列支持自动初始化和自动更新：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name <span class="hljs-type">TIMESTAMP</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span> <span class="hljs-keyword">ON</span> <span class="hljs-keyword">UPDATE</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span><br>col_name DATETIME <span class="hljs-keyword">DEFAULT</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span> <span class="hljs-keyword">ON</span> <span class="hljs-keyword">UPDATE</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span><br>col_name DATETIME <span class="hljs-keyword">DEFAULT</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span>  <span class="hljs-comment">-- 仅自动初始化</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>多列场景示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> auto_demo (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    create_ts <span class="hljs-type">TIMESTAMP</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span>,<br>    update_ts <span class="hljs-type">TIMESTAMP</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span> <span class="hljs-keyword">ON</span> <span class="hljs-keyword">UPDATE</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span>,<br>    create_dt DATETIME <span class="hljs-keyword">DEFAULT</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span>,<br>    update_dt DATETIME <span class="hljs-keyword">DEFAULT</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span> <span class="hljs-keyword">ON</span> <span class="hljs-keyword">UPDATE</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span><br>);<br><span class="hljs-keyword">INSERT INTO</span> auto_demo (id) <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> auto_demo;<br><br><span class="hljs-comment">-- 更新数据后，upudate事件会发生变化</span><br><span class="hljs-keyword">UPDATE</span> auto_demo <span class="hljs-keyword">SET</span> id <span class="hljs-operator">=</span> <span class="hljs-number">2</span> <span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> auto_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>---------------------<span class="hljs-code">+---------------------+</span>---------------------<span class="hljs-code">+---------------------+</span><br><span class="hljs-section">| id | create_ts           | update_ts           | create_dt           | update_dt           |</span><br><span class="hljs-section">+----+---------------------+---------------------+---------------------+---------------------+</span><br><span class="hljs-section">|  1 | 2026-03-25 17:38:11 | 2026-03-25 17:38:11 | 2026-03-25 17:38:11 | 2026-03-25 17:38:11 |</span><br><span class="hljs-section">+----+---------------------+---------------------+---------------------+---------------------</span><br><br><br><span class="hljs-code">+----+</span>---------------------<span class="hljs-code">+---------------------+</span>---------------------<span class="hljs-code">+---------------------+</span><br><span class="hljs-section">| id | create_ts           | update_ts           | create_dt           | update_dt           |</span><br><span class="hljs-section">+----+---------------------+---------------------+---------------------+---------------------+</span><br><span class="hljs-section">|  2 | 2026-03-25 17:38:11 | 2026-03-25 17:38:23 | 2026-03-25 17:38:11 | 2026-03-25 17:38:23 |</span><br><span class="hljs-section">+----+---------------------+---------------------+---------------------+---------------------+</span><br><br></code></pre></td></tr></table></figure>
+
+<p><strong>DATETIME &#x2F; TIMESTAMP 存储需求</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>不含 fsp</th>
+<th>含 fsp (0~6)</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>DATETIME</code></td>
+<td>5 字节</td>
+<td>5 + fsp 字节</td>
+</tr>
+<tr>
+<td><code>TIMESTAMP</code></td>
+<td>4 字节</td>
+<td>4 + fsp 字节</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="2-5-YEAR-类型"><a href="#2-5-YEAR-类型" class="headerlink" title="2.5 YEAR 类型"></a>2.5 YEAR 类型</h3><p><code>YEAR</code> 类型用于存储年份值，格式为 4 位数字，范围 1901~2155，或 0000。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name <span class="hljs-keyword">YEAR</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> year_demo (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    graduation_year <span class="hljs-keyword">YEAR</span><br>);<br><span class="hljs-keyword">INSERT INTO</span> year_demo <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-number">2026</span>), (<span class="hljs-number">2</span>, <span class="hljs-string">&#x27;2025&#x27;</span>), (<span class="hljs-number">3</span>, <span class="hljs-number">1901</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> year_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>------------------+<br><span class="hljs-section">| id | graduation_year  |</span><br><span class="hljs-section">+----+------------------+</span><br>|  1 |             2026 |<br>|  2 |             2025 |<br><span class="hljs-section">|  3 |             1901 |</span><br><span class="hljs-section">+----+------------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>YEAR 存储需求</strong>：固定 1 字节。</p>
+<hr>
+<h2 id="三、字符串类型"><a href="#三、字符串类型" class="headerlink" title="三、字符串类型"></a>三、字符串类型</h2><p>MySQL 8.4 的字符串类型包括字符类型（CHAR&#x2F;VARCHAR）、二进制类型（BINARY&#x2F;VARBINARY）、文本类型（BLOB&#x2F;TEXT）、枚举类型（ENUM）和集合类型（SET）。</p>
+<h3 id="3-1-CHAR-和-VARCHAR"><a href="#3-1-CHAR-和-VARCHAR" class="headerlink" title="3.1 CHAR 和 VARCHAR"></a>3.1 CHAR 和 VARCHAR</h3><p><code>CHAR</code> 是固定长度字符串，<code>VARCHAR</code> 是可变长度字符串。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name <span class="hljs-type">CHAR</span>(M) [<span class="hljs-keyword">CHARACTER SET</span> charset_name] [<span class="hljs-keyword">COLLATE</span> collation_name]<br>col_name <span class="hljs-type">VARCHAR</span>(M) [<span class="hljs-keyword">CHARACTER SET</span> charset_name] [<span class="hljs-keyword">COLLATE</span> collation_name]<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>长度范围</th>
+<th>存储特性</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>CHAR(M)</code></td>
+<td>0~255</td>
+<td>固定长度，不足部分用空格填充，检索时自动去除</td>
+</tr>
+<tr>
+<td><code>VARCHAR(M)</code></td>
+<td>0~65535（受行限制）</td>
+<td>可变长度，只存储实际字符，末尾保留1~2字节存储长度</td>
+</tr>
+</tbody></table>
+<p><strong>创建表示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> string_demo (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    code <span class="hljs-type">CHAR</span>(<span class="hljs-number">5</span>),<br>    name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">100</span>)<br>);<br><span class="hljs-keyword">INSERT INTO</span> string_demo <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;A&#x27;</span>, <span class="hljs-string">&#x27;Alice&#x27;</span>), (<span class="hljs-number">2</span>, <span class="hljs-string">&#x27;ABC&#x27;</span>, <span class="hljs-string">&#x27;Bob&#x27;</span>);<br><span class="hljs-keyword">SELECT</span> id, code, LENGTH(code), name, LENGTH(name) <span class="hljs-keyword">FROM</span> string_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>------<span class="hljs-code">+-------------+</span>-------<span class="hljs-code">+-------------+</span><br><span class="hljs-section">| id | code | LENGTH(code)| name  | LENGTH(name)|</span><br><span class="hljs-section">+----+------+-------------+-------+-------------+</span><br>|  1 | A    |           1 | Alice |           5 |<br><span class="hljs-section">|  2 | ABC  |           3 | Bob   |           3 |</span><br><span class="hljs-section">+----+------+-------------+-------+-------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>空格处理示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">CHAR_LENGTH</span>(<span class="hljs-string">&#x27;hello  &#x27;</span>) <span class="hljs-keyword">AS</span> len, <span class="hljs-keyword">CHAR_LENGTH</span>(RTRIM(<span class="hljs-string">&#x27;hello  &#x27;</span>)) <span class="hljs-keyword">AS</span> trimmed;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------+</span>----------+<br><span class="hljs-section">| len  | trimmed  |</span><br><span class="hljs-section">+------+----------+</span><br><span class="hljs-section">|    7 |        5 |</span><br><span class="hljs-section">+------+----------+</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="3-1-1-字符集与排序规则"><a href="#3-1-1-字符集与排序规则" class="headerlink" title="3.1.1 字符集与排序规则"></a>3.1.1 字符集与排序规则</h4><p>字符类型支持通过 <code>CHARACTER SET</code>（简称 <code>CHARSET</code>）指定字符集，<code>COLLATE</code> 指定排序规则：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 使用 utf8mb4 字符集，unicode 排序规则</span><br>name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">100</span>) <span class="hljs-keyword">CHARACTER SET</span> utf8mb4 <span class="hljs-keyword">COLLATE</span> utf8mb4_unicode_ci<br><br><span class="hljs-comment">-- 简写形式</span><br>name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">100</span>) CHARSET utf8mb4 <span class="hljs-keyword">COLLATE</span> utf8mb4_unicode_ci<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>编码建议</strong>：MySQL 8.4 推荐使用 <code>utf8mb4</code> 字符集，它支持完整的 Unicode（包括 emoji），而旧的 <code>utf8</code> 只支持 3 字节的 Unicode 子集。</p>
+</blockquote>
+<p><strong>排序规则影响示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> collate_demo (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>) <span class="hljs-keyword">COLLATE</span> utf8mb4_general_ci<br>);<br><span class="hljs-keyword">INSERT INTO</span> collate_demo <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;Alice&#x27;</span>), (<span class="hljs-number">2</span>, <span class="hljs-string">&#x27;alice&#x27;</span>), (<span class="hljs-number">3</span>, <span class="hljs-string">&#x27;ALICE&#x27;</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> collate_demo <span class="hljs-keyword">WHERE</span> name <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;alice&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>-------+<br><span class="hljs-section">| id | name  |</span><br><span class="hljs-section">+----+-------+</span><br>|  1 | Alice |<br>|  2 | alice |<br><span class="hljs-section">|  3 | ALICE |</span><br><span class="hljs-section">+----+-------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>utf8mb4_general_ci</code> 不区分大小写（ci &#x3D; case insensitive），所以三条记录都匹配。</p>
+</blockquote>
+<h4 id="3-1-2-CHAR-VARCHAR-存储需求"><a href="#3-1-2-CHAR-VARCHAR-存储需求" class="headerlink" title="3.1.2 CHAR &#x2F; VARCHAR 存储需求"></a>3.1.2 CHAR &#x2F; VARCHAR 存储需求</h4><table>
+<thead>
+<tr>
+<th>类型</th>
+<th>存储说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>CHAR(M)</code></td>
+<td><code>M × W</code> 字节（<code>W</code> 为字符集单字符最大字节数）。<code>CHAR(5)</code> 在 <code>utf8mb4</code> 下固定占 20 字节</td>
+</tr>
+<tr>
+<td><code>VARCHAR(M)</code></td>
+<td><code>L + 1~2</code> 字节（<code>L</code> 为实际字符占用的字节数）。<code>utf8mb4</code> 字符最多占 4 字节，因此 <code>VARCHAR(100)</code> 最多约 401 字节</td>
+</tr>
+</tbody></table>
+<hr>
+<h3 id="3-2-BINARY-和-VARBINARY"><a href="#3-2-BINARY-和-VARBINARY" class="headerlink" title="3.2 BINARY 和 VARBINARY"></a>3.2 BINARY 和 VARBINARY</h3><p>二进制类型与字符类型类似，但存储的是字节序列而非字符。比较和排序基于字节值。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name <span class="hljs-type">BINARY</span>(M)<br>col_name <span class="hljs-type">VARBINARY</span>(M)<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>长度范围</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>BINARY(M)</code></td>
+<td>0~255</td>
+<td>固定长度，字节级比较</td>
+</tr>
+<tr>
+<td><code>VARBINARY(M)</code></td>
+<td>0~65535</td>
+<td>可变长度，存储实际字节</td>
+</tr>
+</tbody></table>
+<p><strong>示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> binary_demo (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    hash <span class="hljs-type">BINARY</span>(<span class="hljs-number">32</span>)<br>);<br><span class="hljs-keyword">INSERT INTO</span> binary_demo <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, UNHEX(<span class="hljs-string">&#x27;616263&#x27;</span>));<br><span class="hljs-keyword">SELECT</span> id, hash, HEX(hash) <span class="hljs-keyword">FROM</span> binary_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>----------------------------------<span class="hljs-code">+-------------+</span><br><span class="hljs-section">| id | hash                             | HEX(hash)   |</span><br><span class="hljs-section">+----+----------------------------------+-------------+</span><br><span class="hljs-section">|  1 | 0x616263                         | 616263      |</span><br><span class="hljs-section">+----+----------------------------------+-------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>BINARY &#x2F; VARBINARY 存储需求</strong>：与 CHAR&#x2F;VARCHAR 类似，但以字节计：<code>BINARY(M)</code> 固定占 <code>M</code> 字节，<code>VARBINARY(M)</code> 为 <code>L + 1~2</code> 字节。</p>
+<hr>
+<h3 id="3-3-BLOB-和-TEXT-类型"><a href="#3-3-BLOB-和-TEXT-类型" class="headerlink" title="3.3 BLOB 和 TEXT 类型"></a>3.3 BLOB 和 TEXT 类型</h3><p>BLOB（Binary Large Object）用于存储大型二进制数据，TEXT 用于存储大型字符串。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name TINYTEXT <span class="hljs-operator">|</span> TEXT <span class="hljs-operator">|</span> MEDIUMTEXT <span class="hljs-operator">|</span> LONGTEXT<br>col_name TINYBLOB <span class="hljs-operator">|</span> <span class="hljs-type">BLOB</span> <span class="hljs-operator">|</span> MEDIUMBLOB <span class="hljs-operator">|</span> LONGBLOB<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>最大长度</th>
+<th>存储需求（额外字节）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>TINYTEXT</code> &#x2F; <code>TINYBLOB</code></td>
+<td>255 字节</td>
+<td>+1 字节</td>
+</tr>
+<tr>
+<td><code>TEXT</code> &#x2F; <code>BLOB</code></td>
+<td>65,535 字节</td>
+<td>+2 字节</td>
+</tr>
+<tr>
+<td><code>MEDIUMTEXT</code> &#x2F; <code>MEDIUMBLOB</code></td>
+<td>16,777,215 字节</td>
+<td>+3 字节</td>
+</tr>
+<tr>
+<td><code>LONGTEXT</code> &#x2F; <code>LONGBLOB</code></td>
+<td>4,294,967,295 字节</td>
+<td>+4 字节</td>
+</tr>
+</tbody></table>
+<p><strong>创建表示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> blob_demo (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    content TEXT,<br>    file_data LONGBLOB<br>);<br><span class="hljs-keyword">INSERT INTO</span> blob_demo <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;This is a long text content&#x27;</span>, <span class="hljs-keyword">NULL</span>);<br><span class="hljs-keyword">SELECT</span> id, <span class="hljs-keyword">LEFT</span>(content, <span class="hljs-number">10</span>), LENGTH(content) <span class="hljs-keyword">FROM</span> blob_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>------------------<span class="hljs-code">+---------------+</span><br><span class="hljs-section">| id | LEFT(content,10) | LENGTH(content)|</span><br><span class="hljs-section">+----+------------------+---------------+</span><br><span class="hljs-section">|  1 | This is a       |             26 |</span><br><span class="hljs-section">+----+------------------+---------------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>索引限制</strong>：<code>TEXT</code> 和 <code>BLOB</code> 列在创建索引时必须指定前缀长度。<code>FULLTEXT</code> 索引仅支持 <code>CHAR</code>、<code>VARCHAR</code> 和 <code>TEXT</code>。</p>
+</blockquote>
+<p><strong>BLOB &#x2F; TEXT 存储需求</strong>：实际字节数 + 额外字节（1&#x2F;2&#x2F;3&#x2F;4 字节，用于记录长度）。</p>
+<hr>
+<h3 id="3-4-ENUM-类型"><a href="#3-4-ENUM-类型" class="headerlink" title="3.4 ENUM 类型"></a>3.4 ENUM 类型</h3><p><code>ENUM</code> 是字符串对象，其值来自创建表时定义的枚举列表。<strong>每个字段每行只能存储一个值</strong>，存储的值必须是定义列表中的成员，不存在或超出均会报错。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name ENUM(<span class="hljs-string">&#x27;value1&#x27;</span>, <span class="hljs-string">&#x27;value2&#x27;</span>, ...) [<span class="hljs-keyword">CHARACTER SET</span> charset] [<span class="hljs-keyword">COLLATE</span> <span class="hljs-keyword">collation</span>]<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>核心约束</strong>：ENUM 是<strong>强制单选</strong>字段。尝试存储多个值（如 <code>&#39;red,blue&#39;</code>）或存储定义之外的值时，MySQL 会报错 <code>Data truncated</code>。</p>
+</blockquote>
+<p><strong>创建表示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> order_status (<br>    id <span class="hljs-type">INT</span> AUTO_INCREMENT <span class="hljs-keyword">PRIMARY KEY</span>,<br>    status ENUM(<span class="hljs-string">&#x27;pending&#x27;</span>, <span class="hljs-string">&#x27;processing&#x27;</span>, <span class="hljs-string">&#x27;completed&#x27;</span>, <span class="hljs-string">&#x27;cancelled&#x27;</span>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;pending&#x27;</span><br>);<br><span class="hljs-keyword">INSERT INTO</span> order_status (status) <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&#x27;pending&#x27;</span>);<br><span class="hljs-keyword">INSERT INTO</span> order_status (status) <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&#x27;completed&#x27;</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> order_status;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>-------------+<br><span class="hljs-section">| id | status      |</span><br><span class="hljs-section">+----+-------------+</span><br>|  1 | pending     |<br><span class="hljs-section">|  2 | completed   |</span><br><span class="hljs-section">+----+-------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>多值存储会报错：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">INSERT INTO</span> order_status (status) <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&#x27;pending,completed&#x27;</span>);<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs subunit"><span class="hljs-keyword">ERROR </span>1265 (01000): Data truncated for column &#x27;status&#x27; at row 1<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>MySQL 拒绝了 <code>pending,completed</code>，因为 ENUM 字段同一行只能存放一个成员。</p>
+</blockquote>
+<p><strong>内部存储机制</strong>：ENUM 成员在内部以整数索引存储（从 1 开始），这带来了两个重要特性：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> id, status, status <span class="hljs-operator">+</span> <span class="hljs-number">0</span> <span class="hljs-keyword">AS</span> enum_index <span class="hljs-keyword">FROM</span> order_status;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>-------------<span class="hljs-code">+------------+</span><br><span class="hljs-section">| id | status      | enum_index |</span><br><span class="hljs-section">+----+-------------+------------+</span><br>|  1 | pending     |          1 |<br><span class="hljs-section">|  2 | completed   |          3 |</span><br><span class="hljs-section">+----+-------------+------------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>按定义顺序排序</strong>：ENUM 值按定义列表中的顺序（而非字母顺序）排序和比较。<code>pending</code> 是第1个，<code>completed</code> 是第3个，所以 <code>ORDER BY status</code> 会按定义顺序排列。</p>
+</blockquote>
+<p><strong>典型使用场景</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>ENUM 成员示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>订单状态</td>
+<td><code>&#39;pending&#39;</code>, <code>&#39;processing&#39;</code>, <code>&#39;completed&#39;</code>, <code>&#39;cancelled&#39;</code></td>
+</tr>
+<tr>
+<td>性别</td>
+<td><code>&#39;male&#39;</code>, <code>&#39;female&#39;</code>, <code>&#39;other&#39;</code></td>
+</tr>
+<tr>
+<td>布尔开关</td>
+<td><code>&#39;yes&#39;</code>, <code>&#39;no&#39;</code></td>
+</tr>
+<tr>
+<td>会员等级</td>
+<td><code>&#39;bronze&#39;</code>, <code>&#39;silver&#39;</code>, <code>&#39;gold&#39;</code>, <code>&#39;platinum&#39;</code></td>
+</tr>
+<tr>
+<td>文章可见性</td>
+<td><code>&#39;draft&#39;</code>, <code>&#39;published&#39;</code>, <code>&#39;archived&#39;</code></td>
+</tr>
+</tbody></table>
+<p><strong>ENUM 存储需求</strong>：1 或 2 字节（取决于成员数量，≤255 个成员用 1 字节）。</p>
+<hr>
+<h3 id="3-5-SET-类型"><a href="#3-5-SET-类型" class="headerlink" title="3.5 SET 类型"></a>3.5 SET 类型</h3><p><code>SET</code> 是字符串对象，<strong>每行可以存储零个、一个或多个值</strong>，所有值都必须来自定义列表。与 ENUM 的本质区别在于：SET 允许多选。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name <span class="hljs-keyword">SET</span>(<span class="hljs-string">&#x27;value1&#x27;</span>, <span class="hljs-string">&#x27;value2&#x27;</span>, ...) [<span class="hljs-keyword">CHARACTER SET</span> charset] [<span class="hljs-keyword">COLLATE</span> <span class="hljs-keyword">collation</span>]<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>核心约束</strong>：SET 是<strong>多选</strong>字段。最多可定义 64 个成员，每行可以存储其中的任意组合（零个到全部），多个值之间以逗号分隔存储在同一字段中。</p>
+</blockquote>
+<p><strong>创建表示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> user_permissions (<br>    id <span class="hljs-type">INT</span> AUTO_INCREMENT <span class="hljs-keyword">PRIMARY KEY</span>,<br>    permissions <span class="hljs-keyword">SET</span>(<span class="hljs-string">&#x27;read&#x27;</span>, <span class="hljs-string">&#x27;write&#x27;</span>, <span class="hljs-string">&#x27;delete&#x27;</span>, <span class="hljs-string">&#x27;admin&#x27;</span>, <span class="hljs-string">&#x27;audit&#x27;</span>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;read&#x27;</span><br>);<br><span class="hljs-keyword">INSERT INTO</span> user_permissions (permissions) <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&#x27;&#x27;</span>);                    <span class="hljs-comment">-- 零个权限</span><br><span class="hljs-keyword">INSERT INTO</span> user_permissions (permissions) <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&#x27;read&#x27;</span>);               <span class="hljs-comment">-- 一个权限</span><br><span class="hljs-keyword">INSERT INTO</span> user_permissions (permissions) <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&#x27;read,write&#x27;</span>);        <span class="hljs-comment">-- 两个权限</span><br><span class="hljs-keyword">INSERT INTO</span> user_permissions (permissions) <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&#x27;read,write,admin&#x27;</span>);  <span class="hljs-comment">-- 三个权限</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> user_permissions;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>------------------------+<br><span class="hljs-section">| id | permissions            |</span><br><span class="hljs-section">+----+------------------------+</span><br>|  1 |                        |<br>|  2 | read                   |<br>|  3 | read,write             |<br><span class="hljs-section">|  4 | read,write,admin      |</span><br><span class="hljs-section">+----+------------------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>存储不存在的值会报错：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">INSERT INTO</span> user_permissions (permissions) <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&#x27;read,unknown&#x27;</span>);<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs subunit"><span class="hljs-keyword">ERROR </span>1265 (01000): Data truncated for column &#x27;permissions&#x27; at row 1<br></code></pre></td></tr></table></figure>
+
+<p><strong>查询包含特定值的行</strong>：SET 字段使用 <code>FIND_IN_SET()</code> 函数按成员名查询：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> user_permissions <span class="hljs-keyword">WHERE</span> FIND_IN_SET(<span class="hljs-string">&#x27;admin&#x27;</span>, permissions) <span class="hljs-operator">&gt;</span> <span class="hljs-number">0</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>----------------------+<br><span class="hljs-section">| id | permissions          |</span><br><span class="hljs-section">+----+----------------------+</span><br><span class="hljs-section">|  4 | read,write,admin    |</span><br><span class="hljs-section">+----+----------------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>典型使用场景</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>SET 成员示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>用户权限</td>
+<td><code>&#39;read&#39;</code>, <code>&#39;write&#39;</code>, <code>&#39;delete&#39;</code>, <code>&#39;admin&#39;</code></td>
+</tr>
+<tr>
+<td>文章标签</td>
+<td><code>&#39;tech&#39;</code>, <code>&#39;news&#39;</code>, <code>&#39;life&#39;</code>, <code>&#39;ai&#39;</code>, <code>&#39;python&#39;</code></td>
+</tr>
+<tr>
+<td>商品特性</td>
+<td><code>&#39;hot&#39;</code>, <code>&#39;new&#39;</code>, <code>&#39;sale&#39;</code>, <code>&#39;gift&#39;</code></td>
+</tr>
+<tr>
+<td>用户兴趣</td>
+<td><code>&#39;music&#39;</code>, <code>&#39;sport&#39;</code>, <code>&#39;travel&#39;</code>, <code>&#39;reading&#39;</code></td>
+</tr>
+<tr>
+<td>通知渠道</td>
+<td><code>&#39;email&#39;</code>, <code>&#39;sms&#39;</code>, <code>&#39;push&#39;</code>, <code>&#39;wechat&#39;</code></td>
+</tr>
+</tbody></table>
+<p><strong>ENUM 与 SET 的核心区别</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>ENUM</th>
+<th>SET</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>每行可存值的数量</td>
+<td><strong>只能存 1 个</strong></td>
+<td><strong>可以存 0~多个</strong></td>
+</tr>
+<tr>
+<td>多值存储</td>
+<td>报错 <code>Data truncated</code></td>
+<td>逗号分隔，正常存储</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>单选字段</td>
+<td>多选字段</td>
+</tr>
+<tr>
+<td>最大成员数</td>
+<td>65,535</td>
+<td>64</td>
+</tr>
+<tr>
+<td>典型用例</td>
+<td>订单状态、性别</td>
+<td>权限、标签、特性</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>选型建议</strong>：如果字段在任何情况下都只会有一个选项，选 ENUM（更紧凑、有排序语义）；如果字段可能有多个选项，选 SET（同一字段支持任意组合）。</p>
+</blockquote>
+<p><strong>SET 存储需求</strong>：1、2、3、4 或 8 字节（取决于成员数量和实际存储的位图）。</p>
+<hr>
+<h2 id="四、JSON-数据类型"><a href="#四、JSON-数据类型" class="headerlink" title="四、JSON 数据类型"></a>四、JSON 数据类型</h2><p>MySQL 8.4 原生支持 <code>JSON</code> 类型，用于存储和高效操作 JSON 文档。JSON 列会对存储的值进行验证，不合法的 JSON 会报错。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name JSON<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-1-插入-JSON-数据"><a href="#4-1-插入-JSON-数据" class="headerlink" title="4.1 插入 JSON 数据"></a>4.1 插入 JSON 数据</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> json_demo (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    meta JSON<br>);<br><span class="hljs-keyword">INSERT INTO</span> json_demo <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;&#123;&quot;name&quot;: &quot;Alice&quot;, &quot;age&quot;: 28, &quot;skills&quot;: [&quot;Python&quot;, &quot;MySQL&quot;]&#125;&#x27;</span>);<br><span class="hljs-keyword">INSERT INTO</span> json_demo <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">2</span>, <span class="hljs-built_in">JSON_OBJECT</span>(<span class="hljs-string">&#x27;name&#x27;</span>, <span class="hljs-string">&#x27;Bob&#x27;</span>, <span class="hljs-string">&#x27;score&#x27;</span>, <span class="hljs-number">95.5</span>));<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> json_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>----------------------------------------------------------+<br><span class="hljs-section">| id | meta                                                     |</span><br><span class="hljs-section">+----+----------------------------------------------------------+</span><br>|  1 | &#123;&quot;age&quot;: 28, &quot;name&quot;: &quot;Alice&quot;, &quot;skills&quot;: [&quot;Python&quot;, &quot;MySQL&quot;]&#125;|<br><span class="hljs-code">+----+</span>----------------------------------------------------------+<br><span class="hljs-section">|  2 | &#123;&quot;name&quot;: &quot;Bob&quot;, &quot;score&quot;: 95.5&#125;                          |</span><br><span class="hljs-section">+----+----------------------------------------------------------+</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="4-2-JSON-默认值"><a href="#4-2-JSON-默认值" class="headerlink" title="4.2 JSON 默认值"></a>4.2 JSON 默认值</h3><p>JSON 列支持字面量默认值和表达式默认值。表达式作为默认值时，需用圆括号包裹：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">col_name JSON <span class="hljs-keyword">DEFAULT</span> (expression)<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>JSON_OBJECT(...)</code> 等 JSON 函数作为默认值时，必须写在 <code>DEFAULT</code> 后的圆括号内，否则语法报错。</p>
+</blockquote>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> json_default_demo (<br>    id <span class="hljs-type">INT</span> AUTO_INCREMENT <span class="hljs-keyword">PRIMARY KEY</span>,<br>    meta JSON <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">NULL</span>,<br>    config JSON <span class="hljs-keyword">DEFAULT</span> (<span class="hljs-built_in">JSON_OBJECT</span>(<span class="hljs-string">&#x27;theme&#x27;</span>, <span class="hljs-string">&#x27;dark&#x27;</span>))<br>);<br><span class="hljs-keyword">INSERT INTO</span> json_default_demo (id) <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> json_default_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>------<span class="hljs-code">+--------+</span><br><span class="hljs-section">| id | meta | config             |</span><br><span class="hljs-section">+----+------+--------+</span><br><span class="hljs-section">|  1 | NULL | &#123;&quot;theme&quot;: &quot;dark&quot;&#125;  |</span><br><span class="hljs-section">+----+------+--------+</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="4-3-JSON-路径表达式"><a href="#4-3-JSON-路径表达式" class="headerlink" title="4.3 JSON 路径表达式"></a>4.3 JSON 路径表达式</h3><p>使用 <code>$</code> 引用整个文档，点号 <code>.</code> 访问对象属性，方括号 <code>[]</code> 访问数组元素。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> id, meta<span class="hljs-operator">-</span><span class="hljs-operator">&gt;&gt;</span><span class="hljs-string">&#x27;$.name&#x27;</span> <span class="hljs-keyword">AS</span> name, meta<span class="hljs-operator">-</span><span class="hljs-operator">&gt;&gt;</span><span class="hljs-string">&#x27;$.skills[0]&#x27;</span> <span class="hljs-keyword">AS</span> first_skill <span class="hljs-keyword">FROM</span> json_demo;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>-------<span class="hljs-code">+--------------+</span><br><span class="hljs-section">| id | name  | first_skill  |</span><br><span class="hljs-section">+----+-------+--------------+</span><br>|  1 | Alice | Python       |<br><span class="hljs-section">|  2 | Bob   | NULL         |</span><br><span class="hljs-section">+----+-------+--------------+</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="4-4-JSON-函数"><a href="#4-4-JSON-函数" class="headerlink" title="4.4 JSON 函数"></a>4.4 JSON 函数</h3><table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>JSON_OBJECT(k, v, ...)</code></td>
+<td>创建 JSON 对象</td>
+<td><code>JSON_OBJECT(&#39;a&#39;, 1, &#39;b&#39;, 2)</code></td>
+</tr>
+<tr>
+<td><code>JSON_ARRAY(val, ...)</code></td>
+<td>创建 JSON 数组</td>
+<td><code>JSON_ARRAY(1, 2, 3)</code></td>
+</tr>
+<tr>
+<td><code>JSON_EXTRACT(json, path)</code></td>
+<td>提取路径下的值</td>
+<td><code>JSON_EXTRACT(meta, &#39;$.name&#39;)</code></td>
+</tr>
+<tr>
+<td><code>JSON_SET(json, path, val)</code></td>
+<td>设置路径下的值</td>
+<td><code>JSON_SET(meta, &#39;$.age&#39;, 30)</code></td>
+</tr>
+<tr>
+<td><code>JSON_MERGE_PATCH(a, b)</code></td>
+<td>合并两个 JSON（RFC 7396）</td>
+<td><code>JSON_MERGE_PATCH(a, b)</code></td>
+</tr>
+<tr>
+<td><code>JSON_KEYS(json)</code></td>
+<td>获取对象的所有键</td>
+<td><code>JSON_KEYS(meta)</code></td>
+</tr>
+<tr>
+<td><code>JSON_LENGTH(json)</code></td>
+<td>获取元素数量</td>
+<td><code>JSON_LENGTH(meta)</code></td>
+</tr>
+</tbody></table>
+<p><strong>JSON 操作示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">UPDATE</span> json_demo <span class="hljs-keyword">SET</span> meta <span class="hljs-operator">=</span> JSON_SET(meta, <span class="hljs-string">&#x27;$.age&#x27;</span>, <span class="hljs-number">29</span>) <span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br><span class="hljs-keyword">SELECT</span> JSON_MERGE_PATCH(<span class="hljs-string">&#x27;&#123;&quot;a&quot;:1&#125;&#x27;</span>, <span class="hljs-string">&#x27;&#123;&quot;b&quot;:2&#125;&#x27;</span>, <span class="hljs-string">&#x27;&#123;&quot;a&quot;:3&#125;&#x27;</span>) <span class="hljs-keyword">AS</span> merged;<br><span class="hljs-keyword">SELECT</span> JSON_KEYS(meta) <span class="hljs-keyword">AS</span> key_list <span class="hljs-keyword">FROM</span> json_demo <span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------------+</span><br><span class="hljs-section">| merged     |</span><br><span class="hljs-section">+------------+</span><br><span class="hljs-section">| &#123;&quot;a&quot;:3,&quot;b&quot;:2&#125; |</span><br><span class="hljs-section">+------------+</span><br><br><span class="hljs-code">+------------+</span><br><span class="hljs-section">| key_list  |</span><br><span class="hljs-section">+------------+</span><br>| [&quot;age&quot;, &quot;name&quot;, &quot;skills&quot;] |<br><span class="hljs-code">+------------+</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="4-5-JSON-索引"><a href="#4-5-JSON-索引" class="headerlink" title="4.5 JSON 索引"></a>4.5 JSON 索引</h3><p>MySQL 8.4 支持在 JSON 列上创建函数索引：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> json_indexed (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    data JSON,<br>    name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>) GENERATED ALWAYS <span class="hljs-keyword">AS</span> (data<span class="hljs-operator">-</span><span class="hljs-operator">&gt;&gt;</span><span class="hljs-string">&#x27;$.name&#x27;</span>) STORED<br>);<br><span class="hljs-keyword">CREATE</span> INDEX idx_name <span class="hljs-keyword">ON</span> json_indexed(name);<br><span class="hljs-keyword">INSERT INTO</span> json_indexed (id, data) <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;&#123;&quot;name&quot;: &quot;Alice&quot;&#125;&#x27;</span>);<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>性能优化</strong>：<code>STORED</code> 生成列将计算结果持久化存储，可创建普通索引。<code>VIRTUAL</code> 生成列不占用额外存储，但无法直接索引。</p>
+</blockquote>
+<h3 id="4-6-JSON-存储需求"><a href="#4-6-JSON-存储需求" class="headerlink" title="4.6 JSON 存储需求"></a>4.6 JSON 存储需求</h3><p>JSON 内部以 BLOB 形式存储，存储空间取决于文档的实际大小和序列化开销。</p>
+<hr>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/MySQL/" class="category-chain-item">MySQL</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/MySQL/" class="print-no-link">#MySQL</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B/" class="print-no-link">#数据类型</a>
+      
+        <a href="/tags/SQL/" class="print-no-link">#SQL</a>
+      
+        <a href="/tags/8-4/" class="print-no-link">#8.4</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/mysql/mysql-84-functions-operators.html" title="MySQL 8.4 内置函数与运算符">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">MySQL 8.4 内置函数与运算符</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/mysql/fedora-dnf-install-mysql84.html" title="Fedora 43 使用 dnf 安装 MySQL 8.4 指南">
+                        <span class="hidden-mobile">Fedora 43 使用 dnf 安装 MySQL 8.4 指南</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,990 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Python的argparse模块是标准库中用于解析命令行参数的核心工具。它能够自动生成帮助信息、处理无效参数，并支持位置参数、可选参数、默认值等功能。 一、ArgumentParser对象ArgumentParser是argparse模块的核心类，用于创建命令行解析器。 1. ArgumentParser构造器语法格式 1argparse.ArgumentParser(prog=None, de">
+  
+  
+  
+  <title>Python命令行参数解析 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Python命令行参数解析"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-23 19:50" pubdate>
+          2026年3月23日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          21 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Python命令行参数解析</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>Python的<code>argparse</code>模块是标准库中用于解析命令行参数的核心工具。它能够自动生成帮助信息、处理无效参数，并支持位置参数、可选参数、默认值等功能。</p>
+<h2 id="一、ArgumentParser对象"><a href="#一、ArgumentParser对象" class="headerlink" title="一、ArgumentParser对象"></a>一、ArgumentParser对象</h2><p><code>ArgumentParser</code>是argparse模块的核心类，用于创建命令行解析器。</p>
+<h3 id="1-ArgumentParser构造器"><a href="#1-ArgumentParser构造器" class="headerlink" title="1. ArgumentParser构造器"></a>1. ArgumentParser构造器</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">argparse.ArgumentParser(<span class="hljs-attribute">prog</span>=None, <span class="hljs-attribute">description</span>=None, <span class="hljs-attribute">epilog</span>=None, <span class="hljs-attribute">add_help</span>=<span class="hljs-literal">True</span>, <span class="hljs-built_in">..</span>.)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>prog</code></td>
+<td>程序名称</td>
+<td><code>prog=&#39;myapp&#39;</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>程序描述</td>
+<td><code>description=&#39;我的程序&#39;</code></td>
+</tr>
+<tr>
+<td><code>epilog</code></td>
+<td>程序结尾文本</td>
+<td><code>epilog=&#39;更多信息&#39;</code></td>
+</tr>
+<tr>
+<td><code>add_help</code></td>
+<td>是否添加<code>-h/--help</code></td>
+<td><code>add_help=True</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> argparse<br><br><span class="hljs-comment"># 基本创建</span><br>parser = argparse.ArgumentParser(description=<span class="hljs-string">&#x27;一个示例程序&#x27;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;基本解析器已创建&quot;</span>)<br><br><span class="hljs-comment"># 自定义程序名</span><br>parser = argparse.ArgumentParser(<br>    prog=<span class="hljs-string">&#x27;myapp&#x27;</span>,<br>    description=<span class="hljs-string">&#x27;我的应用程序&#x27;</span>,<br>    epilog=<span class="hljs-string">&#x27;了解更多请访问 example.com&#x27;</span><br>)<br>parser.print_help()<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs awk">usage: myapp [-h]<br><br>我的应用程序<br><br>options:<br> -h, --help show this help message and <span class="hljs-keyword">exit</span><br><br>了解更多请访问 example.com<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-ArgumentParser常用方法"><a href="#2-ArgumentParser常用方法" class="headerlink" title="2. ArgumentParser常用方法"></a>2. ArgumentParser常用方法</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs routeros">parser.add_argument(<span class="hljs-built_in">..</span>.)<br>parser.parse_args(<span class="hljs-attribute">args</span>=None, <span class="hljs-attribute">namespace</span>=None)<br>parser.print_help()<br></code></pre></td></tr></table></figure>
+
+<p><strong>方法说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>add_argument(...)</code></td>
+<td>添加命令行参数</td>
+<td><code>parser.add_argument(&#39;--name&#39;)</code></td>
+</tr>
+<tr>
+<td><code>parse_args(args)</code></td>
+<td>解析命令行参数</td>
+<td><code>parser.parse_args()</code></td>
+</tr>
+<tr>
+<td><code>print_help()</code></td>
+<td>打印帮助信息</td>
+<td><code>parser.print_help()</code></td>
+</tr>
+</tbody></table>
+<h2 id="二、定义参数"><a href="#二、定义参数" class="headerlink" title="二、定义参数"></a>二、定义参数</h2><p><code>add_argument()</code>方法用于向解析器添加命令行参数。</p>
+<h3 id="1-add-argument-基本参数"><a href="#1-add-argument-基本参数" class="headerlink" title="1. add_argument()基本参数"></a>1. add_argument()基本参数</h3><p><strong>语法格式</strong></p>
+<figure class="highlight fortran"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs fortran">parser.add_argument(<span class="hljs-keyword">name</span>或flags, <span class="hljs-keyword">type</span>=<span class="hljs-keyword">None</span>, <span class="hljs-keyword">default</span>=<span class="hljs-keyword">None</span>, help=<span class="hljs-keyword">None</span>, ...)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>name</code></td>
+<td>位置参数名</td>
+<td><code>add_argument(&#39;filename&#39;)</code></td>
+</tr>
+<tr>
+<td><code>flags</code></td>
+<td>可选参数标识</td>
+<td><code>add_argument(&#39;-v&#39;, &#39;--verbose&#39;)</code></td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>参数类型</td>
+<td><code>type=int</code></td>
+</tr>
+<tr>
+<td><code>default</code></td>
+<td>默认值</td>
+<td><code>default=&#39;value&#39;</code></td>
+</tr>
+<tr>
+<td><code>help</code></td>
+<td>参数说明</td>
+<td><code>help=&#39;帮助信息&#39;</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> argparse<br><br>parser = argparse.ArgumentParser(description=<span class="hljs-string">&#x27;参数示例&#x27;</span>)<br><br><span class="hljs-comment"># 位置参数</span><br>parser.add_argument(<span class="hljs-string">&#x27;input_file&#x27;</span>)<br><br><span class="hljs-comment"># 可选参数</span><br>parser.add_argument(<span class="hljs-string">&#x27;-o&#x27;</span>, <span class="hljs-string">&#x27;--output&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-v&#x27;</span>, <span class="hljs-string">&#x27;--verbose&#x27;</span>, action=<span class="hljs-string">&#x27;store_true&#x27;</span>)<br><br><span class="hljs-comment"># 解析测试</span><br>args = parser.parse_args([<span class="hljs-string">&#x27;data.txt&#x27;</span>, <span class="hljs-string">&#x27;--output&#x27;</span>, <span class="hljs-string">&#x27;result.txt&#x27;</span>, <span class="hljs-string">&#x27;-v&#x27;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;输入文件: <span class="hljs-subst">&#123;args.input_file&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;输出文件: <span class="hljs-subst">&#123;args.output&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;详细模式: <span class="hljs-subst">&#123;args.verbose&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">输入文件: data.txt</span><br><span class="hljs-section">输出文件: result.txt</span><br><span class="hljs-section">详细模式: True</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-action参数"><a href="#2-action参数" class="headerlink" title="2. action参数"></a>2. action参数</h3><p><code>action</code>参数控制参数如何处理。</p>
+<p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">parser.add_argument(<span class="hljs-built_in">..</span>., <span class="hljs-attribute">action</span>=<span class="hljs-string">&#x27;store&#x27;</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>action值说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>action值</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>store</code></td>
+<td>存储值（默认）</td>
+<td><code>action=&#39;store&#39;</code></td>
+</tr>
+<tr>
+<td><code>store_true</code></td>
+<td>出现时存储<code>True</code></td>
+<td><code>action=&#39;store_true&#39;</code></td>
+</tr>
+<tr>
+<td><code>store_false</code></td>
+<td>出现时存储<code>False</code></td>
+<td><code>action=&#39;store_false&#39;</code></td>
+</tr>
+<tr>
+<td><code>append</code></td>
+<td>追加到列表</td>
+<td><code>action=&#39;append&#39;</code></td>
+</tr>
+<tr>
+<td><code>count</code></td>
+<td>计数</td>
+<td><code>action=&#39;count&#39;</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> argparse<br><br>parser = argparse.ArgumentParser()<br><br><span class="hljs-comment"># 布尔开关</span><br>parser.add_argument(<span class="hljs-string">&#x27;-v&#x27;</span>, <span class="hljs-string">&#x27;--verbose&#x27;</span>, action=<span class="hljs-string">&#x27;store_true&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-q&#x27;</span>, <span class="hljs-string">&#x27;--quiet&#x27;</span>, action=<span class="hljs-string">&#x27;store_true&#x27;</span>)<br><br><span class="hljs-comment"># 追加多个值</span><br>parser.add_argument(<span class="hljs-string">&#x27;--name&#x27;</span>, action=<span class="hljs-string">&#x27;append&#x27;</span>)<br><br><span class="hljs-comment"># 计数</span><br>parser.add_argument(<span class="hljs-string">&#x27;-d&#x27;</span>, <span class="hljs-string">&#x27;--debug&#x27;</span>, action=<span class="hljs-string">&#x27;count&#x27;</span>, default=<span class="hljs-number">0</span>)<br><br><span class="hljs-comment"># 测试</span><br>args = parser.parse_args([<span class="hljs-string">&#x27;-vv&#x27;</span>, <span class="hljs-string">&#x27;--name=Alice&#x27;</span>, <span class="hljs-string">&#x27;--name=Bob&#x27;</span>, <span class="hljs-string">&#x27;-ddd&#x27;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;verbose: <span class="hljs-subst">&#123;args.verbose&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;quiet: <span class="hljs-subst">&#123;args.quiet&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;name: <span class="hljs-subst">&#123;args.name&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;debug级别: <span class="hljs-subst">&#123;args.debug&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs pgsql"><span class="hljs-keyword">verbose</span>: <span class="hljs-keyword">True</span><br>quiet: <span class="hljs-keyword">False</span><br><span class="hljs-type">name</span>: [<span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;Bob&#x27;</span>]<br><span class="hljs-keyword">debug</span>级别: <span class="hljs-number">3</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="3-nargs参数"><a href="#3-nargs参数" class="headerlink" title="3. nargs参数"></a>3. nargs参数</h3><p><code>nargs</code>参数指定参数消耗的参数数量。</p>
+<p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">parser.add_argument(<span class="hljs-built_in">..</span>., <span class="hljs-attribute">nargs</span>=N)<br></code></pre></td></tr></table></figure>
+
+<p><strong>nargs值说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>nargs值</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>N</code>（整数）</td>
+<td>精确N个参数</td>
+<td><code>nargs=2</code></td>
+</tr>
+<tr>
+<td><code>?</code></td>
+<td>0或1个</td>
+<td><code>nargs=&#39;?&#39;</code></td>
+</tr>
+<tr>
+<td><code>*</code></td>
+<td>0或多个</td>
+<td><code>nargs=&#39;*&#39;</code></td>
+</tr>
+<tr>
+<td><code>+</code></td>
+<td>1或多个</td>
+<td><code>nargs=&#39;+&#39;</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> argparse<br><br>parser = argparse.ArgumentParser()<br><br><span class="hljs-comment"># 固定数量</span><br>parser.add_argument(<span class="hljs-string">&#x27;--coords&#x27;</span>, nargs=<span class="hljs-number">2</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;files&#x27;</span>, nargs=<span class="hljs-number">3</span>)<br><br><span class="hljs-comment"># 可选数量</span><br>parser.add_argument(<span class="hljs-string">&#x27;--optional&#x27;</span>, nargs=<span class="hljs-string">&#x27;?&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;--multiple&#x27;</span>, nargs=<span class="hljs-string">&#x27;*&#x27;</span>)<br><br><span class="hljs-comment"># 至少一个</span><br>parser.add_argument(<span class="hljs-string">&#x27;--required&#x27;</span>, nargs=<span class="hljs-string">&#x27;+&#x27;</span>)<br><br>args = parser.parse_args([<span class="hljs-string">&#x27;a.txt&#x27;</span>, <span class="hljs-string">&#x27;b.txt&#x27;</span>, <span class="hljs-string">&#x27;c.txt&#x27;</span>, <br>                          <span class="hljs-string">&#x27;--coords&#x27;</span>, <span class="hljs-string">&#x27;10&#x27;</span>, <span class="hljs-string">&#x27;20&#x27;</span>,<br>                          <span class="hljs-string">&#x27;--multiple&#x27;</span>, <span class="hljs-string">&#x27;x&#x27;</span>, <span class="hljs-string">&#x27;y&#x27;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;files: <span class="hljs-subst">&#123;args.files&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;coords: <span class="hljs-subst">&#123;args.coords&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;optional: <span class="hljs-subst">&#123;args.optional&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;multiple: <span class="hljs-subst">&#123;args.multiple&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight prolog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs prolog">files: [<span class="hljs-string">&#x27;a.txt&#x27;</span>, <span class="hljs-string">&#x27;b.txt&#x27;</span>, <span class="hljs-string">&#x27;c.txt&#x27;</span>]<br>coords: [<span class="hljs-number">10</span>, <span class="hljs-number">20</span>]<br>optional: <span class="hljs-symbol">None</span><br>multiple: [<span class="hljs-string">&#x27;x&#x27;</span>, <span class="hljs-string">&#x27;y&#x27;</span>]<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-choices参数"><a href="#4-choices参数" class="headerlink" title="4. choices参数"></a>4. choices参数</h3><p><code>choices</code>限制参数的可选值。</p>
+<p><strong>语法格式</strong></p>
+<figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs lasso">parser.add_argument(<span class="hljs-params">...</span>, choices=<span class="hljs-meta">[</span><span class="hljs-string">&#x27;值1&#x27;</span>, <span class="hljs-string">&#x27;值2&#x27;</span>, <span class="hljs-params">...</span><span class="hljs-meta">]</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>choices</code></td>
+<td>可选值列表</td>
+<td><code>choices=[&#39;low&#39;, &#39;high&#39;]</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> argparse<br><br>parser = argparse.ArgumentParser()<br><br><span class="hljs-comment"># 限制可选值</span><br>parser.add_argument(<span class="hljs-string">&#x27;--level&#x27;</span>, choices=[<span class="hljs-string">&#x27;low&#x27;</span>, <span class="hljs-string">&#x27;medium&#x27;</span>, <span class="hljs-string">&#x27;high&#x27;</span>])<br>parser.add_argument(<span class="hljs-string">&#x27;-v&#x27;</span>, <span class="hljs-string">&#x27;--verbosity&#x27;</span>, choices=[<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>], <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>)<br><br><span class="hljs-comment"># 测试</span><br>args = parser.parse_args([<span class="hljs-string">&#x27;--level&#x27;</span>, <span class="hljs-string">&#x27;high&#x27;</span>, <span class="hljs-string">&#x27;-v&#x27;</span>, <span class="hljs-string">&#x27;2&#x27;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;level: <span class="hljs-subst">&#123;args.level&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;verbosity: <span class="hljs-subst">&#123;args.verbosity&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight avrasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs avrasm"><span class="hljs-symbol">level:</span> high<br><span class="hljs-symbol">verbosity:</span> <span class="hljs-number">2</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="5-required参数"><a href="#5-required参数" class="headerlink" title="5. required参数"></a>5. required参数</h3><p><code>required</code>使可选参数变为必需的。</p>
+<p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">parser.add_argument(<span class="hljs-built_in">..</span>., <span class="hljs-attribute">required</span>=<span class="hljs-literal">True</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>required</code></td>
+<td>是否必需</td>
+<td><code>required=True</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> argparse<br><br>parser = argparse.ArgumentParser()<br><br><span class="hljs-comment"># 强制要求的可选参数</span><br>parser.add_argument(<span class="hljs-string">&#x27;--config&#x27;</span>, required=<span class="hljs-literal">True</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;配置文件路径&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;--mode&#x27;</span>, choices=[<span class="hljs-string">&#x27;dev&#x27;</span>, <span class="hljs-string">&#x27;prod&#x27;</span>], default=<span class="hljs-string">&#x27;dev&#x27;</span>)<br><br><span class="hljs-comment"># 测试缺少必需参数</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;=== 缺少必需参数 ===&quot;</span>)<br><span class="hljs-keyword">import</span> sys<br><span class="hljs-keyword">try</span>:<br>    args = parser.parse_args([])<br><span class="hljs-keyword">except</span> SystemExit:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;解析失败：缺少必需参数&quot;</span>)<br><br><span class="hljs-comment"># 提供必需参数</span><br>args = parser.parse_args([<span class="hljs-string">&#x27;--config&#x27;</span>, <span class="hljs-string">&#x27;app.conf&#x27;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;\n提供必需参数:&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;config: <span class="hljs-subst">&#123;args.config&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-section">=== 缺少必需参数 ===</span><br>usage: arg<span class="hljs-emphasis">_example.py [-h] --config CONFIG</span><br><span class="hljs-emphasis">arg_</span>example.py: error: the following arguments are required: --config<br><br>解析失败：缺少必需参数<br><br>提供必需参数:<br>config: app.conf<br></code></pre></td></tr></table></figure>
+
+<h2 id="三、解析参数"><a href="#三、解析参数" class="headerlink" title="三、解析参数"></a>三、解析参数</h2><p><code>parse_args()</code>方法执行参数解析。</p>
+<h3 id="1-parse-args-方法"><a href="#1-parse-args-方法" class="headerlink" title="1. parse_args()方法"></a>1. parse_args()方法</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">args = parser.parse_args(<span class="hljs-attribute">args</span>=None, <span class="hljs-attribute">namespace</span>=None)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>args</code></td>
+<td>命令行参数列表</td>
+<td><code>parse_args([&#39;--name&#39;, &#39;value&#39;])</code></td>
+</tr>
+<tr>
+<td><code>namespace</code></td>
+<td>结果存放对象</td>
+<td><code>parse_args(namespace=obj)</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> argparse<br><br>parser = argparse.ArgumentParser()<br>parser.add_argument(<span class="hljs-string">&#x27;--name&#x27;</span>, default=<span class="hljs-string">&#x27;World&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;--count&#x27;</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>, default=<span class="hljs-number">1</span>)<br><br><span class="hljs-comment"># 从列表解析</span><br>args = parser.parse_args([<span class="hljs-string">&#x27;--name&#x27;</span>, <span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;--count&#x27;</span>, <span class="hljs-string">&#x27;3&#x27;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;从列表解析: name=<span class="hljs-subst">&#123;args.name&#125;</span>, count=<span class="hljs-subst">&#123;args.count&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">从列表解析: <span class="hljs-attribute">name</span>=Alice, <span class="hljs-attribute">count</span>=3<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-访问解析结果"><a href="#2-访问解析结果" class="headerlink" title="2. 访问解析结果"></a>2. 访问解析结果</h3><p><strong>语法格式</strong></p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs stylus">args.属性名<br><span class="hljs-function"><span class="hljs-title">vars</span><span class="hljs-params">(args)</span></span><br></code></pre></td></tr></table></figure>
+
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> argparse<br><br>parser = argparse.ArgumentParser()<br>parser.add_argument(<span class="hljs-string">&#x27;filename&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-n&#x27;</span>, <span class="hljs-string">&#x27;--name&#x27;</span>, default=<span class="hljs-string">&#x27;unnamed&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;--age&#x27;</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>)<br><br>args = parser.parse_args([<span class="hljs-string">&#x27;data.csv&#x27;</span>, <span class="hljs-string">&#x27;--name&#x27;</span>, <span class="hljs-string">&#x27;Test&#x27;</span>, <span class="hljs-string">&#x27;--age&#x27;</span>, <span class="hljs-string">&#x27;25&#x27;</span>])<br><br><span class="hljs-comment"># 访问方式1：属性访问</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;属性访问: filename=<span class="hljs-subst">&#123;args.filename&#125;</span>, name=<span class="hljs-subst">&#123;args.name&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 访问方式2：vars()转换为字典</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;字典形式: <span class="hljs-subst">&#123;<span class="hljs-built_in">vars</span>(args)&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs routeros">属性访问: <span class="hljs-attribute">filename</span>=data.csv, <span class="hljs-attribute">name</span>=Test<br>字典形式: &#123;<span class="hljs-string">&#x27;filename&#x27;</span>: <span class="hljs-string">&#x27;data.csv&#x27;</span>, <span class="hljs-string">&#x27;name&#x27;</span>: <span class="hljs-string">&#x27;Test&#x27;</span>, <span class="hljs-string">&#x27;age&#x27;</span>: 25&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-parse-known-args-方法"><a href="#3-parse-known-args-方法" class="headerlink" title="3. parse_known_args()方法"></a>3. parse_known_args()方法</h3><p><code>parse_known_args()</code>处理未知参数。</p>
+<p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">args, extras = parser.parse_known_args(<span class="hljs-attribute">args</span>=None, <span class="hljs-attribute">namespace</span>=None)<br></code></pre></td></tr></table></figure>
+
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> argparse<br><br>parser = argparse.ArgumentParser()<br>parser.add_argument(<span class="hljs-string">&#x27;--known&#x27;</span>, default=<span class="hljs-string">&#x27;default&#x27;</span>)<br><br><span class="hljs-comment"># 使用parse_known_args</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;=== parse_known_args解析 ===&quot;</span>)<br>args, extras = parser.parse_known_args([<span class="hljs-string">&#x27;--known&#x27;</span>, <span class="hljs-string">&#x27;value&#x27;</span>, <span class="hljs-string">&#x27;--unknown&#x27;</span>, <span class="hljs-string">&#x27;x&#x27;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;已知参数: known=<span class="hljs-subst">&#123;args.known&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;未知参数: <span class="hljs-subst">&#123;extras&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-section">=== parse_known_args解析 ===</span><br>已知参数: known=value<br>未知参数: [<span class="hljs-emphasis">&#x27;--unknown&#x27;</span>, <span class="hljs-emphasis">&#x27;x&#x27;</span>]<br></code></pre></td></tr></table></figure>
+
+<h2 id="四、参数分组"><a href="#四、参数分组" class="headerlink" title="四、参数分组"></a>四、参数分组</h2><p>参数分组可以组织相关的参数。</p>
+<h3 id="1-add-argument-group-方法"><a href="#1-add-argument-group-方法" class="headerlink" title="1. add_argument_group()方法"></a>1. add_argument_group()方法</h3><p><strong>语法格式</strong></p>
+<figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs lasso"><span class="hljs-keyword">group</span> = parser.add_argument_group(title=<span class="hljs-literal">None</span>, description=<span class="hljs-literal">None</span>)<br><span class="hljs-keyword">group</span>.add_argument(<span class="hljs-params">...</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>方法说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>add_argument_group(title)</code></td>
+<td>创建参数组</td>
+<td><code>add_argument_group(&#39;基本选项&#39;)</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> argparse<br><br>parser = argparse.ArgumentParser(description=<span class="hljs-string">&#x27;程序参数示例&#x27;</span>)<br><br><span class="hljs-comment"># 创建参数组</span><br>basic_group = parser.add_argument_group(<span class="hljs-string">&#x27;基本选项&#x27;</span>)<br>basic_group.add_argument(<span class="hljs-string">&#x27;--name&#x27;</span>, default=<span class="hljs-string">&#x27;app&#x27;</span>)<br>basic_group.add_argument(<span class="hljs-string">&#x27;--version&#x27;</span>, action=<span class="hljs-string">&#x27;store_true&#x27;</span>)<br><br>advanced_group = parser.add_argument_group(<span class="hljs-string">&#x27;高级选项&#x27;</span>)<br>advanced_group.add_argument(<span class="hljs-string">&#x27;--debug&#x27;</span>, action=<span class="hljs-string">&#x27;store_true&#x27;</span>)<br>advanced_group.add_argument(<span class="hljs-string">&#x27;--config&#x27;</span>, default=<span class="hljs-string">&#x27;config.yaml&#x27;</span>)<br><br>parser.print_help()<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs stylus">usage: arg_example<span class="hljs-selector-class">.py</span> <span class="hljs-selector-attr">[-h]</span> <span class="hljs-selector-attr">[--name NAME]</span> <span class="hljs-selector-attr">[--version]</span> <span class="hljs-selector-attr">[--debug]</span> <span class="hljs-selector-attr">[--config CONFIG]</span><br><br>程序参数示例<br><br>optional arguments:<br>  -h, <span class="hljs-attr">--help</span>    show this help message and exit<br><br>基本选项:<br>  <span class="hljs-attr">--name</span> NAME<br>  <span class="hljs-attr">--version</span><br><br>高级选项:<br>  <span class="hljs-attr">--debug</span><br>  <span class="hljs-attr">--config</span> CONFIG<br></code></pre></td></tr></table></figure>
+
+<h2 id="五、互斥参数"><a href="#五、互斥参数" class="headerlink" title="五、互斥参数"></a>五、互斥参数</h2><p>互斥参数组确保同时只能使用其中一个。</p>
+<h3 id="1-add-mutually-exclusive-group-方法"><a href="#1-add-mutually-exclusive-group-方法" class="headerlink" title="1. add_mutually_exclusive_group()方法"></a>1. add_mutually_exclusive_group()方法</h3><p><strong>语法格式</strong></p>
+<figure class="highlight lasso"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs lasso"><span class="hljs-keyword">group</span> = parser.add_mutually_exclusive_group(<span class="hljs-keyword">require</span>=<span class="hljs-literal">False</span>)<br><span class="hljs-keyword">group</span>.add_argument(<span class="hljs-params">...</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>方法说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>add_mutually_exclusive_group()</code></td>
+<td>创建互斥组</td>
+<td><code>add_mutually_exclusive_group()</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> argparse<br><br>parser = argparse.ArgumentParser()<br><br><span class="hljs-comment"># 创建互斥组</span><br>group = parser.add_mutually_exclusive_group()<br>group.add_argument(<span class="hljs-string">&#x27;--short&#x27;</span>, action=<span class="hljs-string">&#x27;store_true&#x27;</span>)<br>group.add_argument(<span class="hljs-string">&#x27;--long&#x27;</span>, action=<span class="hljs-string">&#x27;store_true&#x27;</span>)<br><br><span class="hljs-comment"># 测试</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;=== 只使用一个参数 ===&quot;</span>)<br>args = parser.parse_args([<span class="hljs-string">&#x27;--short&#x27;</span>])<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;short=<span class="hljs-subst">&#123;args.short&#125;</span>, long=<span class="hljs-subst">&#123;args.long&#125;</span>&quot;</span>)<br><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n=== 同时使用两个参数 ===&quot;</span>)<br><span class="hljs-keyword">try</span>:<br>    args = parser.parse_args([<span class="hljs-string">&#x27;--short&#x27;</span>, <span class="hljs-string">&#x27;--long&#x27;</span>])<br><span class="hljs-keyword">except</span> SystemExit <span class="hljs-keyword">as</span> e:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;错误：不能同时使用--short和--long&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-section">=== 只使用一个参数 ===</span><br>short=True, long=False<br><br><span class="hljs-section">=== 同时使用两个参数 ===</span><br>usage: arg<span class="hljs-emphasis">_example.py [-h] [--short | --long]</span><br><span class="hljs-emphasis">arg_</span>example.py: error: argument --long: not allowed with argument --short<br><br>错误：不能同时使用--short和--long<br></code></pre></td></tr></table></figure>
+
+<h2 id="六、参数格式化"><a href="#六、参数格式化" class="headerlink" title="六、参数格式化"></a>六、参数格式化</h2><p>帮助信息的格式化控制。</p>
+<h3 id="1-formatter-class参数"><a href="#1-formatter-class参数" class="headerlink" title="1. formatter_class参数"></a>1. formatter_class参数</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">argparse.ArgumentParser(<span class="hljs-attribute">formatter_class</span>=类名)<br></code></pre></td></tr></table></figure>
+
+<p><strong>formatter_class类说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>类</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>RawDescriptionHelpFormatter</code></td>
+<td>保留描述格式</td>
+<td><code>formatter_class=RawDescriptionHelpFormatter</code></td>
+</tr>
+<tr>
+<td><code>ArgumentDefaultsHelpFormatter</code></td>
+<td>显示默认值</td>
+<td><code>formatter_class=ArgumentDefaultsHelpFormatter</code></td>
+</tr>
+<tr>
+<td><code>MetavarTypeHelpFormatter</code></td>
+<td>显示参数类型</td>
+<td><code>formatter_class=MetavarTypeHelpFormatter</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> argparse<br><br><span class="hljs-comment"># 显示默认值</span><br>parser = argparse.ArgumentParser(<br>    formatter_class=argparse.ArgumentDefaultsHelpFormatter<br>)<br>parser.add_argument(<span class="hljs-string">&#x27;--host&#x27;</span>, default=<span class="hljs-string">&#x27;localhost&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;--port&#x27;</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>, default=<span class="hljs-number">8080</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;=== 显示默认值 ===&quot;</span>)<br>parser.print_help()<br><br><span class="hljs-comment"># 显示类型</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n=== 显示类型 ===&quot;</span>)<br>parser2 = argparse.ArgumentParser(<br>    formatter_class=argparse.MetavarTypeHelpFormatter<br>)<br>parser2.add_argument(<span class="hljs-string">&#x27;--count&#x27;</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>)<br>parser2.add_argument(<span class="hljs-string">&#x27;--name&#x27;</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">str</span>)<br>parser2.print_help()<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-section">=== 显示默认值 ===</span><br>usage: arg_example.py [-h] [--host HOST] [--port PORT]<br><br>optional arguments:<br><span class="hljs-code"> -h, --help    show this help message and exit</span><br><span class="hljs-code"> --host HOST    (default: localhost)</span><br><span class="hljs-code"> --port PORT   (default: 8080)</span><br><br><span class="hljs-section">=== 显示类型 ===</span><br>usage: arg_example.py [-h] [--count int] [--name str]<br><br>optional arguments:<br><span class="hljs-code"> -h, --help    show this help message and exit</span><br><span class="hljs-code"> --count int</span><br><span class="hljs-code"> --name str</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="七、综合示例"><a href="#七、综合示例" class="headerlink" title="七、综合示例"></a>七、综合示例</h2><h3 id="1-文件处理工具"><a href="#1-文件处理工具" class="headerlink" title="1. 文件处理工具"></a>1. 文件处理工具</h3><p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> argparse<br><br><span class="hljs-comment"># 创建解析器</span><br>parser = argparse.ArgumentParser(<br>    description=<span class="hljs-string">&#x27;文件处理工具&#x27;</span>,<br>    formatter_class=argparse.RawDescriptionHelpFormatter,<br>    epilog=<span class="hljs-string">&#x27;示例用法: python tool.py input.txt -o output.txt -v&#x27;</span><br>)<br><br><span class="hljs-comment"># 位置参数</span><br>parser.add_argument(<span class="hljs-string">&#x27;input_file&#x27;</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;输入文件路径&#x27;</span>)<br><br><span class="hljs-comment"># 可选参数</span><br>parser.add_argument(<span class="hljs-string">&#x27;-o&#x27;</span>, <span class="hljs-string">&#x27;--output&#x27;</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;输出文件路径&#x27;</span>, default=<span class="hljs-string">&#x27;a.out&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-v&#x27;</span>, <span class="hljs-string">&#x27;--verbose&#x27;</span>, action=<span class="hljs-string">&#x27;store_true&#x27;</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;详细输出&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;-c&#x27;</span>, <span class="hljs-string">&#x27;--count&#x27;</span>, <span class="hljs-built_in">type</span>=<span class="hljs-built_in">int</span>, default=<span class="hljs-number">1</span>, <span class="hljs-built_in">help</span>=<span class="hljs-string">&#x27;处理次数&#x27;</span>)<br>parser.add_argument(<span class="hljs-string">&#x27;--mode&#x27;</span>, choices=[<span class="hljs-string">&#x27;copy&#x27;</span>, <span class="hljs-string">&#x27;move&#x27;</span>, <span class="hljs-string">&#x27;delete&#x27;</span>], default=<span class="hljs-string">&#x27;copy&#x27;</span>)<br><br><span class="hljs-comment"># 解析参数（显式传入模拟参数列表，避免依赖 sys.argv）</span><br>args = parser.parse_args([<span class="hljs-string">&#x27;data.txt&#x27;</span>, <span class="hljs-string">&#x27;-o&#x27;</span>, <span class="hljs-string">&#x27;result.txt&#x27;</span>, <span class="hljs-string">&#x27;-v&#x27;</span>])<br><br><span class="hljs-comment"># 使用参数</span><br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;输入文件: <span class="hljs-subst">&#123;args.input_file&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;输出文件: <span class="hljs-subst">&#123;args.output&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;详细模式: <span class="hljs-subst">&#123;args.verbose&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;处理次数: <span class="hljs-subst">&#123;args.count&#125;</span>&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;处理模式: <span class="hljs-subst">&#123;args.mode&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>运行示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">python tool.py data.txt -o result.txt -v --mode copy<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">输入文件: data.txt</span><br><span class="hljs-section">输出文件: result.txt</span><br><span class="hljs-section">详细模式: True</span><br><span class="hljs-section">处理次数: 1</span><br><span class="hljs-section">处理模式: copy</span><br></code></pre></td></tr></table></figure>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Python/" class="category-chain-item">Python</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Python/" class="print-no-link">#Python</a>
+      
+        <a href="/tags/%E5%91%BD%E4%BB%A4%E8%A1%8C/" class="print-no-link">#命令行</a>
+      
+        <a href="/tags/argparse/" class="print-no-link">#argparse</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/03/23/python/Python%E7%BA%BF%E7%A8%8B%E4%BD%BF%E7%94%A8%E6%8C%87%E5%8D%97/" title="Python线程使用指南">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Python线程使用指南</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/03/23/python/Python%20CSV%E6%96%87%E4%BB%B6%E8%AF%BB%E5%86%99/" title="Python CSV文件读写">
+                        <span class="hidden-mobile">Python CSV文件读写</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

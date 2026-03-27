@@ -1,0 +1,1088 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Python标准库提供了多个模块用于文件压缩和解压操作，包括 gzip 、 zipfile 和 tarfile 模块。本文档介绍这三个模块的核心用法。 一、gzip 模块gzip 模块提供了对 gzip 格式文件的读写支持，功能类似于 GNU 应用程序 gzip 和 gunzip。数据压缩由 zlib 模块提供。 1. gzip.open() 函数语法格式 1gzip.open(filename,">
+  
+  
+  
+  <title>Python文件压缩与解压 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Python文件压缩与解压"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-23 19:40" pubdate>
+          2026年3月23日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          19 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Python文件压缩与解压</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>Python标准库提供了多个模块用于文件压缩和解压操作，包括 <code>gzip</code> 、 <code>zipfile</code> 和 <code>tarfile</code> 模块。本文档介绍这三个模块的核心用法。</p>
+<h2 id="一、gzip-模块"><a href="#一、gzip-模块" class="headerlink" title="一、gzip 模块"></a>一、<code>gzip</code> 模块</h2><p><code>gzip</code> 模块提供了对 gzip 格式文件的读写支持，功能类似于 GNU 应用程序 gzip 和 gunzip。数据压缩由 <code>zlib</code> 模块提供。</p>
+<h3 id="1-gzip-open-函数"><a href="#1-gzip-open-函数" class="headerlink" title="1. gzip.open() 函数"></a>1. gzip.open() 函数</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">gzip.open(filename, <span class="hljs-attribute">mode</span>=<span class="hljs-string">&#x27;rb&#x27;</span>, <span class="hljs-attribute">compresslevel</span>=9, <span class="hljs-attribute">encoding</span>=None, <span class="hljs-attribute">errors</span>=None, <span class="hljs-attribute">newline</span>=None)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>filename</code></td>
+<td>文件名或文件对象</td>
+<td><code>gzip.open(&#39;file.gz&#39;)</code></td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>模式：<code>&#39;rb&#39;</code>&#x2F;<code>&#39;wb&#39;</code>&#x2F;<code>&#39;ab&#39;</code> 等</td>
+<td><code>mode=&#39;wb&#39;</code></td>
+</tr>
+<tr>
+<td><code>compresslevel</code></td>
+<td>压缩等级（0-9）</td>
+<td><code>compresslevel=9</code></td>
+</tr>
+<tr>
+<td><code>encoding</code></td>
+<td>文本模式编码</td>
+<td><code>encoding=&#39;utf-8&#39;</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> gzip<br><br><span class="hljs-comment"># 写入gzip压缩文件</span><br>content = <span class="hljs-string">b&quot;Hello, World! This is a test file.&quot;</span><br><span class="hljs-keyword">with</span> gzip.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;test.txt.gz&#x27;</span>, <span class="hljs-string">&#x27;wb&#x27;</span>) <span class="hljs-keyword">as</span> f:<br>    f.write(content)<br><br><span class="hljs-comment"># 读取gzip压缩文件</span><br><span class="hljs-keyword">with</span> gzip.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;test.txt.gz&#x27;</span>, <span class="hljs-string">&#x27;rb&#x27;</span>) <span class="hljs-keyword">as</span> f:<br>    decompressed_data = f.read()<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;解压内容: <span class="hljs-subst">&#123;decompressed_data&#125;</span>&quot;</span>)<br><br><span class="hljs-comment"># 文本模式读写</span><br><span class="hljs-keyword">with</span> gzip.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;test.txt.gz&#x27;</span>, <span class="hljs-string">&#x27;rt&#x27;</span>, encoding=<span class="hljs-string">&#x27;utf-8&#x27;</span>) <span class="hljs-keyword">as</span> f:<br>    text = f.read()<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;文本内容: <span class="hljs-subst">&#123;text&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight vhdl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs vhdl">解压内容: b<span class="hljs-symbol">&#x27;Hello</span>, World! This <span class="hljs-keyword">is</span> a test <span class="hljs-keyword">file</span>.&#x27;<br>文本内容: Hello, World! This <span class="hljs-keyword">is</span> a test <span class="hljs-keyword">file</span>.<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-GzipFile-类"><a href="#2-GzipFile-类" class="headerlink" title="2. GzipFile 类"></a>2. GzipFile 类</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">gzip.GzipFile(<span class="hljs-attribute">filename</span>=None, <span class="hljs-attribute">mode</span>=<span class="hljs-string">&#x27;rb&#x27;</span>, <span class="hljs-attribute">compresslevel</span>=9, <span class="hljs-attribute">fileobj</span>=None, <span class="hljs-attribute">mtime</span>=None)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>filename</code></td>
+<td>文件名</td>
+<td><code>filename=&#39;test.txt&#39;</code></td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>模式</td>
+<td><code>mode=&#39;wb&#39;</code></td>
+</tr>
+<tr>
+<td><code>compresslevel</code></td>
+<td>压缩等级</td>
+<td><code>compresslevel=6</code></td>
+</tr>
+<tr>
+<td><code>fileobj</code></td>
+<td>文件对象</td>
+<td><code>fileobj=f</code></td>
+</tr>
+<tr>
+<td><code>mtime</code></td>
+<td>修改时间</td>
+<td><code>mtime=time.time()</code></td>
+</tr>
+</tbody></table>
+<p><strong>属性说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>mtime</code></td>
+<td>最后修改时间戳</td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td>文件路径</td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>读写模式</td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> gzip<br><br><span class="hljs-comment"># 使用GzipFile类</span><br>fileobj = <span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;test.txt.gz&#x27;</span>, <span class="hljs-string">&#x27;wb&#x27;</span>)<br>gzip_file = gzip.GzipFile(<br>    filename=<span class="hljs-string">&#x27;test.txt&#x27;</span>,<br>    mode=<span class="hljs-string">&#x27;wb&#x27;</span>,<br>    compresslevel=<span class="hljs-number">6</span>,<br>    fileobj=fileobj<br>)<br><br>gzip_file.write(<span class="hljs-string">b&quot;Content written via GzipFile&quot;</span>)<br>gzip_file.close()<br>fileobj.close()<br><br><span class="hljs-comment"># 读取并查看属性</span><br><span class="hljs-keyword">with</span> gzip.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;test.txt.gz&#x27;</span>, <span class="hljs-string">&#x27;rb&#x27;</span>) <span class="hljs-keyword">as</span> f:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;文件名: <span class="hljs-subst">&#123;f.name&#125;</span>&quot;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;模式: <span class="hljs-subst">&#123;f.mode&#125;</span>&quot;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;压缩内容: <span class="hljs-subst">&#123;f.read()&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-compress-和-decompress-函数"><a href="#3-compress-和-decompress-函数" class="headerlink" title="3. compress() 和 decompress() 函数"></a>3. compress() 和 decompress() 函数</h3><p><strong>语法格式</strong></p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-title">gzip</span>.compress(<span class="hljs-class"><span class="hljs-keyword">data</span>, compresslevel=9)</span><br><span class="hljs-title">gzip</span>.decompress(<span class="hljs-class"><span class="hljs-keyword">data</span>)</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>函数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>compress(data)</code></td>
+<td>压缩数据</td>
+<td><code>gzip.compress(b&#39;data&#39;)</code></td>
+</tr>
+<tr>
+<td><code>decompress(data)</code></td>
+<td>解压数据</td>
+<td><code>gzip.decompress(data)</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> gzip<br><br><span class="hljs-comment"># 内存压缩</span><br>original_data = <span class="hljs-string">b&quot;This is some data to compress&quot;</span><br>compressed = gzip.compress(original_data, compresslevel=<span class="hljs-number">6</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;原始大小: <span class="hljs-subst">&#123;<span class="hljs-built_in">len</span>(original_data)&#125;</span> bytes&quot;</span>)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;压缩后: <span class="hljs-subst">&#123;<span class="hljs-built_in">len</span>(compressed)&#125;</span> bytes&quot;</span>)<br><br><span class="hljs-comment"># 内存解压</span><br>decompressed = gzip.decompress(compressed)<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;解压内容: <span class="hljs-subst">&#123;decompressed&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<h2 id="二、zipfile-模块"><a href="#二、zipfile-模块" class="headerlink" title="二、zipfile 模块"></a>二、<code>zipfile</code> 模块</h2><p><code>zipfile</code> 模块用于读取和写入 ZIP 格式的归档文件。</p>
+<h3 id="1-ZipFile-类"><a href="#1-ZipFile-类" class="headerlink" title="1. ZipFile 类"></a>1. ZipFile 类</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">zipfile.ZipFile(file, <span class="hljs-attribute">mode</span>=<span class="hljs-string">&#x27;r&#x27;</span>, <span class="hljs-attribute">compression</span>=ZIP_STORED, <span class="hljs-attribute">allowZip64</span>=<span class="hljs-literal">True</span>, <span class="hljs-built_in">..</span>.)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>file</code></td>
+<td>文件路径或文件对象</td>
+<td><code>ZipFile(&#39;archive.zip&#39;)</code></td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>模式：<code>&#39;r&#39;</code>&#x2F;<code>&#39;w&#39;</code>&#x2F;<code>&#39;a&#39;</code></td>
+<td><code>mode=&#39;w&#39;</code></td>
+</tr>
+<tr>
+<td><code>compression</code></td>
+<td>压缩方式</td>
+<td><code>compression=ZIP_DEFLATED</code></td>
+</tr>
+<tr>
+<td><code>allowZip64</code></td>
+<td>是否支持ZIP64</td>
+<td><code>allowZip64=True</code></td>
+</tr>
+</tbody></table>
+<p><strong>模式说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&#39;r&#39;</code></td>
+<td>读取已存在的ZIP文件</td>
+<td><code>mode=&#39;r&#39;</code></td>
+</tr>
+<tr>
+<td><code>&#39;w&#39;</code></td>
+<td>创建新ZIP文件（覆盖）</td>
+<td><code>mode=&#39;w&#39;</code></td>
+</tr>
+<tr>
+<td><code>&#39;a&#39;</code></td>
+<td>追加到已存在的ZIP文件</td>
+<td><code>mode=&#39;a&#39;</code></td>
+</tr>
+<tr>
+<td><code>&#39;x&#39;</code></td>
+<td>创建新ZIP文件（不存在则创建）</td>
+<td><code>mode=&#39;x&#39;</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> zipfile<br><span class="hljs-keyword">import</span> os<br><br><span class="hljs-comment"># 创建ZIP文件</span><br><span class="hljs-keyword">with</span> zipfile.ZipFile(<span class="hljs-string">&#x27;test.zip&#x27;</span>, <span class="hljs-string">&#x27;w&#x27;</span>) <span class="hljs-keyword">as</span> zf:<br>    <span class="hljs-comment"># 写入字符串内容</span><br>    zf.writestr(<span class="hljs-string">&#x27;hello.txt&#x27;</span>, <span class="hljs-string">&#x27;Hello, World!&#x27;</span>)<br>    zf.writestr(<span class="hljs-string">&#x27;data.txt&#x27;</span>, <span class="hljs-string">&#x27;Some data here&#x27;</span>)<br><br><span class="hljs-comment"># 读取ZIP文件</span><br><span class="hljs-keyword">with</span> zipfile.ZipFile(<span class="hljs-string">&#x27;test.zip&#x27;</span>, <span class="hljs-string">&#x27;r&#x27;</span>) <span class="hljs-keyword">as</span> zf:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;ZIP文件内容:&quot;</span>)<br>    <span class="hljs-keyword">for</span> info <span class="hljs-keyword">in</span> zf.infolist():<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;  <span class="hljs-subst">&#123;info.filename&#125;</span>: <span class="hljs-subst">&#123;info.file_size&#125;</span> bytes&quot;</span>)<br>    <br>    <span class="hljs-comment"># 读取单个文件</span><br>    content = zf.read(<span class="hljs-string">&#x27;hello.txt&#x27;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;\nhello.txt内容: <span class="hljs-subst">&#123;content.decode()&#125;</span>&quot;</span>)<br><br>os.remove(<span class="hljs-string">&#x27;test.zip&#x27;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>输出：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">ZIP文件内容</span><span class="hljs-punctuation">:</span><br>  <span class="hljs-attribute">hello.txt</span><span class="hljs-punctuation">:</span> <span class="hljs-string">13 bytes</span><br>  <span class="hljs-attribute">data.txt</span><span class="hljs-punctuation">:</span> <span class="hljs-string">14 bytes</span><br><br><span class="hljs-attribute">hello.txt内容</span><span class="hljs-punctuation">:</span> <span class="hljs-string">Hello, World!</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-ZipFile-读写方法"><a href="#2-ZipFile-读写方法" class="headerlink" title="2. ZipFile 读写方法"></a>2. ZipFile 读写方法</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs routeros">zf.write(filename, <span class="hljs-attribute">arcname</span>=None, <span class="hljs-attribute">compress_type</span>=None, <span class="hljs-built_in">..</span>.)<br>zf.writestr(zinfo_or_arcname, data, <span class="hljs-attribute">compress_type</span>=None)<br>zf.read(name)<br>zf.extract(member, <span class="hljs-attribute">path</span>=None)<br>zf.extractall(<span class="hljs-attribute">path</span>=None, <span class="hljs-attribute">members</span>=None)<br></code></pre></td></tr></table></figure>
+
+<p><strong>方法说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>write(filename, arcname)</code></td>
+<td>写入文件到ZIP</td>
+<td><code>zf.write(&#39;file.txt&#39;)</code></td>
+</tr>
+<tr>
+<td><code>writestr(zinfo, data)</code></td>
+<td>写入字符串&#x2F;字节</td>
+<td><code>zf.writestr(&#39;a.txt&#39;, &#39;data&#39;)</code></td>
+</tr>
+<tr>
+<td><code>read(name)</code></td>
+<td>读取文件内容</td>
+<td><code>zf.read(&#39;a.txt&#39;)</code></td>
+</tr>
+<tr>
+<td><code>extract(member, path)</code></td>
+<td>解压单个文件</td>
+<td><code>zf.extract(&#39;a.txt&#39;)</code></td>
+</tr>
+<tr>
+<td><code>extractall(path)</code></td>
+<td>解压所有文件</td>
+<td><code>zf.extractall(&#39;.&#39;)</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> zipfile<br><span class="hljs-keyword">import</span> os<br><br><span class="hljs-comment"># 创建ZIP并写入多个文件</span><br><span class="hljs-keyword">with</span> zipfile.ZipFile(<span class="hljs-string">&#x27;files.zip&#x27;</span>, <span class="hljs-string">&#x27;w&#x27;</span>) <span class="hljs-keyword">as</span> zf:<br>    zf.writestr(<span class="hljs-string">&#x27;readme.txt&#x27;</span>, <span class="hljs-string">&#x27;这是一个README文件&#x27;</span>)<br>    zf.writestr(<span class="hljs-string">&#x27;config.json&#x27;</span>, <span class="hljs-string">&#x27;&#123;&quot;name&quot;: &quot;test&quot;, &quot;version&quot;: 1&#125;&#x27;</span>)<br>    zf.writestr(<span class="hljs-string">&#x27;data.csv&#x27;</span>, <span class="hljs-string">&#x27;id,name\n1,Alice\n2,Bob&#x27;</span>)<br><br><span class="hljs-comment"># 读取特定文件</span><br><span class="hljs-keyword">with</span> zipfile.ZipFile(<span class="hljs-string">&#x27;files.zip&#x27;</span>, <span class="hljs-string">&#x27;r&#x27;</span>) <span class="hljs-keyword">as</span> zf:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;读取readme.txt:&quot;</span>)<br>    <span class="hljs-built_in">print</span>(zf.read(<span class="hljs-string">&#x27;readme.txt&#x27;</span>).decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>))<br>    <br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n读取config.json:&quot;</span>)<br>    <span class="hljs-built_in">print</span>(zf.read(<span class="hljs-string">&#x27;config.json&#x27;</span>).decode(<span class="hljs-string">&#x27;utf-8&#x27;</span>))<br><br>os.remove(<span class="hljs-string">&#x27;files.zip&#x27;</span>)<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-ZipInfo-对象"><a href="#3-ZipInfo-对象" class="headerlink" title="3. ZipInfo 对象"></a>3. ZipInfo 对象</h3><p><strong>语法格式</strong></p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">zipfile</span>.ZipInfo(filename=&#x27;/&#x27;, date_time=(<span class="hljs-number">1980</span>,<span class="hljs-number">1</span>,<span class="hljs-number">1</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>,<span class="hljs-number">0</span>), ...)<br></code></pre></td></tr></table></figure>
+
+<p><strong>ZipInfo属性说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>filename</code></td>
+<td>文件名</td>
+<td><code>info.filename</code></td>
+</tr>
+<tr>
+<td><code>file_size</code></td>
+<td>原始文件大小</td>
+<td><code>info.file_size</code></td>
+</tr>
+<tr>
+<td><code>compress_size</code></td>
+<td>压缩后大小</td>
+<td><code>info.compress_size</code></td>
+</tr>
+<tr>
+<td><code>date_time</code></td>
+<td>修改时间</td>
+<td><code>info.date_time</code></td>
+</tr>
+<tr>
+<td><code>compress_type</code></td>
+<td>压缩类型</td>
+<td><code>info.compress_type</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> zipfile<br><span class="hljs-keyword">import</span> os<br><br><span class="hljs-comment"># 创建ZIP并获取ZipInfo</span><br><span class="hljs-keyword">with</span> zipfile.ZipFile(<span class="hljs-string">&#x27;info.zip&#x27;</span>, <span class="hljs-string">&#x27;w&#x27;</span>) <span class="hljs-keyword">as</span> zf:<br>    zf.writestr(<span class="hljs-string">&#x27;document.txt&#x27;</span>, <span class="hljs-string">&#x27;Document content&#x27;</span>)<br><br><span class="hljs-comment"># 获取详细信息</span><br><span class="hljs-keyword">with</span> zipfile.ZipFile(<span class="hljs-string">&#x27;info.zip&#x27;</span>, <span class="hljs-string">&#x27;r&#x27;</span>) <span class="hljs-keyword">as</span> zf:<br>    <span class="hljs-keyword">for</span> info <span class="hljs-keyword">in</span> zf.infolist():<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;文件名: <span class="hljs-subst">&#123;info.filename&#125;</span>&quot;</span>)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;原始大小: <span class="hljs-subst">&#123;info.file_size&#125;</span> bytes&quot;</span>)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;压缩大小: <span class="hljs-subst">&#123;info.compress_size&#125;</span> bytes&quot;</span>)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;压缩比: <span class="hljs-subst">&#123;info.file_size / info.compress_size:<span class="hljs-number">.1</span>f&#125;</span>x&quot;</span>)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;修改时间: <span class="hljs-subst">&#123;info.date_time&#125;</span>&quot;</span>)<br><br>os.remove(<span class="hljs-string">&#x27;info.zip&#x27;</span>)<br></code></pre></td></tr></table></figure>
+
+<h2 id="三、tarfile-模块"><a href="#三、tarfile-模块" class="headerlink" title="三、tarfile 模块"></a>三、<code>tarfile</code> 模块</h2><p><code>tarfile</code> 模块用于读取和写入 tar 归档文件，支持 gzip、bz2 和 lzma 压缩。</p>
+<h3 id="1-tarfile-open-函数"><a href="#1-tarfile-open-函数" class="headerlink" title="1. tarfile.open() 函数"></a>1. tarfile.open() 函数</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">tarfile.open(<span class="hljs-attribute">name</span>=None, <span class="hljs-attribute">mode</span>=<span class="hljs-string">&#x27;r&#x27;</span>, <span class="hljs-attribute">fileobj</span>=None, <span class="hljs-attribute">bufsize</span>=10240, **kwargs)<br></code></pre></td></tr></table></figure>
+
+<p><strong>mode模式说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>模式</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&#39;r&#39;</code></td>
+<td>读取透明压缩文件</td>
+<td><code>mode=&#39;r&#39;</code></td>
+</tr>
+<tr>
+<td><code>&#39;r:&#39;</code></td>
+<td>读取未压缩tar</td>
+<td><code>mode=&#39;r:&#39;</code></td>
+</tr>
+<tr>
+<td><code>&#39;r:gz&#39;</code></td>
+<td>读取gzip压缩tar</td>
+<td><code>mode=&#39;r:gz&#39;</code></td>
+</tr>
+<tr>
+<td><code>&#39;r:bz2&#39;</code></td>
+<td>读取bz2压缩tar</td>
+<td><code>mode=&#39;r:bz2&#39;</code></td>
+</tr>
+<tr>
+<td><code>&#39;r:xz&#39;</code></td>
+<td>读取xz压缩tar</td>
+<td><code>mode=&#39;r:xz&#39;</code></td>
+</tr>
+<tr>
+<td><code>&#39;w&#39;</code></td>
+<td>写入透明压缩tar</td>
+<td><code>mode=&#39;w&#39;</code></td>
+</tr>
+<tr>
+<td><code>&#39;w:gz&#39;</code></td>
+<td>写入gzip压缩tar</td>
+<td><code>mode=&#39;w:gz&#39;</code></td>
+</tr>
+<tr>
+<td><code>&#39;w:xz&#39;</code></td>
+<td>写入xz压缩tar</td>
+<td><code>mode=&#39;w:xz&#39;</code></td>
+</tr>
+</tbody></table>
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>name</code></td>
+<td>文件名</td>
+<td><code>name=&#39;archive.tar.gz&#39;</code></td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>打开模式</td>
+<td><code>mode=&#39;w:gz&#39;</code></td>
+</tr>
+<tr>
+<td><code>fileobj</code></td>
+<td>文件对象</td>
+<td><code>fileobj=f</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> tarfile<br><span class="hljs-keyword">import</span> os<br><br><span class="hljs-comment"># 创建tar.gz归档</span><br><span class="hljs-keyword">with</span> tarfile.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;test.tar.gz&#x27;</span>, <span class="hljs-string">&#x27;w:gz&#x27;</span>) <span class="hljs-keyword">as</span> tf:<br>    <span class="hljs-comment"># 添加字符串内容</span><br>    <span class="hljs-keyword">import</span> io<br>    info = tarfile.TarInfo(name=<span class="hljs-string">&#x27;readme.txt&#x27;</span>)<br>    data = <span class="hljs-string">b&#x27;Readme content&#x27;</span><br>    info.size = <span class="hljs-built_in">len</span>(data)<br>    tf.addfile(info, io.BytesIO(data))<br>    <br>    <span class="hljs-comment"># 添加文件（如果有的话）</span><br>    <span class="hljs-comment"># tf.add(&#x27;existing_file.txt&#x27;, arcname=&#x27;file.txt&#x27;)</span><br><br><span class="hljs-comment"># 读取tar.gz归档</span><br><span class="hljs-keyword">with</span> tarfile.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;test.tar.gz&#x27;</span>, <span class="hljs-string">&#x27;r:gz&#x27;</span>) <span class="hljs-keyword">as</span> tf:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;归档内容:&quot;</span>)<br>    <span class="hljs-keyword">for</span> member <span class="hljs-keyword">in</span> tf.getmembers():<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;  <span class="hljs-subst">&#123;member.name&#125;</span>: <span class="hljs-subst">&#123;member.size&#125;</span> bytes&quot;</span>)<br>    <br>    <span class="hljs-comment"># 提取单个文件</span><br>    member = tf.getmember(<span class="hljs-string">&#x27;readme.txt&#x27;</span>)<br>    f = tf.extractfile(member)<br>    <span class="hljs-keyword">if</span> f:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;\nreadme.txt内容: <span class="hljs-subst">&#123;f.read().decode()&#125;</span>&quot;</span>)<br><br>os.remove(<span class="hljs-string">&#x27;test.tar.gz&#x27;</span>)<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-TarFile-常用方法"><a href="#2-TarFile-常用方法" class="headerlink" title="2. TarFile 常用方法"></a>2. TarFile 常用方法</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs routeros">tf.<span class="hljs-built_in">add</span>(name, <span class="hljs-attribute">arcname</span>=None, <span class="hljs-attribute">recursive</span>=<span class="hljs-literal">True</span>, <span class="hljs-built_in">..</span>.)<br>tf.addfile(tarinfo, <span class="hljs-attribute">fileobj</span>=None)<br>tf.extract(member, <span class="hljs-attribute">path</span>=<span class="hljs-string">&#x27;.&#x27;</span>)<br>tf.extractall(<span class="hljs-attribute">path</span>=<span class="hljs-string">&#x27;.&#x27;</span>, <span class="hljs-attribute">members</span>=None)<br>tf.getmembers()<br>tf.getnames()<br>tf.list(<span class="hljs-attribute">members</span>=None)<br></code></pre></td></tr></table></figure>
+
+<p><strong>方法说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>add(name, arcname)</code></td>
+<td>添加文件&#x2F;目录</td>
+<td><code>tf.add(&#39;file.txt&#39;)</code></td>
+</tr>
+<tr>
+<td><code>addfile(tarinfo, fileobj)</code></td>
+<td>添加TarInfo文件</td>
+<td><code>tf.addfile(info, f)</code></td>
+</tr>
+<tr>
+<td><code>extract(member, path)</code></td>
+<td>解压单个文件</td>
+<td><code>tf.extract(&#39;a.txt&#39;)</code></td>
+</tr>
+<tr>
+<td><code>extractall(path)</code></td>
+<td>解压所有文件</td>
+<td><code>tf.extractall(&#39;.&#39;)</code></td>
+</tr>
+<tr>
+<td><code>getmembers()</code></td>
+<td>获取所有成员列表</td>
+<td><code>tf.getmembers()</code></td>
+</tr>
+<tr>
+<td><code>getnames()</code></td>
+<td>获取所有成员名称</td>
+<td><code>tf.getnames()</code></td>
+</tr>
+<tr>
+<td><code>list(members)</code></td>
+<td>列出成员信息</td>
+<td><code>tf.list()</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> tarfile<br><span class="hljs-keyword">import</span> os<br><br><span class="hljs-comment"># 创建tar归档</span><br><span class="hljs-keyword">with</span> tarfile.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;archive.tar&#x27;</span>, <span class="hljs-string">&#x27;w&#x27;</span>) <span class="hljs-keyword">as</span> tf:<br>    <span class="hljs-comment"># 创建TarInfo</span><br>    info = tarfile.TarInfo(name=<span class="hljs-string">&#x27;config.txt&#x27;</span>)<br>    content = <span class="hljs-string">b&#x27;key=value\ndebug=true&#x27;</span><br>    info.size = <span class="hljs-built_in">len</span>(content)<br>    <br>    <span class="hljs-comment"># 添加到归档</span><br>    <span class="hljs-keyword">import</span> io<br>    tf.addfile(info, io.BytesIO(content))<br><br><span class="hljs-comment"># 列出归档内容</span><br><span class="hljs-keyword">with</span> tarfile.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;archive.tar&#x27;</span>, <span class="hljs-string">&#x27;r&#x27;</span>) <span class="hljs-keyword">as</span> tf:<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;归档成员:&quot;</span>)<br>    <span class="hljs-keyword">for</span> m <span class="hljs-keyword">in</span> tf.getmembers():<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;  <span class="hljs-subst">&#123;m.name&#125;</span>: <span class="hljs-subst">&#123;m.size&#125;</span> bytes&quot;</span>)<br>    <br>    <span class="hljs-comment"># 列出详细信息</span><br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;\n详细信息:&quot;</span>)<br>    tf.<span class="hljs-built_in">list</span>()<br><br>os.remove(<span class="hljs-string">&#x27;archive.tar&#x27;</span>)<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-TarInfo-对象"><a href="#3-TarInfo-对象" class="headerlink" title="3. TarInfo 对象"></a>3. TarInfo 对象</h3><p><strong>语法格式</strong></p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">tarfile.TarInfo(<span class="hljs-attribute">name</span>=<span class="hljs-string">&#x27;&#x27;</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>TarInfo属性说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>name</code></td>
+<td>文件名</td>
+<td><code>info.name</code></td>
+</tr>
+<tr>
+<td><code>size</code></td>
+<td>文件大小</td>
+<td><code>info.size</code></td>
+</tr>
+<tr>
+<td><code>mtime</code></td>
+<td>修改时间</td>
+<td><code>info.mtime</code></td>
+</tr>
+<tr>
+<td><code>type</code></td>
+<td>文件类型</td>
+<td><code>info.type</code></td>
+</tr>
+<tr>
+<td><code>mode</code></td>
+<td>文件权限</td>
+<td><code>info.mode</code></td>
+</tr>
+<tr>
+<td><code>uid</code></td>
+<td>用户ID</td>
+<td><code>info.uid</code></td>
+</tr>
+<tr>
+<td><code>gid</code></td>
+<td>组ID</td>
+<td><code>info.gid</code></td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> tarfile<br><span class="hljs-keyword">import</span> os<br><br><span class="hljs-comment"># 创建带详细信息的tar文件</span><br><span class="hljs-keyword">with</span> tarfile.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;detailed.tar&#x27;</span>, <span class="hljs-string">&#x27;w&#x27;</span>) <span class="hljs-keyword">as</span> tf:<br>    info = tarfile.TarInfo(name=<span class="hljs-string">&#x27;myfile.txt&#x27;</span>)<br>    info.size = <span class="hljs-number">100</span><br>    info.mtime = <span class="hljs-number">1234567890</span><br>    info.mode = <span class="hljs-number">0o644</span><br>    info.uid = <span class="hljs-number">1000</span><br>    info.gid = <span class="hljs-number">1000</span><br>    <br>    <span class="hljs-keyword">import</span> io<br>    tf.addfile(info, io.BytesIO(<span class="hljs-string">b&#x27;x&#x27;</span> * <span class="hljs-number">100</span>))<br><br><span class="hljs-comment"># 读取并验证信息</span><br><span class="hljs-keyword">with</span> tarfile.<span class="hljs-built_in">open</span>(<span class="hljs-string">&#x27;detailed.tar&#x27;</span>, <span class="hljs-string">&#x27;r&#x27;</span>) <span class="hljs-keyword">as</span> tf:<br>    member = tf.getmember(<span class="hljs-string">&#x27;myfile.txt&#x27;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;文件名: <span class="hljs-subst">&#123;member.name&#125;</span>&quot;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;大小: <span class="hljs-subst">&#123;member.size&#125;</span> bytes&quot;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;权限: <span class="hljs-subst">&#123;<span class="hljs-built_in">oct</span>(member.mode)&#125;</span>&quot;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;UID/GID: <span class="hljs-subst">&#123;member.uid&#125;</span>/<span class="hljs-subst">&#123;member.gid&#125;</span>&quot;</span>)<br><br>os.remove(<span class="hljs-string">&#x27;detailed.tar&#x27;</span>)<br></code></pre></td></tr></table></figure>
+
+<h2 id="四、模块对比与选择"><a href="#四、模块对比与选择" class="headerlink" title="四、模块对比与选择"></a>四、模块对比与选择</h2><table>
+<thead>
+<tr>
+<th>模块</th>
+<th>用途</th>
+<th>压缩格式</th>
+<th>特点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>gzip</code></td>
+<td>单文件压缩</td>
+<td>gzip</td>
+<td>简单高效，适合单个文件</td>
+</tr>
+<tr>
+<td><code>zipfile</code></td>
+<td>ZIP归档</td>
+<td>ZIP</td>
+<td>多文件归档，可读可写</td>
+</tr>
+<tr>
+<td><code>tarfile</code></td>
+<td>tar归档</td>
+<td>tar&#x2F;gz&#x2F;bz2&#x2F;xz</td>
+<td>多文件归档，支持多种压缩</td>
+</tr>
+</tbody></table>
+<p><strong>选择建议</strong>：</p>
+<ul>
+<li>压缩单个文件使用 <code>gzip</code></li>
+<li>需要读写ZIP格式使用 <code>zipfile</code></li>
+<li>需要tar格式或多种压缩格式使用 <code>tarfile</code></li>
+<li>多文件且需要压缩可用 <code>tarfile</code> + 压缩模式</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Python/" class="category-chain-item">Python</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/03/23/python/Python%20CSV%E6%96%87%E4%BB%B6%E8%AF%BB%E5%86%99/" title="Python CSV文件读写">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Python CSV文件读写</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/python/decimal.html" title="【标准库】decimal模块">
+                        <span class="hidden-mobile">【标准库】decimal模块</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

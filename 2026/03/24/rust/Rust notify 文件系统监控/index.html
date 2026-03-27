@@ -1,0 +1,1081 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="notify 是 Rust 生态中用于监控文件系统变化的跨平台库，支持 Linux、macOS、Windows 等系统。本文基于 notify 8.2.0 版本讲解其核心用法。 一、安装与依赖1.1 添加依赖语法格式 12[dependencies]notify = &amp;quot;8.2.0&amp;quot;  示例 12[dependencies]notify = &amp;quot;8.2.0&amp;quot;">
+  
+  
+  
+  <title>Rust notify 文件系统监控使用指南 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Rust notify 文件系统监控使用指南"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-24 11:35" pubdate>
+          2026年3月24日 中午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          3.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          33 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Rust notify 文件系统监控使用指南</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p><code>notify</code> 是 Rust 生态中用于监控文件系统变化的跨平台库，支持 Linux、macOS、Windows 等系统。本文基于 notify 8.2.0 版本讲解其核心用法。</p>
+<h2 id="一、安装与依赖"><a href="#一、安装与依赖" class="headerlink" title="一、安装与依赖"></a>一、安装与依赖</h2><h3 id="1-1-添加依赖"><a href="#1-1-添加依赖" class="headerlink" title="1.1 添加依赖"></a>1.1 添加依赖</h3><p><strong>语法格式</strong></p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">notify</span> = <span class="hljs-string">&quot;8.2.0&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>示例</strong></p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">notify</span> = <span class="hljs-string">&quot;8.2.0&quot;</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="1-2-Feature-特性"><a href="#1-2-Feature-特性" class="headerlink" title="1.2 Feature 特性"></a>1.2 Feature 特性</h3><table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>serde</code></td>
+<td>启用事件序列化支持</td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">notify</span> = &#123; version = <span class="hljs-string">&quot;8.2.0&quot;</span>, features = [<span class="hljs-string">&quot;serde&quot;</span>] &#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="二、快速开始"><a href="#二、快速开始" class="headerlink" title="二、快速开始"></a>二、快速开始</h2><h3 id="2-1-recommended-watcher-推荐监听器"><a href="#2-1-recommended-watcher-推荐监听器" class="headerlink" title="2.1 recommended_watcher() 推荐监听器"></a>2.1 recommended_watcher() 推荐监听器</h3><p><strong>语法格式</strong></p>
+<figure class="highlight livescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs livescript">notify::recommended_watcher<span class="hljs-function"><span class="hljs-params">(event_handler)</span> -&gt;</span> Result&lt;RecommendedWatcher&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>event_handler</code></td>
+<td>事件处理函数&#x2F;闭包</td>
+<td><code>move |res| { ... }</code></td>
+</tr>
+</tbody></table>
+<p><strong>说明</strong>：<code>recommended_watcher()</code> 会自动为当前平台选择最佳的后端实现。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;Event, <span class="hljs-type">Result</span>, Watcher&#125;;<br><span class="hljs-keyword">use</span> std::path::Path;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">watcher</span> = notify::<span class="hljs-title function_ invoke__">recommended_watcher</span>(|res: <span class="hljs-type">Result</span>&lt;Event&gt;| &#123;<br>        <span class="hljs-keyword">match</span> res &#123;<br>            <span class="hljs-title function_ invoke__">Ok</span>(event) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;事件: &#123;:?&#125;&quot;</span>, event),<br>            <span class="hljs-title function_ invoke__">Err</span>(e) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;监听错误: &#123;:?&#125;&quot;</span>, e),<br>        &#125;<br>    &#125;)?;<br><br>    <span class="hljs-comment">// 监听当前目录及子目录</span><br>    watcher.<span class="hljs-title function_ invoke__">watch</span>(Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;.&quot;</span>), notify::RecursiveMode::Recursive)?;<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;监听中，按 Ctrl+C 退出...&quot;</span>);<br>    <span class="hljs-keyword">loop</span> &#123;<br>        std::thread::<span class="hljs-title function_ invoke__">sleep</span>(std::time::Duration::<span class="hljs-title function_ invoke__">from_secs</span>(<span class="hljs-number">1</span>));<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>输出示例</strong></p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs css">事件: Event &#123; kind: <span class="hljs-built_in">Create</span>(Any), paths: [...], attrs: [...] &#125;<br>事件: Event &#123; kind: <span class="hljs-built_in">Modify</span>(<span class="hljs-built_in">Data</span>(Any)), paths: [...], attrs: [...] &#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-2-使用-mpsc-通道"><a href="#2-2-使用-mpsc-通道" class="headerlink" title="2.2 使用 mpsc 通道"></a>2.2 使用 mpsc 通道</h3><p><strong>说明</strong>：通过标准库的 <code>mpsc</code> 通道接收事件。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;Event, RecursiveMode, <span class="hljs-type">Result</span>, Watcher&#125;;<br><span class="hljs-keyword">use</span> std::path::Path;<br><span class="hljs-keyword">use</span> std::sync::mpsc;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> (tx, rx) = mpsc::channel::&lt;<span class="hljs-type">Result</span>&lt;Event&gt;&gt;();<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">watcher</span> = notify::<span class="hljs-title function_ invoke__">recommended_watcher</span>(tx)?;<br><br>    watcher.<span class="hljs-title function_ invoke__">watch</span>(Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;.&quot;</span>), RecursiveMode::Recursive)?;<br><br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">res</span> <span class="hljs-keyword">in</span> rx &#123;<br>        <span class="hljs-keyword">match</span> res &#123;<br>            <span class="hljs-title function_ invoke__">Ok</span>(event) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;收到事件: &#123;:?&#125;&quot;</span>, event.kind),<br>            <span class="hljs-title function_ invoke__">Err</span>(e) =&gt; <span class="hljs-built_in">eprintln!</span>(<span class="hljs-string">&quot;错误: &#123;:?&#125;&quot;</span>, e),<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="三、核心类型"><a href="#三、核心类型" class="headerlink" title="三、核心类型"></a>三、核心类型</h2><h3 id="3-1-Watcher-trait-监听器接口"><a href="#3-1-Watcher-trait-监听器接口" class="headerlink" title="3.1 Watcher trait 监听器接口"></a>3.1 Watcher trait 监听器接口</h3><p><strong>语法格式</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">trait</span> <span class="hljs-title class_">Watcher</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">watch</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, path: &amp;Path, mode: RecursiveMode) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;()&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">unwatch</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, path: &amp;Path) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;()&gt;;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>方法说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>watch(path, mode)</code></td>
+<td>开始监听指定路径</td>
+</tr>
+<tr>
+<td><code>unwatch(path)</code></td>
+<td>停止监听指定路径</td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;RecursiveMode, <span class="hljs-type">Result</span>, Watcher&#125;;<br><span class="hljs-keyword">use</span> std::path::Path;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">manage_watcher</span>(watcher: &amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">impl</span> <span class="hljs-title class_">Watcher</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-comment">// 监听单个文件</span><br>    watcher.<span class="hljs-title function_ invoke__">watch</span>(Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/path/to/file.txt&quot;</span>), RecursiveMode::NonRecursive)?;<br><br>    <span class="hljs-comment">// 监听目录（递归）</span><br>    watcher.<span class="hljs-title function_ invoke__">watch</span>(Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/path/to/dir&quot;</span>), RecursiveMode::Recursive)?;<br><br>    <span class="hljs-comment">// 取消监听</span><br>    watcher.<span class="hljs-title function_ invoke__">unwatch</span>(Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/path/to/file.txt&quot;</span>))?;<br><br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-2-Event-事件结构"><a href="#3-2-Event-事件结构" class="headerlink" title="3.2 Event 事件结构"></a>3.2 Event 事件结构</h3><p><strong>语法格式</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">Event</span> &#123;<br>    <span class="hljs-keyword">pub</span> kind: EventKind,           <span class="hljs-comment">// 事件类型</span><br>    <span class="hljs-keyword">pub</span> paths: <span class="hljs-type">Vec</span>&lt;PathBuf&gt;,      <span class="hljs-comment">// 涉及的路径</span><br>    <span class="hljs-keyword">pub</span> attrs: EventAttributes,    <span class="hljs-comment">// 额外属性</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>字段说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>kind</code></td>
+<td>事件类型，详见 EventKind</td>
+</tr>
+<tr>
+<td><code>paths</code></td>
+<td>受影响的文件路径列表</td>
+</tr>
+<tr>
+<td><code>attrs</code></td>
+<td>事件附加属性（追踪ID、标志等）</td>
+</tr>
+</tbody></table>
+<p><strong>方法说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>need_rescan()</code></td>
+<td>是否可能遗漏了事件</td>
+</tr>
+<tr>
+<td><code>tracker_id()</code></td>
+<td>获取追踪器 ID</td>
+</tr>
+<tr>
+<td><code>flag()</code></td>
+<td>获取事件标志</td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;Event, EventKind&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">handle_event</span>(event: Event) &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;事件类型: &#123;:?&#125;&quot;</span>, event.kind);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;涉及路径: &#123;:?&#125;&quot;</span>, event.paths);<br><br>    <span class="hljs-keyword">if</span> event.<span class="hljs-title function_ invoke__">need_rescan</span>() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;警告: 可能遗漏了某些事件&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-comment">// 匹配事件类型</span><br>    <span class="hljs-keyword">match</span> event.kind &#123;<br>        EventKind::<span class="hljs-title function_ invoke__">Create</span>(_) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文件被创建&quot;</span>),<br>        EventKind::<span class="hljs-title function_ invoke__">Modify</span>(_) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文件被修改&quot;</span>),<br>        EventKind::<span class="hljs-title function_ invoke__">Remove</span>(_) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文件被删除&quot;</span>),<br>        _ =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;其他事件&quot;</span>),<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-3-RecursiveMode-递归模式"><a href="#3-3-RecursiveMode-递归模式" class="headerlink" title="3.3 RecursiveMode 递归模式"></a>3.3 RecursiveMode 递归模式</h3><p><strong>语法格式</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">RecursiveMode</span> &#123;<br>    Recursive,      <span class="hljs-comment">// 递归监听子目录</span><br>    NonRecursive,   <span class="hljs-comment">// 仅监听当前目录</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>变体</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Recursive</code></td>
+<td>监听目录及其所有子目录，包括后续创建的子目录</td>
+</tr>
+<tr>
+<td><code>NonRecursive</code></td>
+<td>仅监听指定目录，不包含子目录</td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;RecursiveMode, Watcher&#125;;<br><span class="hljs-keyword">use</span> std::path::Path;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> notify::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">watcher</span> = notify::<span class="hljs-title function_ invoke__">recommended_watcher</span>(|_| &#123;&#125;)?;<br><br>    <span class="hljs-comment">// 仅监听当前目录，不含子目录</span><br>    watcher.<span class="hljs-title function_ invoke__">watch</span>(Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/tmp&quot;</span>), RecursiveMode::NonRecursive)?;<br><br>    <span class="hljs-comment">// 监听当前目录及所有子目录</span><br>    watcher.<span class="hljs-title function_ invoke__">watch</span>(Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/var/log&quot;</span>), RecursiveMode::Recursive)?;<br><br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-4-EventKind-事件类型"><a href="#3-4-EventKind-事件类型" class="headerlink" title="3.4 EventKind 事件类型"></a>3.4 EventKind 事件类型</h3><p><strong>语法格式</strong></p>
+<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs scss">pub enum EventKind &#123;<br>    Any,                    <span class="hljs-comment">// 未知/所有事件</span><br>    <span class="hljs-built_in">Access</span>(AccessKind),     <span class="hljs-comment">// 文件访问事件</span><br>    <span class="hljs-built_in">Create</span>(CreateKind),     <span class="hljs-comment">// 文件创建事件</span><br>    <span class="hljs-built_in">Modify</span>(ModifyKind),      <span class="hljs-comment">// 文件修改事件</span><br>    <span class="hljs-built_in">Remove</span>(RemoveKind),     <span class="hljs-comment">// 文件删除事件</span><br>    Other,                  <span class="hljs-comment">// 其他事件</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>事件类型说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>说明</th>
+<th>平台支持</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Access</code></td>
+<td>文件被打开&#x2F;执行</td>
+<td>部分平台</td>
+</tr>
+<tr>
+<td><code>Create</code></td>
+<td>文件或目录被创建</td>
+<td>全部</td>
+</tr>
+<tr>
+<td><code>Modify</code></td>
+<td>内容、名称或元数据变更</td>
+<td>全部</td>
+</tr>
+<tr>
+<td><code>Remove</code></td>
+<td>文件或目录被删除</td>
+<td>全部</td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::EventKind;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">classify_event</span>(kind: &amp;EventKind) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span> &#123;<br>    <span class="hljs-keyword">match</span> kind &#123;<br>        EventKind::<span class="hljs-title function_ invoke__">Any</span>(_) =&gt; <span class="hljs-string">&quot;任意事件&quot;</span>,<br>        EventKind::<span class="hljs-title function_ invoke__">Access</span>(_) =&gt; <span class="hljs-string">&quot;访问事件&quot;</span>,<br>        EventKind::<span class="hljs-title function_ invoke__">Create</span>(_) =&gt; <span class="hljs-string">&quot;创建事件&quot;</span>,<br>        EventKind::<span class="hljs-title function_ invoke__">Modify</span>(_) =&gt; <span class="hljs-string">&quot;修改事件&quot;</span>,<br>        EventKind::<span class="hljs-title function_ invoke__">Remove</span>(_) =&gt; <span class="hljs-string">&quot;删除事件&quot;</span>,<br>        EventKind::Other =&gt; <span class="hljs-string">&quot;其他事件&quot;</span>,<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-5-ModifyKind-修改详情"><a href="#3-5-ModifyKind-修改详情" class="headerlink" title="3.5 ModifyKind 修改详情"></a>3.5 ModifyKind 修改详情</h3><p><strong>语法格式</strong></p>
+<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs scss">pub enum ModifyKind &#123;<br>    Any,<br>    <span class="hljs-built_in">Data</span>(DataChange),          <span class="hljs-comment">// 内容变更</span><br>    <span class="hljs-built_in">Metadata</span>(MetadataKind),   <span class="hljs-comment">// 元数据变更</span><br>    <span class="hljs-built_in">Name</span>(RenameMode),          <span class="hljs-comment">// 名称变更（重命名）</span><br>    Other,                     <span class="hljs-comment">// 其他修改</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>变体</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Data</code></td>
+<td>文件内容被修改</td>
+</tr>
+<tr>
+<td><code>Metadata</code></td>
+<td>文件权限、时间戳等元数据变更</td>
+</tr>
+<tr>
+<td><code>Name</code></td>
+<td>文件名变更（重命名）</td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::event::&#123;EventKind, ModifyKind&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">describe_modify</span>(kind: &amp;EventKind) &#123;<br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">EventKind</span>::<span class="hljs-title function_ invoke__">Modify</span>(modify) = kind &#123;<br>        <span class="hljs-keyword">match</span> modify &#123;<br>            ModifyKind::<span class="hljs-title function_ invoke__">Data</span>(_) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文件内容变更&quot;</span>),<br>            ModifyKind::<span class="hljs-title function_ invoke__">Metadata</span>(_) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;元数据变更&quot;</span>),<br>            ModifyKind::<span class="hljs-title function_ invoke__">Name</span>(_) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文件名变更&quot;</span>),<br>            ModifyKind::Other =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;其他修改&quot;</span>),<br>            ModifyKind::Any =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;未知修改&quot;</span>),<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="四、配置选项"><a href="#四、配置选项" class="headerlink" title="四、配置选项"></a>四、配置选项</h2><h3 id="4-1-Config-配置结构"><a href="#4-1-Config-配置结构" class="headerlink" title="4.1 Config 配置结构"></a>4.1 Config 配置结构</h3><p><strong>语法格式</strong></p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs css">notify::Config::<span class="hljs-built_in">default</span>()<br>    .<span class="hljs-built_in">with_poll_interval</span>(interval)<br>    .<span class="hljs-built_in">with_compare_contents</span>(enabled)<br>    .<span class="hljs-built_in">with_follow_links</span>(enabled)<br></code></pre></td></tr></table></figure>
+
+<p><strong>配置项说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+<th>适用后端</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>with_poll_interval</code></td>
+<td>设置轮询间隔</td>
+<td>PollWatcher</td>
+</tr>
+<tr>
+<td><code>with_compare_contents</code></td>
+<td>启用内容比较（哈希）</td>
+<td>PollWatcher</td>
+</tr>
+<tr>
+<td><code>with_follow_links</code></td>
+<td>是否跟随符号链接</td>
+<td>所有</td>
+</tr>
+</tbody></table>
+<p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;Config, Watcher&#125;;<br><span class="hljs-keyword">use</span> std::time::Duration;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">create_config</span>() <span class="hljs-punctuation">-&gt;</span> Config &#123;<br>    Config::<span class="hljs-title function_ invoke__">default</span>()<br>        <span class="hljs-comment">// PollWatcher: 每 2 秒轮询一次</span><br>        .<span class="hljs-title function_ invoke__">with_poll_interval</span>(Duration::<span class="hljs-title function_ invoke__">from_secs</span>(<span class="hljs-number">2</span>))<br>        <span class="hljs-comment">// PollWatcher: 通过内容哈希检测变更</span><br>        .<span class="hljs-title function_ invoke__">with_compare_contents</span>(<span class="hljs-literal">true</span>)<br>        <span class="hljs-comment">// 递归监听时是否跟随符号链接</span><br>        .<span class="hljs-title function_ invoke__">with_follow_links</span>(<span class="hljs-literal">true</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-2-使用配置创建监听器"><a href="#4-2-使用配置创建监听器" class="headerlink" title="4.2 使用配置创建监听器"></a>4.2 使用配置创建监听器</h3><p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;Config, RecommendedWatcher, <span class="hljs-type">Result</span>, Watcher&#125;;<br><span class="hljs-keyword">use</span> std::time::Duration;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">config</span> = Config::<span class="hljs-title function_ invoke__">default</span>()<br>        .<span class="hljs-title function_ invoke__">with_poll_interval</span>(Duration::<span class="hljs-title function_ invoke__">from_secs</span>(<span class="hljs-number">5</span>));<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">watcher</span> = RecommendedWatcher::<span class="hljs-title function_ invoke__">new</span>(<br>        |res| <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, res),<br>        config,<br>    )?;<br><br>    watcher.<span class="hljs-title function_ invoke__">watch</span>(<span class="hljs-string">&quot;/path/to/dir&quot;</span>.<span class="hljs-title function_ invoke__">as_ref</span>(), notify::RecursiveMode::Recursive)?;<br><br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="五、跨平台后端"><a href="#五、跨平台后端" class="headerlink" title="五、跨平台后端"></a>五、跨平台后端</h2><h3 id="5-1-后端类型"><a href="#5-1-后端类型" class="headerlink" title="5.1 后端类型"></a>5.1 后端类型</h3><table>
+<thead>
+<tr>
+<th>后端</th>
+<th>平台</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>INotify</td>
+<td>Linux</td>
+<td>基于 inotify，高效</td>
+</tr>
+<tr>
+<td>Kqueue</td>
+<td>macOS&#x2F;BSD</td>
+<td>基于 kqueue</td>
+</tr>
+<tr>
+<td>FSEvent</td>
+<td>macOS</td>
+<td>macOS 原生事件</td>
+</tr>
+<tr>
+<td>Poll</td>
+<td>所有</td>
+<td>轮询方式，兼容性最好</td>
+</tr>
+<tr>
+<td>ReadDirectoryChangesW</td>
+<td>Windows</td>
+<td>Windows 原生</td>
+</tr>
+</tbody></table>
+<h3 id="5-2-手动指定后端"><a href="#5-2-手动指定后端" class="headerlink" title="5.2 手动指定后端"></a>5.2 手动指定后端</h3><p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;Config, INotifyWatcher, <span class="hljs-type">Result</span>, Watcher&#125;;<br><span class="hljs-keyword">use</span> std::path::Path;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-comment">// Linux: 使用 inotify 后端</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">watcher</span> = INotifyWatcher::<span class="hljs-title function_ invoke__">new</span>(<br>        |res| <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, res),<br>        Config::<span class="hljs-title function_ invoke__">default</span>(),<br>    )?;<br><br>    watcher.<span class="hljs-title function_ invoke__">watch</span>(Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/tmp&quot;</span>), notify::RecursiveMode::Recursive)?;<br><br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="5-3-PollWatcher-轮询后端"><a href="#5-3-PollWatcher-轮询后端" class="headerlink" title="5.3 PollWatcher 轮询后端"></a>5.3 PollWatcher 轮询后端</h3><p><strong>语法格式</strong></p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs arduino">notify::PollWatcher::<span class="hljs-keyword">new</span>(event_handler, config) -&gt; Result&lt;PollWatcher&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>说明</strong>：PollWatcher 通过定期扫描文件系统来检测变化，兼容性最好但性能较低。适用于不支持原生事件通知的平台（如网络文件系统）。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;Config, PollWatcher, <span class="hljs-type">Result</span>, Watcher&#125;;<br><span class="hljs-keyword">use</span> std::path::Path;<br><span class="hljs-keyword">use</span> std::time::Duration;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">config</span> = Config::<span class="hljs-title function_ invoke__">default</span>()<br>        .<span class="hljs-title function_ invoke__">with_poll_interval</span>(Duration::<span class="hljs-title function_ invoke__">from_secs</span>(<span class="hljs-number">3</span>));<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">watcher</span> = PollWatcher::<span class="hljs-title function_ invoke__">new</span>(<br>        |res| <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, res),<br>        config,<br>    )?;<br><br>    watcher.<span class="hljs-title function_ invoke__">watch</span>(Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;.&quot;</span>), notify::RecursiveMode::Recursive)?;<br><br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="六、实战示例"><a href="#六、实战示例" class="headerlink" title="六、实战示例"></a>六、实战示例</h2><h3 id="6-1-监控配置文件变更自动重载"><a href="#6-1-监控配置文件变更自动重载" class="headerlink" title="6.1 监控配置文件变更自动重载"></a>6.1 监控配置文件变更自动重载</h3><p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;Config, Event, RecommendedWatcher, <span class="hljs-type">Result</span>, Watcher&#125;;<br><span class="hljs-keyword">use</span> std::path::Path;<br><span class="hljs-keyword">use</span> std::sync::mpsc;<br><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">ConfigManager</span> &#123;<br>    config_data: <span class="hljs-type">String</span>,<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">ConfigManager</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">new</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-keyword">Self</span> &#123;<br>        <span class="hljs-keyword">Self</span> &#123;<br>            config_data: <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">new</span>(),<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">load</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, path: &amp;Path) <span class="hljs-punctuation">-&gt;</span> std::io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>        <span class="hljs-keyword">self</span>.config_data = std::fs::<span class="hljs-title function_ invoke__">read_to_string</span>(path)?;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;配置已加载: &#123;&#125; 字节&quot;</span>, <span class="hljs-keyword">self</span>.config_data.<span class="hljs-title function_ invoke__">len</span>());<br>        <span class="hljs-title function_ invoke__">Ok</span>(())<br>    &#125;<br><br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">reload</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, path: &amp;Path) <span class="hljs-punctuation">-&gt;</span> std::io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;检测到配置变更，重新加载...&quot;</span>);<br>        <span class="hljs-keyword">self</span>.<span class="hljs-title function_ invoke__">load</span>(path)<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">config_path</span> = Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;config.toml&quot;</span>);<br>    <span class="hljs-keyword">let</span> (tx, rx) = mpsc::<span class="hljs-title function_ invoke__">channel</span>();<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">config_mgr</span> = ConfigManager::<span class="hljs-title function_ invoke__">new</span>();<br>    config_mgr.<span class="hljs-title function_ invoke__">load</span>(config_path)?;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">watcher</span> = RecommendedWatcher::<span class="hljs-title function_ invoke__">new</span>(<br>        <span class="hljs-keyword">move</span> |res: <span class="hljs-type">Result</span>&lt;Event&gt;| &#123;<br>            <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Ok</span>(event) = res &#123;<br>                <span class="hljs-keyword">let</span> <span class="hljs-variable">_</span> = tx.<span class="hljs-title function_ invoke__">send</span>(event);<br>            &#125;<br>        &#125;,<br>        Config::<span class="hljs-title function_ invoke__">default</span>(),<br>    )?;<br><br>    watcher.<span class="hljs-title function_ invoke__">watch</span>(config_path, notify::RecursiveMode::NonRecursive)?;<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;监听配置文件变更中...&quot;</span>);<br><br>    <span class="hljs-keyword">loop</span> &#123;<br>        <span class="hljs-keyword">match</span> rx.<span class="hljs-title function_ invoke__">recv</span>() &#123;<br>            <span class="hljs-title function_ invoke__">Ok</span>(event) =&gt; &#123;<br>                <span class="hljs-keyword">if</span> matches!(event.kind, notify::EventKind::<span class="hljs-title function_ invoke__">Modify</span>(_)) &#123;<br>                    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Err</span>(e) = config_mgr.<span class="hljs-title function_ invoke__">reload</span>(config_path) &#123;<br>                        <span class="hljs-built_in">eprintln!</span>(<span class="hljs-string">&quot;重载失败: &#123;&#125;&quot;</span>, e);<br>                    &#125;<br>                &#125;<br>            &#125;<br>            <span class="hljs-title function_ invoke__">Err</span>(_) =&gt; <span class="hljs-keyword">break</span>,<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>说明</strong>：<code>matches!(event.kind, notify::EventKind::Modify(_))</code> 用于判断事件类型是否为修改事件。第一个参数为要匹配的表达式，第二个参数为匹配模式。<code>_</code> 是通配符，匹配任意值。如果匹配成功返回 <code>true</code>，否则返回 <code>false</code>。这里使用 <code>notify::EventKind::Modify(_)</code> 匹配任意类型的修改事件（文件内容修改、权限修改等）。</p>
+</blockquote>
+<h3 id="6-2-监听目录自动执行命令"><a href="#6-2-监听目录自动执行命令" class="headerlink" title="6.2 监听目录自动执行命令"></a>6.2 监听目录自动执行命令</h3><p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;Config, EventKind, RecommendedWatcher, RecursiveMode, <span class="hljs-type">Result</span>, Watcher&#125;;<br><span class="hljs-keyword">use</span> std::path::Path;<br><span class="hljs-keyword">use</span> std::process::Command;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">watch_path</span> = Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;./src&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">watcher</span> = RecommendedWatcher::<span class="hljs-title function_ invoke__">new</span>(<br>        |res: <span class="hljs-type">Result</span>&lt;notify::Event&gt;| &#123;<br>            <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Ok</span>(event) = res &#123;<br>                <span class="hljs-title function_ invoke__">handle_event</span>(&amp;event);<br>            &#125;<br>        &#125;,<br>        Config::<span class="hljs-title function_ invoke__">default</span>(),<br>    )?;<br><br>    watcher.<span class="hljs-title function_ invoke__">watch</span>(watch_path, RecursiveMode::Recursive)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;监听 &#123;:?&#125; 目录中...&quot;</span>, watch_path);<br><br>    <span class="hljs-keyword">loop</span> &#123;<br>        std::thread::<span class="hljs-title function_ invoke__">sleep</span>(std::time::Duration::<span class="hljs-title function_ invoke__">from_secs</span>(<span class="hljs-number">1</span>));<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">handle_event</span>(event: &amp;notify::Event) &#123;<br>    <span class="hljs-keyword">match</span> event.kind &#123;<br>        EventKind::<span class="hljs-title function_ invoke__">Create</span>(_) =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;检测到新文件: &#123;:?&#125;&quot;</span>, event.paths);<br>        &#125;<br>        EventKind::<span class="hljs-title function_ invoke__">Modify</span>(_) =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文件已修改: &#123;:?&#125;&quot;</span>, event.paths);<br>            <span class="hljs-comment">// 可以在这里触发构建</span><br>            <span class="hljs-keyword">let</span> <span class="hljs-variable">_</span> = Command::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;cargo&quot;</span>)<br>                .<span class="hljs-title function_ invoke__">args</span>([<span class="hljs-string">&quot;build&quot;</span>])<br>                .<span class="hljs-title function_ invoke__">spawn</span>();<br>        &#125;<br>        EventKind::<span class="hljs-title function_ invoke__">Remove</span>(_) =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文件已删除: &#123;:?&#125;&quot;</span>, event.paths);<br>        &#125;<br>        _ =&gt; &#123;&#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="6-3-文件变化去重（防止重复处理）"><a href="#6-3-文件变化去重（防止重复处理）" class="headerlink" title="6.3 文件变化去重（防止重复处理）"></a>6.3 文件变化去重（防止重复处理）</h3><p><strong>说明</strong>：某些编辑器会快速触发多个事件，可以使用计时器去重。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;Config, RecommendedWatcher, RecursiveMode, <span class="hljs-type">Result</span>, Watcher&#125;;<br><span class="hljs-keyword">use</span> std::collections::HashSet;<br><span class="hljs-keyword">use</span> std::path::&#123;Path, PathBuf&#125;;<br><span class="hljs-keyword">use</span> std::sync::&#123;Arc, Mutex&#125;;<br><span class="hljs-keyword">use</span> std::time::&#123;Duration, Instant&#125;;<br><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Debouncer</span> &#123;<br>    events: HashSet&lt;PathBuf&gt;,<br>    last_flush: Instant,<br>    debounce_time: Duration,<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">Debouncer</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">new</span>(debounce_ms: <span class="hljs-type">u64</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-keyword">Self</span> &#123;<br>        <span class="hljs-keyword">Self</span> &#123;<br>            events: HashSet::<span class="hljs-title function_ invoke__">new</span>(),<br>            last_flush: Instant::<span class="hljs-title function_ invoke__">now</span>(),<br>            debounce_time: Duration::<span class="hljs-title function_ invoke__">from_millis</span>(debounce_ms),<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">add</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, paths: <span class="hljs-type">Vec</span>&lt;PathBuf&gt;) &#123;<br>        <span class="hljs-keyword">for</span> <span class="hljs-variable">path</span> <span class="hljs-keyword">in</span> paths &#123;<br>            <span class="hljs-keyword">self</span>.events.<span class="hljs-title function_ invoke__">insert</span>(path);<br>        &#125;<br>        <span class="hljs-comment">// 如果距上次刷新超过去重时间，刷新并处理</span><br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">self</span>.last_flush.<span class="hljs-title function_ invoke__">elapsed</span>() &gt; <span class="hljs-keyword">self</span>.debounce_time &#123;<br>            <span class="hljs-keyword">self</span>.<span class="hljs-title function_ invoke__">flush</span>();<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">flush</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>) &#123;<br>        <span class="hljs-keyword">if</span> !<span class="hljs-keyword">self</span>.events.<span class="hljs-title function_ invoke__">is_empty</span>() &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;处理 &#123;&#125; 个变更:&quot;</span>, <span class="hljs-keyword">self</span>.events.<span class="hljs-title function_ invoke__">len</span>());<br>            <span class="hljs-keyword">for</span> <span class="hljs-variable">path</span> <span class="hljs-keyword">in</span> &amp;<span class="hljs-keyword">self</span>.events &#123;<br>                <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  - &#123;:?&#125;&quot;</span>, path);<br>            &#125;<br>            <span class="hljs-keyword">self</span>.events.<span class="hljs-title function_ invoke__">clear</span>();<br>            <span class="hljs-keyword">self</span>.last_flush = Instant::<span class="hljs-title function_ invoke__">now</span>();<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-comment">// 使用 Arc&lt;Mutex&lt;&gt;&gt; 共享 debouncer 到闭包和主循环（线程安全）</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">debouncer</span> = Arc::<span class="hljs-title function_ invoke__">new</span>(Mutex::<span class="hljs-title function_ invoke__">new</span>(Debouncer::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">500</span>)));<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">debouncer_clone</span> = debouncer.<span class="hljs-title function_ invoke__">clone</span>();<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">watcher</span> = RecommendedWatcher::<span class="hljs-title function_ invoke__">new</span>(<br>        <span class="hljs-keyword">move</span> |res: <span class="hljs-type">Result</span>&lt;notify::Event&gt;| &#123;<br>            <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Ok</span>(event) = res &#123;<br>                <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Ok</span>(<span class="hljs-keyword">mut</span> debouncer) = debouncer_clone.<span class="hljs-title function_ invoke__">lock</span>() &#123;<br>                    debouncer.<span class="hljs-title function_ invoke__">add</span>(event.paths);<br>                &#125;<br>            &#125;<br>        &#125;,<br>        Config::<span class="hljs-title function_ invoke__">default</span>(),<br>    )?;<br><br>    watcher.<span class="hljs-title function_ invoke__">watch</span>(Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;.&quot;</span>), RecursiveMode::Recursive)?;<br><br>    <span class="hljs-comment">// 定期刷新去重缓冲区</span><br>    <span class="hljs-keyword">loop</span> &#123;<br>        std::thread::<span class="hljs-title function_ invoke__">sleep</span>(Duration::<span class="hljs-title function_ invoke__">from_millis</span>(<span class="hljs-number">100</span>));<br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Ok</span>(<span class="hljs-keyword">mut</span> debouncer) = debouncer.<span class="hljs-title function_ invoke__">lock</span>() &#123;<br>            debouncer.<span class="hljs-title function_ invoke__">flush</span>();<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="七、已知问题与限制"><a href="#七、已知问题与限制" class="headerlink" title="七、已知问题与限制"></a>七、已知问题与限制</h2><h3 id="7-1-网络文件系统"><a href="#7-1-网络文件系统" class="headerlink" title="7.1 网络文件系统"></a>7.1 网络文件系统</h3><p>网络挂载的文件系统（如 NFS）可能无法正常发送事件。可使用 <code>PollWatcher</code> 作为替代方案。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;Config, PollWatcher, <span class="hljs-type">Result</span>&#125;;<br><span class="hljs-keyword">use</span> std::time::Duration;<br><br><span class="hljs-comment">// 对于网络文件系统使用 PollWatcher</span><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">watch_network_path</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">config</span> = Config::<span class="hljs-title function_ invoke__">default</span>()<br>        .<span class="hljs-title function_ invoke__">with_poll_interval</span>(Duration::<span class="hljs-title function_ invoke__">from_secs</span>(<span class="hljs-number">10</span>));<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">_watcher</span> = PollWatcher::<span class="hljs-title function_ invoke__">new</span>(<br>        |res| <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, res),<br>        config,<br>    )?;<br><br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="7-2-Linux-inotify-限制"><a href="#7-2-Linux-inotify-限制" class="headerlink" title="7.2 Linux inotify 限制"></a>7.2 Linux inotify 限制</h3><p>Linux 的 inotify 有系统级限制：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 增加监听实例数量</span><br><span class="hljs-built_in">sudo</span> sysctl fs.inotify.max_user_instances=8192<br><span class="hljs-comment"># 增加监听文件数量</span><br><span class="hljs-built_in">sudo</span> sysctl fs.inotify.max_user_watches=524288<br><span class="hljs-built_in">sudo</span> sysctl -p<br></code></pre></td></tr></table></figure>
+
+<h3 id="7-3-编辑器行为差异"><a href="#7-3-编辑器行为差异" class="headerlink" title="7.3 编辑器行为差异"></a>7.3 编辑器行为差异</h3><p>不同编辑器保存文件的方式不同：</p>
+<ul>
+<li>部分编辑器会截断文件后写入</li>
+<li>部分编辑器会先删除旧文件再创建新文件</li>
+</ul>
+<p>这会导致观察到的事件类型不一致。</p>
+<h3 id="7-4-父目录删除"><a href="#7-4-父目录删除" class="headerlink" title="7.4 父目录删除"></a>7.4 父目录删除</h3><p>如果想监听 <code>/a/b/</code> 目录被删除，需要监听其父目录 <code>/a</code>。</p>
+<p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;Config, RecommendedWatcher, RecursiveMode, <span class="hljs-type">Result</span>, Watcher&#125;;<br><span class="hljs-keyword">use</span> std::path::Path;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">watcher</span> = RecommendedWatcher::<span class="hljs-title function_ invoke__">new</span>(<br>        |res| <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, res),<br>        Config::<span class="hljs-title function_ invoke__">default</span>(),<br>    )?;<br><br>    <span class="hljs-comment">// 监听父目录才能检测到子目录被删除</span><br>    watcher.<span class="hljs-title function_ invoke__">watch</span>(Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/a&quot;</span>), RecursiveMode::Recursive)?;<br><br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="八、完整项目模板"><a href="#八、完整项目模板" class="headerlink" title="八、完整项目模板"></a>八、完整项目模板</h2><h3 id="8-1-Cargo-toml"><a href="#8-1-Cargo-toml" class="headerlink" title="8.1 Cargo.toml"></a>8.1 Cargo.toml</h3><figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[package]</span><br><span class="hljs-attr">name</span> = <span class="hljs-string">&quot;file-watcher&quot;</span><br><span class="hljs-attr">version</span> = <span class="hljs-string">&quot;0.1.0&quot;</span><br><span class="hljs-attr">edition</span> = <span class="hljs-string">&quot;2021&quot;</span><br><br><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">notify</span> = <span class="hljs-string">&quot;8.2.0&quot;</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="8-2-src-main-rs"><a href="#8-2-src-main-rs" class="headerlink" title="8.2 src&#x2F;main.rs"></a>8.2 src&#x2F;main.rs</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify::&#123;Config, EventKind, RecommendedWatcher, RecursiveMode, <span class="hljs-type">Result</span>, Watcher&#125;;<br><span class="hljs-keyword">use</span> std::path::Path;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">watch_path</span> = std::env::<span class="hljs-title function_ invoke__">args</span>()<br>        .<span class="hljs-title function_ invoke__">nth</span>(<span class="hljs-number">1</span>)<br>        .<span class="hljs-title function_ invoke__">unwrap_or_else</span>(|| <span class="hljs-string">&quot;.&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>());<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;监听目录: &#123;&#125;&quot;</span>, watch_path);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">watcher</span> = RecommendedWatcher::<span class="hljs-title function_ invoke__">new</span>(<br>        |res: <span class="hljs-type">Result</span>&lt;notify::Event&gt;| &#123;<br>            <span class="hljs-keyword">match</span> res &#123;<br>                <span class="hljs-title function_ invoke__">Ok</span>(event) =&gt; &#123;<br>                    <span class="hljs-keyword">let</span> <span class="hljs-variable">action</span> = <span class="hljs-keyword">match</span> event.kind &#123;<br>                        EventKind::<span class="hljs-title function_ invoke__">Create</span>(_) =&gt; <span class="hljs-string">&quot;创建&quot;</span>,<br>                        EventKind::<span class="hljs-title function_ invoke__">Modify</span>(_) =&gt; <span class="hljs-string">&quot;修改&quot;</span>,<br>                        EventKind::<span class="hljs-title function_ invoke__">Remove</span>(_) =&gt; <span class="hljs-string">&quot;删除&quot;</span>,<br>                        EventKind::<span class="hljs-title function_ invoke__">Access</span>(_) =&gt; <span class="hljs-string">&quot;访问&quot;</span>,<br>                        _ =&gt; <span class="hljs-string">&quot;其他&quot;</span>,<br>                    &#125;;<br>                    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[&#123;&#125;] &#123;:?&#125;&quot;</span>, action, event.paths);<br>                &#125;<br>                <span class="hljs-title function_ invoke__">Err</span>(e) =&gt; <span class="hljs-built_in">eprintln!</span>(<span class="hljs-string">&quot;错误: &#123;:?&#125;&quot;</span>, e),<br>            &#125;<br>        &#125;,<br>        Config::<span class="hljs-title function_ invoke__">default</span>(),<br>    )?;<br><br>    watcher.<span class="hljs-title function_ invoke__">watch</span>(<br>        Path::<span class="hljs-title function_ invoke__">new</span>(&amp;watch_path),<br>        RecursiveMode::Recursive,<br>    )?;<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;按 Ctrl+C 退出&quot;</span>);<br>    <span class="hljs-keyword">loop</span> &#123;<br>        std::thread::<span class="hljs-title function_ invoke__">sleep</span>(std::time::Duration::<span class="hljs-title function_ invoke__">from_secs</span>(<span class="hljs-number">1</span>));<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>运行</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo run -- /path/to/watch<br></code></pre></td></tr></table></figure>
+
+<h2 id="九、相关扩展"><a href="#九、相关扩展" class="headerlink" title="九、相关扩展"></a>九、相关扩展</h2><h3 id="9-1-notify-debouncer-mini"><a href="#9-1-notify-debouncer-mini" class="headerlink" title="9.1 notify-debouncer-mini"></a>9.1 notify-debouncer-mini</h3><p>轻量级去抖库，对事件进行简单的时间窗口去重。同一文件在指定时间间隔内的多次变更只会触发一次回调。</p>
+<p><strong>主要功能</strong></p>
+<ul>
+<li>时间窗口去重：在指定时间间隔内，同一文件的多次变更只会触发一次事件</li>
+<li>轻量级：依赖少，API 简洁</li>
+<li>回调模式：使用闭包处理事件</li>
+</ul>
+<p><strong>使用场景</strong></p>
+<ul>
+<li>简单需求：只需要过滤重复事件，不关心事件顺序</li>
+<li>编辑器热重载：避免保存文件时触发多次重载</li>
+<li>日志文件监控：避免频繁更新 UI</li>
+</ul>
+<p><strong>依赖</strong></p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-attr">notify-debouncer-mini</span> = <span class="hljs-string">&quot;0.5&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>函数签名</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">new_debouncer</span>&lt;F: DebounceEventHandler&gt;(<br>    timeout: Duration,<br>    event_handler: F,<br>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;Debouncer&lt;RecommendedWatcher&gt;, Error&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>timeout</code></td>
+<td><code>Duration</code></td>
+<td>去重时间窗口，同一文件在此时间内多次变更只触发一次事件</td>
+</tr>
+<tr>
+<td><code>event_handler</code></td>
+<td>闭包&#x2F;函数</td>
+<td>事件处理回调，接收 <code>DebounceEventResult</code> 类型参数</td>
+</tr>
+</tbody></table>
+<p><strong>返回值</strong>：<code>Result&lt;Debouncer&lt;RecommendedWatcher&gt;, Error&gt;</code></p>
+<p><strong>timeout 设置建议</strong></p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>编辑器热重载</td>
+<td>100-300ms</td>
+<td>大多数编辑器保存操作在 200ms 内完成</td>
+</tr>
+<tr>
+<td>构建系统触发</td>
+<td>500ms-1s</td>
+<td>确保文件写入完全结束</td>
+</tr>
+<tr>
+<td>UI 更新</td>
+<td>300-500ms</td>
+<td>平衡响应速度和频繁更新</td>
+</tr>
+<tr>
+<td>日志监控</td>
+<td>1-2s</td>
+<td>日志写入通常较快但可能批量写入</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>提示</strong>：timeout 过短可能导致事件被遗漏，过长则响应延迟。对于不确定的场景，建议先使用 500ms 作为默认值。</p>
+</blockquote>
+<p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify_debouncer_mini::&#123;new_debouncer, DebounceEventResult, notify::RecursiveMode&#125;;<br><span class="hljs-keyword">use</span> std::path::Path;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;(), notify_debouncer_mini::notify::Error&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">debouncer</span> = <span class="hljs-title function_ invoke__">new_debouncer</span>(<br>        std::time::Duration::<span class="hljs-title function_ invoke__">from_secs</span>(<span class="hljs-number">1</span>),<br>        |res: DebounceEventResult| &#123;<br>            <span class="hljs-keyword">match</span> res &#123;<br>                <span class="hljs-title function_ invoke__">Ok</span>(events) =&gt; &#123;<br>                    <span class="hljs-keyword">for</span> <span class="hljs-variable">event</span> <span class="hljs-keyword">in</span> events &#123;<br>                        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文件变更: &#123;:?&#125;&quot;</span>, event.path);<br>                    &#125;<br>                &#125;<br>                <span class="hljs-title function_ invoke__">Err</span>(e) =&gt; <span class="hljs-built_in">eprintln!</span>(<span class="hljs-string">&quot;错误: &#123;:?&#125;&quot;</span>, e),<br>            &#125;<br>        &#125;,<br>    )?;<br><br>    debouncer.<span class="hljs-title function_ invoke__">watcher</span>().<span class="hljs-title function_ invoke__">watch</span>(Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/path&quot;</span>), RecursiveMode::Recursive)?;<br><br>    <span class="hljs-keyword">loop</span> &#123;<br>        std::thread::<span class="hljs-title function_ invoke__">sleep</span>(std::time::Duration::<span class="hljs-title function_ invoke__">from_secs</span>(<span class="hljs-number">1</span>));<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="9-2-notify-debouncer-full"><a href="#9-2-notify-debouncer-full" class="headerlink" title="9.2 notify-debouncer-full"></a>9.2 notify-debouncer-full</h3><p>功能完整的去抖库，在 mini 版本基础上增加了文件路径追踪、事件合并等高级功能。</p>
+<p><strong>主要功能</strong></p>
+<ul>
+<li>重命名事件合并：自动匹配文件的 rename From 和 To 事件</li>
+<li>文件路径追踪：记录文件 ID，跨重命名事件保持路径一致</li>
+<li>创建后不重复：在 Create 事件后不会重复触发 Modify 事件</li>
+<li>目录删除优化：删除目录时只触发一次 Remove 事件</li>
+<li>跨平台文件 ID：macOS&#x2F;Windows 使用 FS Events 追踪文件</li>
+</ul>
+<p><strong>使用场景</strong></p>
+<ul>
+<li>复杂编辑场景：需要处理重命名、移动文件等复杂操作</li>
+<li>构建系统：确保只在文件稳定后才触发构建</li>
+<li>IDE&#x2F;编辑器：需要精确跟踪文件状态变化</li>
+<li>数据同步：需要处理文件重命名等场景</li>
+</ul>
+<p><strong>依赖</strong></p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-attr">notify-debouncer-full</span> = <span class="hljs-string">&quot;0.5&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>函数签名</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">new_debouncer</span>&lt;F: DebounceEventHandler&gt;(<br>    timeout: Duration,<br>    cache: <span class="hljs-type">Option</span>&lt;<span class="hljs-type">Box</span>&lt;<span class="hljs-keyword">dyn</span> FileIdCache&gt;&gt;,<br>    event_handler: F,<br>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;Debouncer&lt;RecommendedWatcher, FileIdMap&gt;, Error&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>timeout</code></td>
+<td><code>Duration</code></td>
+<td>去重时间窗口</td>
+</tr>
+<tr>
+<td><code>cache</code></td>
+<td><code>Option&lt;Box&lt;dyn FileIdCache&gt;&gt;</code></td>
+<td>文件 ID 缓存，<code>None</code> 使用默认的 <code>FileIdMap</code></td>
+</tr>
+<tr>
+<td><code>event_handler</code></td>
+<td>闭包&#x2F;函数</td>
+<td>事件处理回调</td>
+</tr>
+</tbody></table>
+<p><strong>返回值</strong>：<code>Result&lt;Debouncer&lt;RecommendedWatcher, FileIdMap&gt;, Error&gt;</code></p>
+<p><strong>timeout 设置建议</strong></p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>简单热重载</td>
+<td>200-500ms</td>
+<td>足够过滤编辑器保存时的重复事件</td>
+</tr>
+<tr>
+<td>构建系统</td>
+<td>1-2s</td>
+<td>确保文件稳定（写入、重命名都完成）</td>
+</tr>
+<tr>
+<td>IDE 级别监控</td>
+<td>2-3s</td>
+<td>需要处理复杂操作如 git 操作、IDE 自动保存</td>
+</tr>
+<tr>
+<td>文件同步</td>
+<td>2-5s</td>
+<td>给足时间处理大文件和多步骤操作</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>提示</strong>：<code>notify-debouncer-full</code> 支持更精细的过滤，建议比 mini 版设置更长一些，以充分发挥其事件合并能力。如果对文件重命名有需求，建议至少 2 秒。</p>
+</blockquote>
+<p><strong>示例</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> notify_debouncer_full::&#123;new_debouncer, DebounceEventResult, notify::RecursiveMode&#125;;<br><span class="hljs-keyword">use</span> std::path::Path;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;(), notify_debouncer_full::notify::Error&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">debouncer</span> = <span class="hljs-title function_ invoke__">new_debouncer</span>(<br>        std::time::Duration::<span class="hljs-title function_ invoke__">from_secs</span>(<span class="hljs-number">2</span>),<br>        <span class="hljs-literal">None</span>,<br>        |result: DebounceEventResult| &#123;<br>            <span class="hljs-keyword">match</span> result &#123;<br>                <span class="hljs-title function_ invoke__">Ok</span>(events) =&gt; &#123;<br>                    <span class="hljs-keyword">for</span> <span class="hljs-variable">event</span> <span class="hljs-keyword">in</span> events &#123;<br>                        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文件变更: &#123;:?&#125;&quot;</span>, event.paths);<br>                    &#125;<br>                &#125;<br>                <span class="hljs-title function_ invoke__">Err</span>(errors) =&gt; &#123;<br>                    <span class="hljs-keyword">for</span> <span class="hljs-variable">e</span> <span class="hljs-keyword">in</span> errors &#123;<br>                        <span class="hljs-built_in">eprintln!</span>(<span class="hljs-string">&quot;错误: &#123;:?&#125;&quot;</span>, e);<br>                    &#125;<br>                &#125;<br>            &#125;<br>        &#125;,<br>    )?;<br><br>    debouncer.<span class="hljs-title function_ invoke__">watch</span>(Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/path&quot;</span>), RecursiveMode::Recursive)?;<br><br>    <span class="hljs-keyword">loop</span> &#123;<br>        std::thread::<span class="hljs-title function_ invoke__">sleep</span>(std::time::Duration::<span class="hljs-title function_ invoke__">from_secs</span>(<span class="hljs-number">1</span>));<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Rust/" class="print-no-link">#Rust</a>
+      
+        <a href="/tags/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F/" class="print-no-link">#文件系统</a>
+      
+        <a href="/tags/notify/" class="print-no-link">#notify</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/mysql/fedora-dnf-install-mysql84.html" title="Fedora 43 使用 dnf 安装 MySQL 8.4 指南">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Fedora 43 使用 dnf 安装 MySQL 8.4 指南</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/03/24/python/Python%20urllib%20HTTP%E8%AF%B7%E6%B1%82%E6%8C%87%E5%8D%97/" title="Python urllib HTTP请求指南">
+                        <span class="hidden-mobile">Python urllib HTTP请求指南</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

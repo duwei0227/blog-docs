@@ -1,0 +1,1824 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="一、运算符MySQL 8.4 支持多种运算符，用于构建表达式。按功能分为算术、比较、逻辑、位运算四类。 1.1 算术运算符算术运算符用于数值计算。    运算符 说明 示例    + 加法 3 + 5 → 8   - 减法 10 - 4 → 6   * 乘法 3 * 5 → 15   / 除法（返回浮点数） 10 / 3 → 3.3333   DIV 整数除法 10 DIV 3 → 3   % 或">
+  
+  
+  
+  <title>MySQL 8.4 内置函数与运算符 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="MySQL 8.4 内置函数与运算符"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-26 09:00" pubdate>
+          2026年3月26日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          40 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">MySQL 8.4 内置函数与运算符</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="一、运算符"><a href="#一、运算符" class="headerlink" title="一、运算符"></a>一、运算符</h2><p>MySQL 8.4 支持多种运算符，用于构建表达式。按功能分为算术、比较、逻辑、位运算四类。</p>
+<h3 id="1-1-算术运算符"><a href="#1-1-算术运算符" class="headerlink" title="1.1 算术运算符"></a>1.1 算术运算符</h3><p>算术运算符用于数值计算。</p>
+<table>
+<thead>
+<tr>
+<th>运算符</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>+</code></td>
+<td>加法</td>
+<td><code>3 + 5</code> → 8</td>
+</tr>
+<tr>
+<td><code>-</code></td>
+<td>减法</td>
+<td><code>10 - 4</code> → 6</td>
+</tr>
+<tr>
+<td><code>*</code></td>
+<td>乘法</td>
+<td><code>3 * 5</code> → 15</td>
+</tr>
+<tr>
+<td><code>/</code></td>
+<td>除法（返回浮点数）</td>
+<td><code>10 / 3</code> → 3.3333</td>
+</tr>
+<tr>
+<td><code>DIV</code></td>
+<td>整数除法</td>
+<td><code>10 DIV 3</code> → 3</td>
+</tr>
+<tr>
+<td><code>%</code> 或 <code>MOD</code></td>
+<td>取模（余数）</td>
+<td><code>10 % 3</code> → 1</td>
+</tr>
+</tbody></table>
+<p><strong>除法与整数除法示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-number">10</span> <span class="hljs-operator">/</span> <span class="hljs-number">3</span> <span class="hljs-keyword">AS</span> float_div, <span class="hljs-number">10</span> DIV <span class="hljs-number">3</span> <span class="hljs-keyword">AS</span> int_div, <span class="hljs-number">10</span> <span class="hljs-operator">%</span> <span class="hljs-number">3</span> <span class="hljs-keyword">AS</span> remainder, <span class="hljs-number">10</span> MOD <span class="hljs-number">3</span> <span class="hljs-keyword">AS</span> mod_result;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------------+</span>----------<span class="hljs-code">+------------+</span>--------------+<br><span class="hljs-section">| float_div  | int_div  | remainder  | mod_result   |</span><br><span class="hljs-section">+------------+----------+------------+--------------+</span><br><span class="hljs-section">|    3.3333  |        3 |          1 |            1 |</span><br><span class="hljs-section">+------------+----------+------------+--------------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>注意</strong>：<code>/</code> 返回精确小数（与 <code>DECIMAL</code> 上下文），<code>DIV</code> 返回整数。<code>%</code> 和 <code>MOD</code> 功能相同，推荐 <code>MOD()</code> 函数写法以避免与注释符号混淆。</p>
+</blockquote>
+<p><strong>除法精度规则</strong>：MySQL 使用 <code>div_precision_increment</code> 系统变量控制除法结果的小数位数，默认值为 4。分母或分子的位数增加时，精度也会相应提升，显示结果自动四舍五入到对应位数。实际存储精度高于显示精度，可用 <code>CAST(x AS DECIMAL(p, s))</code> 或 <code>FORMAT(x, d)</code> 指定精确位数：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> @<span class="hljs-variable">@div_precision_increment</span>;           <span class="hljs-comment">-- 默认 4</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-number">10</span> <span class="hljs-operator">/</span> <span class="hljs-number">3</span>;                             <span class="hljs-comment">-- 3.3333</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-number">100</span> <span class="hljs-operator">/</span> <span class="hljs-number">3</span>;                             <span class="hljs-comment">-- 33.3333</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">CAST</span>(<span class="hljs-number">10</span> <span class="hljs-operator">/</span> <span class="hljs-number">3</span> <span class="hljs-keyword">AS</span> <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">20</span>, <span class="hljs-number">10</span>));    <span class="hljs-comment">-- 3.3333333333</span><br><span class="hljs-keyword">SELECT</span> FORMAT(<span class="hljs-number">10</span> <span class="hljs-operator">/</span> <span class="hljs-number">3</span>, <span class="hljs-number">6</span>);                   <span class="hljs-comment">-- 3.333333</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>算术运算示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> (<span class="hljs-number">10</span> <span class="hljs-operator">+</span> <span class="hljs-number">5</span>) <span class="hljs-operator">*</span> <span class="hljs-number">2</span> <span class="hljs-operator">-</span> <span class="hljs-number">8</span> <span class="hljs-operator">/</span> <span class="hljs-number">4</span> <span class="hljs-keyword">AS</span> <span class="hljs-keyword">result</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+--------+</span><br><span class="hljs-section">| result |</span><br><span class="hljs-section">+--------+</span><br><span class="hljs-section">|  28.00 |</span><br><span class="hljs-section">+--------+</span><br></code></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="1-2-比较运算符"><a href="#1-2-比较运算符" class="headerlink" title="1.2 比较运算符"></a>1.2 比较运算符</h3><p>比较运算符用于比较表达式，返回 1（真）、0（假）或 NULL。</p>
+<table>
+<thead>
+<tr>
+<th>运算符</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>=</code></td>
+<td>等于</td>
+<td><code>5 = 5</code> → 1</td>
+</tr>
+<tr>
+<td><code>&lt;&gt;</code> 或 <code>!=</code></td>
+<td>不等于</td>
+<td><code>5 &lt;&gt; 3</code> → 1</td>
+</tr>
+<tr>
+<td><code>&lt;</code></td>
+<td>小于</td>
+<td><code>3 &lt; 5</code> → 1</td>
+</tr>
+<tr>
+<td><code>&gt;</code></td>
+<td>大于</td>
+<td><code>5 &gt; 3</code> → 1</td>
+</tr>
+<tr>
+<td><code>&lt;=</code></td>
+<td>小于等于</td>
+<td><code>5 &lt;= 5</code> → 1</td>
+</tr>
+<tr>
+<td><code>&gt;=</code></td>
+<td>大于等于</td>
+<td><code>5 &gt;= 6</code> → 0</td>
+</tr>
+<tr>
+<td><code>&lt;=&gt;</code></td>
+<td>NULL 安全的等于（两者 NULL 也返回 1）</td>
+<td><code>NULL &lt;=&gt; NULL</code> → 1</td>
+</tr>
+<tr>
+<td><code>IS boolean</code></td>
+<td>测试布尔值（TRUE &#x2F; FALSE &#x2F; UNKNOWN）</td>
+<td><code>1 IS TRUE</code> → 1</td>
+</tr>
+<tr>
+<td><code>IS NOT boolean</code></td>
+<td>测试非布尔值</td>
+<td><code>NULL IS NOT UNKNOWN</code> → 1</td>
+</tr>
+<tr>
+<td><code>IS NULL</code></td>
+<td>是否为 NULL</td>
+<td></td>
+</tr>
+<tr>
+<td><code>IS NOT NULL</code></td>
+<td>是否不为 NULL</td>
+<td></td>
+</tr>
+<tr>
+<td><code>BETWEEN min AND max</code></td>
+<td>是否在范围内（含边界）</td>
+<td><code>5 BETWEEN 1 AND 10</code> → 1</td>
+</tr>
+<tr>
+<td><code>NOT BETWEEN ...</code></td>
+<td>是否不在范围内</td>
+<td></td>
+</tr>
+<tr>
+<td><code>IN (val, ...)</code></td>
+<td>是否在列表中</td>
+<td><code>5 IN (1, 3, 5)</code> → 1</td>
+</tr>
+<tr>
+<td><code>NOT IN (val, ...)</code></td>
+<td>是否不在列表中</td>
+<td></td>
+</tr>
+<tr>
+<td><code>LIKE pattern</code></td>
+<td>模式匹配（% 任意字符，_ 单个字符）</td>
+<td><code>&#39;hello&#39; LIKE &#39;h%&#39;</code> → 1</td>
+</tr>
+<tr>
+<td><code>NOT LIKE</code></td>
+<td>模式不匹配</td>
+<td></td>
+</tr>
+<tr>
+<td><code>REGEXP pattern</code> 或 <code>RLIKE</code></td>
+<td>正则表达式匹配</td>
+<td><code>&#39;abc&#39; REGEXP &#39;^a&#39;</code> → 1</td>
+</tr>
+<tr>
+<td><code>NOT REGEXP</code></td>
+<td>正则表达式不匹配</td>
+<td></td>
+</tr>
+<tr>
+<td><code>MEMBER OF(json_array)</code></td>
+<td>是否为 JSON 数组的元素</td>
+<td><code>17 MEMBER OF(&#39;[23, 17, 10]&#39;)</code> → 1</td>
+</tr>
+<tr>
+<td><code>EXISTS(subquery)</code></td>
+<td>子查询是否返回行</td>
+<td></td>
+</tr>
+<tr>
+<td><code>NOT EXISTS(subquery)</code></td>
+<td>子查询是否无返回行</td>
+<td></td>
+</tr>
+<tr>
+<td><code>INTERVAL(N, N1, N2, ...)</code></td>
+<td>返回 N &lt; Ni 时最小的 i-1，否则 -1</td>
+<td><code>INTERVAL(10, 1, 10, 100)</code> → 2</td>
+</tr>
+<tr>
+<td><code>ISNULL(expr)</code></td>
+<td>expr 为 NULL 返回 1，否则返回 0</td>
+<td><code>ISNULL(1/0)</code> → 1</td>
+</tr>
+<tr>
+<td><code>STRCMP(expr1, expr2)</code></td>
+<td>字符串比较（0 相等，-1 小于，1 大于）</td>
+<td><code>STRCMP(&#39;abc&#39;, &#39;abd&#39;)</code> → -1</td>
+</tr>
+<tr>
+<td><code>BINARY str</code></td>
+<td>将字符串转为二进制</td>
+<td><code>BINARY &#39;abc&#39; = &#39;ABC&#39;</code> → 0（区分大小写）</td>
+</tr>
+</tbody></table>
+<p><strong>常用比较示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-number">5</span> <span class="hljs-operator">=</span> <span class="hljs-number">5</span> <span class="hljs-keyword">AS</span> eq, <span class="hljs-number">5</span> <span class="hljs-operator">&lt;&gt;</span> <span class="hljs-number">3</span> <span class="hljs-keyword">AS</span> neq, <span class="hljs-number">5</span> <span class="hljs-operator">&lt;</span> <span class="hljs-number">3</span> <span class="hljs-keyword">AS</span> lt, <span class="hljs-keyword">NULL</span> <span class="hljs-operator">&lt;=&gt;</span> <span class="hljs-keyword">NULL</span> <span class="hljs-keyword">AS</span> null_safe_eq;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-number">5</span> <span class="hljs-keyword">BETWEEN</span> <span class="hljs-number">1</span> <span class="hljs-keyword">AND</span> <span class="hljs-number">10</span> <span class="hljs-keyword">AS</span> in_range, <span class="hljs-number">5</span> <span class="hljs-keyword">IN</span> (<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">5</span>) <span class="hljs-keyword">AS</span> in_list;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-string">&#x27;hello&#x27;</span> <span class="hljs-keyword">LIKE</span> <span class="hljs-string">&#x27;h%&#x27;</span> <span class="hljs-keyword">AS</span> like_match, <span class="hljs-string">&#x27;world&#x27;</span> REGEXP <span class="hljs-string">&#x27;^w&#x27;</span> <span class="hljs-keyword">AS</span> regex_match;<br><span class="hljs-keyword">SELECT</span> ISNULL(<span class="hljs-number">1</span><span class="hljs-operator">/</span><span class="hljs-number">0</span>) <span class="hljs-keyword">AS</span> is_null_division, ISNULL(<span class="hljs-number">1</span><span class="hljs-operator">+</span><span class="hljs-number">1</span>) <span class="hljs-keyword">AS</span> is_null_expr;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">COALESCE</span>(<span class="hljs-keyword">NULL</span>, <span class="hljs-string">&#x27;first&#x27;</span>, <span class="hljs-string">&#x27;second&#x27;</span>) <span class="hljs-keyword">AS</span> first_not_null;<br><span class="hljs-keyword">SELECT</span> GREATEST(<span class="hljs-number">3</span>, <span class="hljs-number">1</span>, <span class="hljs-number">9</span>, <span class="hljs-number">5</span>) <span class="hljs-keyword">AS</span> max_val, LEAST(<span class="hljs-number">3</span>, <span class="hljs-number">1</span>, <span class="hljs-number">9</span>, <span class="hljs-number">5</span>) <span class="hljs-keyword">AS</span> min_val;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----+</span>-----<span class="hljs-code">+-----+</span>--------------+<br><span class="hljs-section">| eq | neq | lt  | null_safe_eq |</span><br><span class="hljs-section">+----+-----+-----+--------------+</span><br><span class="hljs-section">|  1 |   1 |   0 |            1 |</span><br><span class="hljs-section">+----+-----+-----+--------------+</span><br><br><span class="hljs-code">+----------+</span>----------+<br><span class="hljs-section">| in_range | in_list  |</span><br><span class="hljs-section">+----------+----------+</span><br><span class="hljs-section">|        1 |        1 |</span><br><span class="hljs-section">+----------+----------+</span><br><br><span class="hljs-code">+------------+</span>-------------+<br><span class="hljs-section">| like_match | regex_match |</span><br><span class="hljs-section">+------------+-------------+</span><br><span class="hljs-section">|          1 |           1 |</span><br><span class="hljs-section">+------------+-------------+</span><br><br><span class="hljs-code">+---------------------+</span>------------+<br><span class="hljs-section">| isnull_division     | isnull_expr |</span><br><span class="hljs-section">+---------------------+------------+</span><br><span class="hljs-section">|                   1 |          0 |</span><br><span class="hljs-section">+---------------------+------------+</span><br><br><span class="hljs-code">+------------------+</span><br><span class="hljs-section">| first_not_null    |</span><br><span class="hljs-section">+------------------+</span><br><span class="hljs-section">| first             |</span><br><span class="hljs-section">+------------------+</span><br><br><span class="hljs-code">+---------+</span>---------+<br><span class="hljs-section">| max_val  | min_val  |</span><br><span class="hljs-section">+---------+---------+</span><br><span class="hljs-section">|       9  |       1 |</span><br><span class="hljs-section">+---------+---------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>NULL 比较注意事项</strong>：普通比较运算符遇到 NULL 时返回 NULL。使用 <code>&lt;=&gt;</code> 或 <code>IS NULL</code> 处理 NULL 值。</p>
+</blockquote>
+<p><strong>NULL 安全的比较：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">NULL</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">NULL</span> <span class="hljs-keyword">AS</span> normal_eq, <span class="hljs-keyword">NULL</span> <span class="hljs-operator">&lt;=&gt;</span> <span class="hljs-keyword">NULL</span> <span class="hljs-keyword">AS</span> safe_eq, <span class="hljs-number">5</span> <span class="hljs-keyword">IS</span> <span class="hljs-keyword">NULL</span> <span class="hljs-keyword">AS</span> not_null;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------------+</span>----------<span class="hljs-code">+-----------+</span><br><span class="hljs-section">| normal_eq  | safe_eq  | not_null  |</span><br><span class="hljs-section">+------------+----------+-----------+</span><br><span class="hljs-section">|       NULL |        1 |         0 |</span><br><span class="hljs-section">+------------+----------+-----------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>IS 布尔值测试：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-number">1</span> <span class="hljs-keyword">IS</span> <span class="hljs-literal">TRUE</span> <span class="hljs-keyword">AS</span> is_true, <span class="hljs-number">0</span> <span class="hljs-keyword">IS</span> <span class="hljs-literal">FALSE</span> <span class="hljs-keyword">AS</span> is_false, <span class="hljs-keyword">NULL</span> <span class="hljs-keyword">IS</span> <span class="hljs-literal">UNKNOWN</span> <span class="hljs-keyword">AS</span> is_unknown;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-number">1</span> <span class="hljs-keyword">IS</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">UNKNOWN</span> <span class="hljs-keyword">AS</span> not_unknown, <span class="hljs-keyword">NULL</span> <span class="hljs-keyword">IS</span> <span class="hljs-keyword">NOT</span> <span class="hljs-literal">UNKNOWN</span> <span class="hljs-keyword">AS</span> null_not_unknown;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----------+</span>------------<span class="hljs-code">+---------------+</span><br><span class="hljs-section">| is_true  | is_false   | is_unknown    |</span><br><span class="hljs-section">+----------+------------+---------------+</span><br><span class="hljs-section">|        1 |          1 |             1 |</span><br><span class="hljs-section">+----------+------------+---------------+</span><br><br><span class="hljs-code">+---------------+</span>---------------------+<br><span class="hljs-section">| not_unknown   | null_not_unknown     |</span><br><span class="hljs-section">+---------------+---------------------+</span><br><span class="hljs-section">|             1 |                   0 |</span><br><span class="hljs-section">+---------------+---------------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>INTERVAL 函数示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- INTERVAL(N, N1, N2, N3, ...) 返回第一个 &lt;= N 的区间索引</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-type">INTERVAL</span>(<span class="hljs-number">23</span>, <span class="hljs-number">1</span>, <span class="hljs-number">15</span>, <span class="hljs-number">17</span>, <span class="hljs-number">30</span>, <span class="hljs-number">44</span>, <span class="hljs-number">200</span>) <span class="hljs-keyword">AS</span> idx;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-type">INTERVAL</span>(<span class="hljs-number">10</span>, <span class="hljs-number">1</span>, <span class="hljs-number">10</span>, <span class="hljs-number">100</span>, <span class="hljs-number">1000</span>) <span class="hljs-keyword">AS</span> idx;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-type">INTERVAL</span>(<span class="hljs-number">22</span>, <span class="hljs-number">23</span>, <span class="hljs-number">30</span>, <span class="hljs-number">44</span>, <span class="hljs-number">200</span>) <span class="hljs-keyword">AS</span> idx;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-----+</span><br><span class="hljs-section">| idx |</span><br><span class="hljs-section">+-----+</span><br><span class="hljs-section">|   3 |</span><br><span class="hljs-section">+-----+</span><br><br><span class="hljs-code">+-----+</span><br><span class="hljs-section">| idx |</span><br><span class="hljs-section">+-----+</span><br><span class="hljs-section">|   2 |</span><br><span class="hljs-section">+-----+</span><br><br><span class="hljs-code">+-----+</span><br><span class="hljs-section">| idx |</span><br><span class="hljs-section">+-----+</span><br><span class="hljs-section">|   0 |</span><br><span class="hljs-section">+-----+</span><br><br>&gt; INTERVAL 返回 0 表示 N &lt;= N1，返回 1 表示 N1 &lt; N &lt;= N2，以此类推。参数必须升序排列，内部使用二分查找，性能高效。<br></code></pre></td></tr></table></figure>
+
+<p><strong>MEMBER OF 示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-number">17</span> <span class="hljs-keyword">MEMBER</span> <span class="hljs-keyword">OF</span>(<span class="hljs-string">&#x27;[23, &quot;abc&quot;, 17, &quot;ab&quot;, 10]&#x27;</span>) <span class="hljs-keyword">AS</span> <span class="hljs-keyword">result</span>;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-string">&#x27;ab&#x27;</span> <span class="hljs-keyword">MEMBER</span> <span class="hljs-keyword">OF</span>(<span class="hljs-string">&#x27;[23, &quot;abc&quot;, 17, &quot;ab&quot;, 10]&#x27;</span>) <span class="hljs-keyword">AS</span> <span class="hljs-keyword">result</span>;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-number">7</span> <span class="hljs-keyword">MEMBER</span> <span class="hljs-keyword">OF</span>(<span class="hljs-string">&#x27;[23, &quot;abc&quot;, 17, &quot;ab&quot;, 10]&#x27;</span>) <span class="hljs-keyword">AS</span> <span class="hljs-keyword">result</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+--------+</span><br><span class="hljs-section">| result |</span><br><span class="hljs-section">+--------+</span><br><span class="hljs-section">|      1 |</span><br><span class="hljs-section">+--------+</span><br><br><span class="hljs-code">+--------+</span><br><span class="hljs-section">| result |</span><br><span class="hljs-section">+--------+</span><br><span class="hljs-section">|      1 |</span><br><span class="hljs-section">+--------+</span><br><br><span class="hljs-code">+--------+</span><br><span class="hljs-section">| result |</span><br><span class="hljs-section">+--------+</span><br><span class="hljs-section">|      0 |</span><br><span class="hljs-section">+--------+</span><br><br>&gt; 部分匹配不成立：<span class="hljs-emphasis">&#x27;ab&#x27;</span> 是 <span class="hljs-emphasis">&#x27;abc&#x27;</span> 的一部分但不是独立元素，所以 <span class="hljs-emphasis">&#x27;abc&#x27;</span> 匹配而 <span class="hljs-emphasis">&#x27;ab&#x27;</span> 不匹配。字符串精确匹配，不进行类型转换。<br></code></pre></td></tr></table></figure>
+
+<p><strong>BINARY 运算符示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-string">&#x27;abc&#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;ABC&#x27;</span> <span class="hljs-keyword">AS</span> no_binary, <span class="hljs-type">BINARY</span> <span class="hljs-string">&#x27;abc&#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;ABC&#x27;</span> <span class="hljs-keyword">AS</span> with_binary;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-type">BINARY</span> <span class="hljs-string">&#x27;hello&#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;HELLO&#x27;</span> <span class="hljs-keyword">AS</span> binary_case_sensitive;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+--------------+</span>---------------+<br><span class="hljs-section">| no_binary    | with_binary   |</span><br><span class="hljs-section">+--------------+---------------+</span><br><span class="hljs-section">|            1 |             0 |</span><br><span class="hljs-section">+--------------+---------------+</span><br><br><span class="hljs-code">+-----------------------+</span><br><span class="hljs-section">| binary_case_sensitive  |</span><br><span class="hljs-section">+-----------------------+</span><br><span class="hljs-section">|                     0 |</span><br><span class="hljs-section">+-----------------------+</span><br><br>&gt; 不带 BINARY 时，字符串比较不区分大小写（默认 utf8mb4）。BINARY 将字符串转为二进制字节序列，按字节比较，强制区分大小写。<br></code></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="1-3-逻辑运算符"><a href="#1-3-逻辑运算符" class="headerlink" title="1.3 逻辑运算符"></a>1.3 逻辑运算符</h3><p>逻辑运算符返回真（1）或假（0）。</p>
+<table>
+<thead>
+<tr>
+<th>运算符</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>AND</code> 或 <code>&amp;&amp;</code></td>
+<td>逻辑与（全真为真）</td>
+<td><code>1 AND 1</code> → 1</td>
+</tr>
+<tr>
+<td><code>OR</code> 或 <code>||</code></td>
+<td>逻辑或（任一为真即为真）</td>
+<td><code>1 OR 0</code> → 1</td>
+</tr>
+<tr>
+<td><code>NOT</code> 或 <code>!</code></td>
+<td>逻辑非</td>
+<td><code>NOT 1</code> → 0</td>
+</tr>
+<tr>
+<td><code>XOR</code></td>
+<td>逻辑异或（一真一假为真）</td>
+<td><code>1 XOR 0</code> → 1</td>
+</tr>
+</tbody></table>
+<p><strong>逻辑运算真值表：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-number">1</span> <span class="hljs-keyword">AND</span> <span class="hljs-number">1</span> <span class="hljs-keyword">AS</span> t_and_t, <span class="hljs-number">1</span> <span class="hljs-keyword">AND</span> <span class="hljs-number">0</span> <span class="hljs-keyword">AS</span> t_and_f, <span class="hljs-number">0</span> <span class="hljs-keyword">AND</span> <span class="hljs-number">0</span> <span class="hljs-keyword">AS</span> f_and_f;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-number">1</span> <span class="hljs-keyword">OR</span> <span class="hljs-number">0</span> <span class="hljs-keyword">AS</span> t_or_f, <span class="hljs-number">0</span> <span class="hljs-keyword">OR</span> <span class="hljs-number">0</span> <span class="hljs-keyword">AS</span> f_or_f;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">NOT</span> <span class="hljs-number">1</span> <span class="hljs-keyword">AS</span> not_t, <span class="hljs-keyword">NOT</span> <span class="hljs-number">0</span> <span class="hljs-keyword">AS</span> not_f;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-number">1</span> XOR <span class="hljs-number">1</span> <span class="hljs-keyword">AS</span> t_xor_t, <span class="hljs-number">1</span> XOR <span class="hljs-number">0</span> <span class="hljs-keyword">AS</span> t_xor_f, <span class="hljs-number">0</span> XOR <span class="hljs-number">0</span> <span class="hljs-keyword">AS</span> f_xor_f;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+--------+</span>--------<span class="hljs-code">+--------+</span><br><span class="hljs-section">| t_and_t | t_and_f | f_and_f |</span><br><span class="hljs-section">+--------+--------+--------+</span><br><span class="hljs-section">|       1 |       0 |       0 |</span><br><span class="hljs-section">+--------+--------+--------+</span><br><br><span class="hljs-code">+-------+</span>--------+<br><span class="hljs-section">| t_or_f | f_or_f |</span><br><span class="hljs-section">+-------+--------+</span><br><span class="hljs-section">|      1 |      0 |</span><br><span class="hljs-section">+-------+--------+</span><br><br><span class="hljs-code">+-------+</span>-------+<br><span class="hljs-section">| not_t | not_f |</span><br><span class="hljs-section">+-------+-------+</span><br><span class="hljs-section">|     0 |     1 |</span><br><span class="hljs-section">+-------+-------+</span><br><br><span class="hljs-code">+--------+</span>--------<span class="hljs-code">+--------+</span><br><span class="hljs-section">| t_xor_t | t_xor_f | f_xor_f |</span><br><span class="hljs-section">+--------+--------+--------+</span><br><span class="hljs-section">|       0 |       1 |       0 |</span><br><span class="hljs-section">+--------+--------+--------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>&amp;&amp;</code>、<code>||</code>、<code>!</code> 是非标准写法，兼容性不如 <code>AND</code>、<code>OR</code>、<code>NOT</code>。建议使用后者。</p>
+</blockquote>
+<hr>
+<h3 id="1-4-位运算符"><a href="#1-4-位运算符" class="headerlink" title="1.4 位运算符"></a>1.4 位运算符</h3><p>位运算符对整数值的二进制位进行操作。</p>
+<table>
+<thead>
+<tr>
+<th>运算符</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&amp;</code></td>
+<td>按位与</td>
+<td><code>5 &amp; 3</code> → 1</td>
+</tr>
+<tr>
+<td><code>|</code></td>
+<td>按位或</td>
+<td><code>5 | 3</code> → 7</td>
+</tr>
+<tr>
+<td><code>^</code></td>
+<td>按位异或</td>
+<td><code>5 ^ 3</code> → 6</td>
+</tr>
+<tr>
+<td><code>~</code></td>
+<td>按位取反</td>
+<td><code>~0</code> → 全 1（补码）</td>
+</tr>
+<tr>
+<td><code>-&gt;</code></td>
+<td>JSON 列路径取值（等价于 <code>JSON_EXTRACT()</code>）</td>
+<td><code>col-&gt;&gt;&#39;$.name&#39;</code></td>
+</tr>
+<tr>
+<td><code>-&gt;&gt;</code></td>
+<td>JSON 列路径取值并取消引号（等价于 <code>JSON_UNQUOTE(JSON_EXTRACT())</code>，MySQL 8.0.13 起已弃用）</td>
+<td><code>col-&gt;&gt;&#39;$.name&#39;</code></td>
+</tr>
+<tr>
+<td><code>&lt;&lt;</code></td>
+<td>左移</td>
+<td><code>5 &lt;&lt; 1</code> → 10</td>
+</tr>
+<tr>
+<td><code>&gt;&gt;</code></td>
+<td>右移</td>
+<td><code>5 &gt;&gt; 1</code> → 2</td>
+</tr>
+</tbody></table>
+<p><strong>位运算示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-number">5</span> <span class="hljs-operator">&amp;</span> <span class="hljs-number">3</span> <span class="hljs-keyword">AS</span> bit_and, <span class="hljs-number">5</span> <span class="hljs-operator">|</span> <span class="hljs-number">3</span> <span class="hljs-keyword">AS</span> bit_or, <span class="hljs-number">5</span> <span class="hljs-operator">^</span> <span class="hljs-number">3</span> <span class="hljs-keyword">AS</span> bit_xor;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">~</span><span class="hljs-number">0</span> <span class="hljs-keyword">AS</span> all_bits_on, <span class="hljs-number">5</span> <span class="hljs-operator">&lt;&lt;</span> <span class="hljs-number">1</span> <span class="hljs-keyword">AS</span> left_shift, <span class="hljs-number">5</span> <span class="hljs-operator">&gt;&gt;</span> <span class="hljs-number">1</span> <span class="hljs-keyword">AS</span> right_shift;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+---------+</span>---------<span class="hljs-code">+---------+</span><br><span class="hljs-section">| bit_and | bit_or  | bit_xor |</span><br><span class="hljs-section">+---------+---------+---------+</span><br><span class="hljs-section">|       1 |       7 |       6 |</span><br><span class="hljs-section">+---------+---------+---------+</span><br><br><span class="hljs-code">+-------------+</span>------------<span class="hljs-code">+-------------+</span><br><span class="hljs-section">| all_bits_on | left_shift | right_shift |</span><br><span class="hljs-section">+-------------+------------+-------------+</span><br><span class="hljs-section">|           -1 |         10 |           2 |</span><br><span class="hljs-section">+-------------+------------+-------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>权限位掩码示例（READ&#x3D;1, WRITE&#x3D;2, DELETE&#x3D;4, ADMIN&#x3D;8）：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-number">3</span> <span class="hljs-operator">&amp;</span> <span class="hljs-number">1</span> <span class="hljs-keyword">AS</span> has_read, <span class="hljs-number">3</span> <span class="hljs-operator">&amp;</span> <span class="hljs-number">2</span> <span class="hljs-keyword">AS</span> has_write, <span class="hljs-number">3</span> <span class="hljs-operator">&amp;</span> <span class="hljs-number">4</span> <span class="hljs-keyword">AS</span> has_delete;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-----------+</span>------------<span class="hljs-code">+-------------+</span><br><span class="hljs-section">| has_read  | has_write  | has_delete  |</span><br><span class="hljs-section">+-----------+------------+-------------+</span><br><span class="hljs-section">|         1 |          2 |           0 |</span><br><span class="hljs-section">+-----------+------------+-------------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>3 &amp; 4 = 0</code> 表示权限 3 不包含 DELETE。可用 <code>IF(flags &amp; 4, &#39;YES&#39;, &#39;NO&#39;)</code> 判断权限。</p>
+</blockquote>
+<p><strong>JSON 列路径运算符示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> meta<span class="hljs-operator">-</span><span class="hljs-operator">&gt;&gt;</span><span class="hljs-string">&#x27;$.name&#x27;</span> <span class="hljs-keyword">AS</span> name, meta<span class="hljs-operator">-</span><span class="hljs-operator">&gt;&gt;</span><span class="hljs-string">&#x27;$.age&#x27;</span> <span class="hljs-keyword">AS</span> age <span class="hljs-keyword">FROM</span> json_demo;<br><span class="hljs-comment">-- 等价于</span><br><span class="hljs-keyword">SELECT</span> JSON_UNQUOTE(JSON_EXTRACT(meta, <span class="hljs-string">&#x27;$.name&#x27;</span>)) <span class="hljs-keyword">AS</span> name <span class="hljs-keyword">FROM</span> json_demo;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>-&gt;</code> 等价于 <code>JSON_EXTRACT()</code>，<code>-&gt;&gt;</code> 等价于 <code>JSON_UNQUOTE(JSON_EXTRACT())</code>。官方文档中 <code>-&gt;&gt;</code> 已标记为弃用，推荐使用 <code>JSON_UNQUOTE(JSON_EXTRACT())</code> 或 <code>JSON_VALUE()</code> 替代。</p>
+</blockquote>
+<hr>
+<h3 id="1-5-赋值运算符"><a href="#1-5-赋值运算符" class="headerlink" title="1.5 赋值运算符"></a>1.5 赋值运算符</h3><table>
+<thead>
+<tr>
+<th>运算符</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>:=</code></td>
+<td>赋值（可在任何表达式中使用，永不解释为比较运算符）</td>
+<td><code>@var := 1</code></td>
+</tr>
+<tr>
+<td><code>=</code></td>
+<td>赋值（仅在 SET 语句或 UPDATE SET 子句中为赋值，其他上下文为比较运算符）</td>
+<td></td>
+</tr>
+</tbody></table>
+<p><strong>赋值运算符示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-variable">@var1</span> :<span class="hljs-operator">=</span> <span class="hljs-number">1</span> <span class="hljs-keyword">AS</span> assigned, <span class="hljs-variable">@var2</span> :<span class="hljs-operator">=</span> <span class="hljs-variable">@var1</span> <span class="hljs-operator">+</span> <span class="hljs-number">10</span> <span class="hljs-keyword">AS</span> derived;<br><span class="hljs-keyword">UPDATE</span> users <span class="hljs-keyword">SET</span> score <span class="hljs-operator">=</span> score <span class="hljs-operator">+</span> <span class="hljs-number">10</span> <span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+---------+</span><br><span class="hljs-section">| assigned |</span><br><span class="hljs-section">+---------+</span><br><span class="hljs-section">|        1 |</span><br><span class="hljs-section">+---------+</span><br><br>&gt; <span class="hljs-code">`` := ``</span> 可在任何 SQL 语句中使用赋值，<span class="hljs-code">`` = ``</span> 在 SET/UPDATE 中为赋值，在 SELECT 中为比较。<br></code></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="1-6-运算符优先级"><a href="#1-6-运算符优先级" class="headerlink" title="1.6 运算符优先级"></a>1.6 运算符优先级</h3><p>运算符按以下优先级从高到低执行，优先级相同时从左到右结合。括号 <code>()</code> 可显式改变优先级。</p>
+<figure class="highlight excel"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs excel">INTERVAL             -- 最高<br>BINARY, COLLATE<br>!                    -- 逻辑非（按位取反）<br>- (unary), ~         -- 负号、按位取反<br>^<br>*, /, DIV, %, <span class="hljs-built_in">MOD</span><br>+ (binary), - (binary)  -- 加减<br>&lt;&lt;, &gt;&gt;<br>&amp;<br>|<br>=, &lt;=&gt;, &gt;=, &gt;, &lt;=, &lt;, &lt;&gt;, !=, IS, LIKE, REGEXP, IN, MEMBER OF<br>BETWEEN, CASE, WHEN, THEN, ELSE<br><span class="hljs-built_in">NOT</span><br><span class="hljs-built_in">AND</span>, &amp;&amp;<br><span class="hljs-built_in">XOR</span><br><span class="hljs-built_in">OR</span>, ||<br>= (assignment), <span class="hljs-symbol">:</span>=   -- 最低<br></code></pre></td></tr></table></figure>
+
+<p><strong>优先级示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-number">2</span> <span class="hljs-operator">+</span> <span class="hljs-number">3</span> <span class="hljs-operator">*</span> <span class="hljs-number">4</span> <span class="hljs-keyword">AS</span> default_priority, (<span class="hljs-number">2</span> <span class="hljs-operator">+</span> <span class="hljs-number">3</span>) <span class="hljs-operator">*</span> <span class="hljs-number">4</span> <span class="hljs-keyword">AS</span> explicit_priority;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------------------+</span>-------------------+<br><span class="hljs-section">| default_priority | explicit_priority |</span><br><span class="hljs-section">+------------------+-------------------+</span><br><span class="hljs-section">|                14 |                20 |</span><br><span class="hljs-section">+------------------+-------------------+</span><br></code></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="二、字符串函数"><a href="#二、字符串函数" class="headerlink" title="二、字符串函数"></a>二、字符串函数</h2><h3 id="2-1-大小写与空白处理"><a href="#2-1-大小写与空白处理" class="headerlink" title="2.1 大小写与空白处理"></a>2.1 大小写与空白处理</h3><table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>UPPER(str)</code></td>
+<td>转为大写</td>
+<td><code>UPPER(&#39;hello&#39;)</code> → <code>&#39;HELLO&#39;</code></td>
+</tr>
+<tr>
+<td><code>LOWER(str)</code></td>
+<td>转为小写</td>
+<td><code>LOWER(&#39;HELLO&#39;)</code> → <code>&#39;hello&#39;</code></td>
+</tr>
+<tr>
+<td><code>LENGTH(str)</code></td>
+<td>字节长度</td>
+<td><code>LENGTH(&#39;你好&#39;)</code> → 6</td>
+</tr>
+<tr>
+<td><code>CHAR_LENGTH(str)</code></td>
+<td>字符数</td>
+<td><code>CHAR_LENGTH(&#39;你好&#39;)</code> → 2</td>
+</tr>
+<tr>
+<td><code>CONCAT(str, ...)</code></td>
+<td>连接字符串</td>
+<td><code>CONCAT(&#39;a&#39;, &#39;b&#39;)</code> → <code>&#39;ab&#39;</code></td>
+</tr>
+<tr>
+<td><code>CONCAT_WS(sep, str, ...)</code></td>
+<td>用分隔符连接</td>
+<td><code>CONCAT_WS(&#39;-&#39;, &#39;a&#39;, &#39;b&#39;)</code> → <code>&#39;a-b&#39;</code></td>
+</tr>
+<tr>
+<td><code>LEFT(str, n)</code></td>
+<td>取左侧 n 个字符</td>
+<td><code>LEFT(&#39;hello&#39;, 2)</code> → <code>&#39;he&#39;</code></td>
+</tr>
+<tr>
+<td><code>RIGHT(str, n)</code></td>
+<td>取右侧 n 个字符</td>
+<td><code>RIGHT(&#39;hello&#39;, 2)</code> → <code>&#39;lo&#39;</code></td>
+</tr>
+<tr>
+<td><code>SUBSTRING(str, pos, len)</code> &#x2F; <code>SUBSTR(str, pos, len)</code></td>
+<td>截取子串，pos 从 1 开始，支持负数（从末尾倒计数）</td>
+<td><code>SUBSTRING(&#39;hello&#39;, 2, 3)</code> → <code>&#39;ell&#39;</code></td>
+</tr>
+<tr>
+<td><code>TRIM([rem FROM] str)</code></td>
+<td>去除首尾空白</td>
+<td><code>TRIM(&#39;  hi  &#39;)</code> → <code>&#39;hi&#39;</code></td>
+</tr>
+<tr>
+<td><code>LTRIM(str)</code></td>
+<td>去除左侧空白</td>
+<td></td>
+</tr>
+<tr>
+<td><code>RTRIM(str)</code></td>
+<td>去除右侧空白</td>
+<td></td>
+</tr>
+<tr>
+<td><code>LPAD(str, len, pad)</code></td>
+<td>左侧填充到指定长度</td>
+<td><code>LPAD(&#39;hi&#39;, 5, &#39;0&#39;)</code> → <code>&#39;000hi&#39;</code></td>
+</tr>
+<tr>
+<td><code>RPAD(str, len, pad)</code></td>
+<td>右侧填充到指定长度</td>
+<td><code>RPAD(&#39;hi&#39;, 5, &#39;0&#39;)</code> → <code>&#39;hi000&#39;</code></td>
+</tr>
+<tr>
+<td><code>REPLACE(str, from, to)</code></td>
+<td>替换子串</td>
+<td><code>REPLACE(&#39;hello&#39;, &#39;l&#39;, &#39;x&#39;)</code> → <code>&#39;hexxo&#39;</code></td>
+</tr>
+<tr>
+<td><code>REVERSE(str)</code></td>
+<td>反转字符串</td>
+<td><code>REVERSE(&#39;hello&#39;)</code> → <code>&#39;olleh&#39;</code></td>
+</tr>
+</tbody></table>
+<p><strong>字符串处理示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">UPPER</span>(<span class="hljs-string">&#x27;hello&#x27;</span>) <span class="hljs-keyword">AS</span> upper_case, <span class="hljs-built_in">LOWER</span>(<span class="hljs-string">&#x27;WORLD&#x27;</span>) <span class="hljs-keyword">AS</span> lower_case;<br><span class="hljs-keyword">SELECT</span> LENGTH(<span class="hljs-string">&#x27;你好&#x27;</span>) <span class="hljs-keyword">AS</span> byte_len, <span class="hljs-keyword">CHAR_LENGTH</span>(<span class="hljs-string">&#x27;你好&#x27;</span>) <span class="hljs-keyword">AS</span> char_len;<br><span class="hljs-keyword">SELECT</span> CONCAT(<span class="hljs-string">&#x27;Hello&#x27;</span>, <span class="hljs-string">&#x27; &#x27;</span>, <span class="hljs-string">&#x27;World&#x27;</span>) <span class="hljs-keyword">AS</span> greeting, CONCAT_WS(<span class="hljs-string">&#x27;-&#x27;</span>, <span class="hljs-string">&#x27;a&#x27;</span>, <span class="hljs-string">&#x27;b&#x27;</span>, <span class="hljs-string">&#x27;c&#x27;</span>) <span class="hljs-keyword">AS</span> separated;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------------+</span>------------+<br><span class="hljs-section">| upper_case | lower_case |</span><br><span class="hljs-section">+------------+------------+</span><br><span class="hljs-section">| HELLO      | world       |</span><br><span class="hljs-section">+------------+------------+</span><br><br><span class="hljs-code">+----------+</span>----------+<br><span class="hljs-section">| byte_len | char_len |</span><br><span class="hljs-section">+----------+----------+</span><br><span class="hljs-section">|        6 |        2 |</span><br><span class="hljs-section">+----------+----------+</span><br><br><span class="hljs-code">+---------------------+</span>------------+<br><span class="hljs-section">| greeting            | separated  |</span><br><span class="hljs-section">+---------------------+------------+</span><br><span class="hljs-section">| Hello World         | a-b-c      |</span><br><span class="hljs-section">+---------------------+------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>子串截取与替换：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">LEFT</span>(<span class="hljs-string">&#x27;hello&#x27;</span>, <span class="hljs-number">2</span>) <span class="hljs-keyword">AS</span> left_part, <span class="hljs-keyword">RIGHT</span>(<span class="hljs-string">&#x27;hello&#x27;</span>, <span class="hljs-number">3</span>) <span class="hljs-keyword">AS</span> right_part;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">SUBSTRING</span>(<span class="hljs-string">&#x27;hello&#x27;</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>) <span class="hljs-keyword">AS</span> substring_1, SUBSTR(<span class="hljs-string">&#x27;2026-03-26&#x27;</span>, <span class="hljs-number">1</span>, <span class="hljs-number">4</span>) <span class="hljs-keyword">AS</span> year_part;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">SUBSTRING</span>(<span class="hljs-string">&#x27;hello&#x27;</span>, <span class="hljs-number">-2</span>, <span class="hljs-number">2</span>) <span class="hljs-keyword">AS</span> neg_start;  <span class="hljs-comment">-- 从倒数第2位取2个字符</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">TRIM</span>(<span class="hljs-string">&#x27;  hello  &#x27;</span>) <span class="hljs-keyword">AS</span> trimmed, LPAD(<span class="hljs-string">&#x27;42&#x27;</span>, <span class="hljs-number">5</span>, <span class="hljs-string">&#x27;0&#x27;</span>) <span class="hljs-keyword">AS</span> zero_padded;<br><span class="hljs-keyword">SELECT</span> REPLACE(<span class="hljs-string">&#x27;hello-world&#x27;</span>, <span class="hljs-string">&#x27;-&#x27;</span>, <span class="hljs-string">&#x27;_&#x27;</span>) <span class="hljs-keyword">AS</span> replaced, REVERSE(<span class="hljs-string">&#x27;hello&#x27;</span>) <span class="hljs-keyword">AS</span> reversed;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-----------+</span>-------------+<br><span class="hljs-section">| left_part | right_part  |</span><br><span class="hljs-section">+-----------+-------------+</span><br><span class="hljs-section">| he        | llo         |</span><br><span class="hljs-section">+-----------+-------------+</span><br><br><span class="hljs-code">+------------+</span>------------+<br><span class="hljs-section">| substring_1 | year_part  |</span><br><span class="hljs-section">+------------+------------+</span><br><span class="hljs-section">| ell        | 2026        |</span><br><span class="hljs-section">+------------+------------+</span><br><br><span class="hljs-code">+------------+</span><br><span class="hljs-section">| neg_start  |</span><br><span class="hljs-section">+------------+</span><br><span class="hljs-section">| lo         |</span><br><span class="hljs-section">+------------+</span><br><br><span class="hljs-code">+---------+</span>--------------+<br><span class="hljs-section">| trimmed | zero_padded  |</span><br><span class="hljs-section">+---------+--------------+</span><br><span class="hljs-section">| hello   | 00042        |</span><br><span class="hljs-section">+---------+--------------+</span><br><br><span class="hljs-code">+-----------+</span>-----------+<br><span class="hljs-section">| replaced | reversed  |</span><br><span class="hljs-section">+-----------+-----------+</span><br><span class="hljs-section">| hello_world | olleh    |</span><br><span class="hljs-section">+-----------+-----------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>LENGTH()</code> 按字节计，<code>CHAR_LENGTH()</code> 按字符数计。UTF-8 下，中文字符占 3 字节，因此 <code>LENGTH(&#39;你好&#39;) = 6</code>。</p>
+</blockquote>
+<hr>
+<h3 id="2-2-字符串查找与操作"><a href="#2-2-字符串查找与操作" class="headerlink" title="2.2 字符串查找与操作"></a>2.2 字符串查找与操作</h3><table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>FIND_IN_SET(str, strlist)</code></td>
+<td>在逗号分隔列表中查找位置</td>
+<td><code>FIND_IN_SET(&#39;b&#39;, &#39;a,b,c&#39;)</code> → 2</td>
+</tr>
+<tr>
+<td><code>SUBSTRING_INDEX(str, delim, count)</code></td>
+<td>按分隔符截取，|count| 表示取到第几个分隔符位置，count &gt; 0 从左取，count &lt; 0 从右取</td>
+<td><code>SUBSTRING_INDEX(&#39;a-b-c-d&#39;, &#39;-&#39;, 2)</code> → <code>&#39;a-b&#39;</code></td>
+</tr>
+<tr>
+<td><code>REGEXP_LIKE(str, pattern)</code></td>
+<td>正则匹配（MySQL 8.0+）</td>
+<td><code>REGEXP_LIKE(&#39;abc&#39;, &#39;^a&#39;)</code> → 1</td>
+</tr>
+<tr>
+<td><code>ELT(n, str1, str2, ...)</code></td>
+<td>根据 n 返回参数列表中第 n 个字符串（下标从 1 开始），n 超出范围或为 0&#x2F;负数返回 NULL</td>
+<td><code>ELT(2, &#39;a&#39;, &#39;b&#39;, &#39;c&#39;)</code> → <code>&#39;b&#39;</code></td>
+</tr>
+<tr>
+<td><code>FIELD(str, str1, str2, ...)</code></td>
+<td>查找字符串在列表中的位置</td>
+<td><code>FIELD(&#39;b&#39;, &#39;a&#39;, &#39;b&#39;, &#39;c&#39;)</code> → 2</td>
+</tr>
+<tr>
+<td><code>INSTR(str, substr)</code></td>
+<td>查找子串位置（从 1 开始）</td>
+<td><code>INSTR(&#39;hello&#39;, &#39;ll&#39;)</code> → 3</td>
+</tr>
+<tr>
+<td><code>STRCMP(expr1, expr2)</code></td>
+<td>字符串比较（0 相等，-1 小于，1 大于）</td>
+<td><code>STRCMP(&#39;abc&#39;, &#39;abd&#39;)</code> → -1</td>
+</tr>
+</tbody></table>
+<p><strong>字符串查找示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> FIND_IN_SET(<span class="hljs-string">&#x27;b&#x27;</span>, <span class="hljs-string">&#x27;a,b,c,d&#x27;</span>) <span class="hljs-keyword">AS</span> position_result;<br><span class="hljs-keyword">SELECT</span> SUBSTRING_INDEX(<span class="hljs-string">&#x27;user@domain.com&#x27;</span>, <span class="hljs-string">&#x27;@&#x27;</span>, <span class="hljs-number">1</span>) <span class="hljs-keyword">AS</span> local_part;<br><span class="hljs-keyword">SELECT</span> SUBSTRING_INDEX(<span class="hljs-string">&#x27;user@domain.com&#x27;</span>, <span class="hljs-string">&#x27;@&#x27;</span>, <span class="hljs-number">-1</span>) <span class="hljs-keyword">AS</span> domain_part;<br><span class="hljs-keyword">SELECT</span> SUBSTRING_INDEX(<span class="hljs-string">&#x27;a-b-c-d&#x27;</span>, <span class="hljs-string">&#x27;-&#x27;</span>, <span class="hljs-number">2</span>) <span class="hljs-keyword">AS</span> from_left_2;<br><span class="hljs-keyword">SELECT</span> SUBSTRING_INDEX(<span class="hljs-string">&#x27;a-b-c-d&#x27;</span>, <span class="hljs-string">&#x27;-&#x27;</span>, <span class="hljs-number">-2</span>) <span class="hljs-keyword">AS</span> from_right_2;<br><span class="hljs-keyword">SELECT</span> REGEXP_LIKE(<span class="hljs-string">&#x27;hello123&#x27;</span>, <span class="hljs-string">&#x27;^[a-z]+[0-9]+$&#x27;</span>) <span class="hljs-keyword">AS</span> regex_match;<br><span class="hljs-keyword">SELECT</span> ELT(<span class="hljs-number">3</span>, <span class="hljs-string">&#x27;apple&#x27;</span>, <span class="hljs-string">&#x27;banana&#x27;</span>, <span class="hljs-string">&#x27;cherry&#x27;</span>) <span class="hljs-keyword">AS</span> third_elt;<br><span class="hljs-keyword">SELECT</span> FIELD(<span class="hljs-string">&#x27;banana&#x27;</span>, <span class="hljs-string">&#x27;apple&#x27;</span>, <span class="hljs-string">&#x27;banana&#x27;</span>, <span class="hljs-string">&#x27;cherry&#x27;</span>) <span class="hljs-keyword">AS</span> field_position;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-----------------+</span><br><span class="hljs-section">| position_result |</span><br><span class="hljs-section">+-----------------+</span><br><span class="hljs-section">|               2 |</span><br><span class="hljs-section">+-----------------+</span><br><br><span class="hljs-code">+------------+</span><br><span class="hljs-section">| local_part |</span><br><span class="hljs-section">+------------+</span><br><span class="hljs-section">| user       |</span><br><span class="hljs-section">+------------+</span><br><br><span class="hljs-code">+-------------+</span><br><span class="hljs-section">| domain_part  |</span><br><span class="hljs-section">+-------------+</span><br><span class="hljs-section">| domain.com   |</span><br><span class="hljs-section">+-------------+</span><br><br><span class="hljs-code">+------------+</span><br><span class="hljs-section">| from_left_2 |</span><br><span class="hljs-section">+------------+</span><br><span class="hljs-section">| a-b         |</span><br><span class="hljs-section">+------------+</span><br><br><span class="hljs-code">+---------------+</span><br><span class="hljs-section">| from_right_2   |</span><br><span class="hljs-section">+---------------+</span><br><span class="hljs-section">| c-d             |</span><br><span class="hljs-section">+---------------+</span><br><br><span class="hljs-code">+--------------+</span><br><span class="hljs-section">| regex_match  |</span><br><span class="hljs-section">+--------------+</span><br><span class="hljs-section">|            1 |</span><br><span class="hljs-section">+--------------+</span><br><br><span class="hljs-code">+------------+</span><br><span class="hljs-section">| third_elt  |</span><br><span class="hljs-section">+------------+</span><br><span class="hljs-section">| cherry     |</span><br><span class="hljs-section">+------------+</span><br><br><span class="hljs-code">+---------------+</span><br><span class="hljs-section">| field_position |</span><br><span class="hljs-section">+---------------+</span><br><span class="hljs-section">|              2 |</span><br><span class="hljs-section">+---------------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>SUBSTRING_INDEX(str, delim, count)</code>：|count| 表示取到第几个分隔符为止，count &gt; 0 从左数，count &lt; 0 从右数。可用于解析邮箱、文件路径等。</p>
+</blockquote>
+<hr>
+<h2 id="三、数值函数"><a href="#三、数值函数" class="headerlink" title="三、数值函数"></a>三、数值函数</h2><h3 id="3-1-算术与数学函数"><a href="#3-1-算术与数学函数" class="headerlink" title="3.1 算术与数学函数"></a>3.1 算术与数学函数</h3><table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ABS(x)</code></td>
+<td>绝对值</td>
+<td><code>ABS(-5)</code> → 5</td>
+</tr>
+<tr>
+<td><code>CEIL(x)</code> 或 <code>CEILING(x)</code></td>
+<td>向上取整</td>
+<td><code>CEIL(3.2)</code> → 4</td>
+</tr>
+<tr>
+<td><code>FLOOR(x)</code></td>
+<td>向下取整</td>
+<td><code>FLOOR(3.8)</code> → 3</td>
+</tr>
+<tr>
+<td><code>ROUND(x, d)</code></td>
+<td>四舍五入到 d 位小数</td>
+<td><code>ROUND(3.14159, 2)</code> → 3.14</td>
+</tr>
+<tr>
+<td><code>TRUNCATE(x, d)</code></td>
+<td>截断到 d 位小数</td>
+<td><code>TRUNCATE(3.14159, 2)</code> → 3.14</td>
+</tr>
+<tr>
+<td><code>MOD(a, b)</code></td>
+<td>取模</td>
+<td><code>MOD(10, 3)</code> → 1</td>
+</tr>
+<tr>
+<td><code>POW(x, y)</code> 或 <code>POWER(x, y)</code></td>
+<td>幂运算</td>
+<td><code>POW(2, 3)</code> → 8</td>
+</tr>
+<tr>
+<td><code>SQRT(x)</code></td>
+<td>平方根</td>
+<td><code>SQRT(16)</code> → 4</td>
+</tr>
+<tr>
+<td><code>RAND()</code></td>
+<td>0~1 之间的随机浮点数</td>
+<td></td>
+</tr>
+<tr>
+<td><code>RAND(n)</code></td>
+<td>确定性随机（n 为种子）</td>
+<td></td>
+</tr>
+<tr>
+<td><code>SIGN(x)</code></td>
+<td>符号（-1&#x2F;0&#x2F;1）</td>
+<td><code>SIGN(-5)</code> → -1</td>
+</tr>
+<tr>
+<td><code>GREATEST(val, ...)</code></td>
+<td>返回最大值</td>
+<td><code>GREATEST(1, 5, 3)</code> → 5</td>
+</tr>
+<tr>
+<td><code>LEAST(val, ...)</code></td>
+<td>返回最小值</td>
+<td><code>LEAST(1, 5, 3)</code> → 1</td>
+</tr>
+</tbody></table>
+<p><strong>数学函数示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">ABS</span>(<span class="hljs-number">-10</span>) <span class="hljs-keyword">AS</span> abs_val, <span class="hljs-built_in">CEIL</span>(<span class="hljs-number">3.2</span>) <span class="hljs-keyword">AS</span> ceil_val, <span class="hljs-built_in">FLOOR</span>(<span class="hljs-number">3.8</span>) <span class="hljs-keyword">AS</span> floor_val;<br><span class="hljs-keyword">SELECT</span> ROUND(<span class="hljs-number">3.14159</span>, <span class="hljs-number">3</span>) <span class="hljs-keyword">AS</span> rounded, <span class="hljs-keyword">TRUNCATE</span>(<span class="hljs-number">3.14159</span>, <span class="hljs-number">3</span>) <span class="hljs-keyword">AS</span> truncated;<br><span class="hljs-keyword">SELECT</span> POW(<span class="hljs-number">2</span>, <span class="hljs-number">10</span>) <span class="hljs-keyword">AS</span> power_val, <span class="hljs-built_in">SQRT</span>(<span class="hljs-number">64</span>) <span class="hljs-keyword">AS</span> sqrt_val, <span class="hljs-built_in">MOD</span>(<span class="hljs-number">17</span>, <span class="hljs-number">5</span>) <span class="hljs-keyword">AS</span> mod_val;<br><span class="hljs-keyword">SELECT</span> GREATEST(<span class="hljs-number">3</span>, <span class="hljs-number">1</span>, <span class="hljs-number">9</span>, <span class="hljs-number">5</span>) <span class="hljs-keyword">AS</span> max_val, LEAST(<span class="hljs-number">3</span>, <span class="hljs-number">1</span>, <span class="hljs-number">9</span>, <span class="hljs-number">5</span>) <span class="hljs-keyword">AS</span> min_val;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+---------+</span>-----------<span class="hljs-code">+-----------+</span><br><span class="hljs-section">| abs_val | ceil_val  | floor_val |</span><br><span class="hljs-section">+---------+-----------+-----------+</span><br><span class="hljs-section">|      10 |         4 |         3 |</span><br><span class="hljs-section">+---------+-----------+-----------+</span><br><br><span class="hljs-code">+----------+</span>-------------+<br><span class="hljs-section">| rounded  | truncated   |</span><br><span class="hljs-section">+----------+-------------+</span><br><span class="hljs-section">|  3.142  |      3.141  |</span><br><span class="hljs-section">+----------+-------------+</span><br><br><span class="hljs-code">+----------+</span>---------<span class="hljs-code">+---------+</span><br><span class="hljs-section">| power_val | sqrt_val | mod_val |</span><br><span class="hljs-section">+----------+---------+---------+</span><br><span class="hljs-section">|      1024 |       8 |       2 |</span><br><span class="hljs-section">+----------+---------+---------+</span><br><br><span class="hljs-code">+---------+</span>---------+<br><span class="hljs-section">| max_val  | min_val  |</span><br><span class="hljs-section">+---------+---------+</span><br><span class="hljs-section">|       9  |       1  |</span><br><span class="hljs-section">+---------+---------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>随机数据生成：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 生成 1~100 之间的随机整数</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">FLOOR</span>(<span class="hljs-number">1</span> <span class="hljs-operator">+</span> RAND() <span class="hljs-operator">*</span> <span class="hljs-number">100</span>) <span class="hljs-keyword">AS</span> random_int;<br></code></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="3-2-三角函数"><a href="#3-2-三角函数" class="headerlink" title="3.2 三角函数"></a>3.2 三角函数</h3><table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SIN(x)</code></td>
+<td>正弦（弧度）</td>
+</tr>
+<tr>
+<td><code>COS(x)</code></td>
+<td>余弦（弧度）</td>
+</tr>
+<tr>
+<td><code>TAN(x)</code></td>
+<td>正切（弧度）</td>
+</tr>
+<tr>
+<td><code>ASIN(x)</code></td>
+<td>反正弦</td>
+</tr>
+<tr>
+<td><code>ACOS(x)</code></td>
+<td>反余弦</td>
+</tr>
+<tr>
+<td><code>ATAN(x)</code></td>
+<td>反正切</td>
+</tr>
+<tr>
+<td><code>ATAN2(y, x)</code></td>
+<td>四象限反正切</td>
+</tr>
+<tr>
+<td><code>DEGREES(x)</code></td>
+<td>弧度转角度</td>
+</tr>
+<tr>
+<td><code>RADIANS(x)</code></td>
+<td>角度转弧度</td>
+</tr>
+<tr>
+<td><code>PI()</code></td>
+<td>π 常量</td>
+</tr>
+</tbody></table>
+<p><strong>三角函数示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">SIN</span>(PI() <span class="hljs-operator">/</span> <span class="hljs-number">2</span>) <span class="hljs-keyword">AS</span> sin_90deg, <span class="hljs-built_in">COS</span>(<span class="hljs-number">0</span>) <span class="hljs-keyword">AS</span> cos_0, <span class="hljs-built_in">TAN</span>(PI() <span class="hljs-operator">/</span> <span class="hljs-number">4</span>) <span class="hljs-keyword">AS</span> tan_45deg;<br><span class="hljs-keyword">SELECT</span> DEGREES(PI()) <span class="hljs-keyword">AS</span> pi_to_deg, RADIANS(<span class="hljs-number">180</span>) <span class="hljs-keyword">AS</span> deg_to_rad;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-----------+</span>--------<span class="hljs-code">+-------------+</span><br><span class="hljs-section">| sin_90deg | cos_0  | tan_45deg   |</span><br><span class="hljs-section">+-----------+--------+-------------+</span><br><span class="hljs-section">|         1 |      1 |  1.00000000 |</span><br><span class="hljs-section">+-----------+--------+-------------+</span><br><br><span class="hljs-code">+------------+</span>-------------+<br><span class="hljs-section">| pi_to_deg  | deg_to_rad  |</span><br><span class="hljs-section">+------------+-------------+</span><br><span class="hljs-section">|        180 |   3.14159265 |</span><br><span class="hljs-section">+------------+-------------+</span><br></code></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="四、日期和时间函数"><a href="#四、日期和时间函数" class="headerlink" title="四、日期和时间函数"></a>四、日期和时间函数</h2><h3 id="4-1-获取当前值"><a href="#4-1-获取当前值" class="headerlink" title="4.1 获取当前值"></a>4.1 获取当前值</h3><table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>CURDATE()</code> &#x2F; <code>CURRENT_DATE()</code></td>
+<td>当前日期</td>
+</tr>
+<tr>
+<td><code>CURTIME()</code> &#x2F; <code>CURRENT_TIME()</code></td>
+<td>当前时间</td>
+</tr>
+<tr>
+<td><code>NOW()</code></td>
+<td>当前日期时间（语句开始时固定）</td>
+</tr>
+<tr>
+<td><code>SYSDATE()</code></td>
+<td>当前日期时间（每次调用实时）</td>
+</tr>
+<tr>
+<td><code>UTC_DATE()</code></td>
+<td>UTC 日期</td>
+</tr>
+<tr>
+<td><code>UTC_TIME()</code></td>
+<td>UTC 时间</td>
+</tr>
+<tr>
+<td><code>UTC_TIMESTAMP()</code></td>
+<td>UTC 日期时间</td>
+</tr>
+<tr>
+<td><code>YEAR(date)</code></td>
+<td>提取年份</td>
+</tr>
+<tr>
+<td><code>MONTH(date)</code></td>
+<td>提取月份（1~12）</td>
+</tr>
+<tr>
+<td><code>MONTHNAME(date)</code></td>
+<td>月份名称</td>
+</tr>
+<tr>
+<td><code>DAY(date)</code> &#x2F; <code>DAYOFMONTH(date)</code></td>
+<td>提取日（1~31）</td>
+</tr>
+<tr>
+<td><code>DAYNAME(date)</code></td>
+<td>星期名称</td>
+</tr>
+<tr>
+<td><code>DAYOFWEEK(date)</code></td>
+<td>星期索引（1&#x3D;周日，7&#x3D;周六）</td>
+</tr>
+<tr>
+<td><code>WEEKDAY(date)</code></td>
+<td>星期索引（0&#x3D;周一，6&#x3D;周日）</td>
+</tr>
+<tr>
+<td><code>DAYOFYEAR(date)</code></td>
+<td>一年中的第几天</td>
+</tr>
+<tr>
+<td><code>QUARTER(date)</code></td>
+<td>季度（1~4）</td>
+</tr>
+<tr>
+<td><code>HOUR(time)</code></td>
+<td>小时（0~23）</td>
+</tr>
+<tr>
+<td><code>MINUTE(time)</code></td>
+<td>分钟（0~59）</td>
+</tr>
+<tr>
+<td><code>SECOND(time)</code></td>
+<td>秒（0~59）</td>
+</tr>
+</tbody></table>
+<p><strong>日期时间提取示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> CURDATE() <span class="hljs-keyword">AS</span> today, CURTIME() <span class="hljs-keyword">AS</span> now_time, NOW() <span class="hljs-keyword">AS</span> current_datetime;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">YEAR</span>(NOW()) <span class="hljs-keyword">AS</span> year_val, <span class="hljs-keyword">MONTH</span>(NOW()) <span class="hljs-keyword">AS</span> month_val, <span class="hljs-keyword">DAY</span>(NOW()) <span class="hljs-keyword">AS</span> day_val;<br><span class="hljs-keyword">SELECT</span> DAYNAME(NOW()) <span class="hljs-keyword">AS</span> weekday_name, QUARTER(NOW()) <span class="hljs-keyword">AS</span> quarter_val;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">HOUR</span>(NOW()) <span class="hljs-keyword">AS</span> hour_val, <span class="hljs-keyword">MINUTE</span>(NOW()) <span class="hljs-keyword">AS</span> minute_val, <span class="hljs-keyword">SECOND</span>(NOW()) <span class="hljs-keyword">AS</span> second_val;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------------+</span>------------<span class="hljs-code">+---------------------+</span><br><span class="hljs-section">| today      | now_time   | current_datetime    |</span><br><span class="hljs-section">+------------+------------+---------------------+</span><br><span class="hljs-section">| 2026-03-26 | 10:30:45   | 2026-03-26 10:30:45 |</span><br><span class="hljs-section">+------------+------------+---------------------+</span><br><br><span class="hljs-code">+---------+</span>-----------<span class="hljs-code">+---------+</span><br><span class="hljs-section">| year_val | month_val | day_val |</span><br><span class="hljs-section">+---------+-----------+---------+</span><br><span class="hljs-section">|    2026 |         3 |      26 |</span><br><span class="hljs-section">+---------+-----------+---------+</span><br><br><span class="hljs-code">+---------------+</span>-------------+<br><span class="hljs-section">| weekday_name  | quarter_val |</span><br><span class="hljs-section">+---------------+-------------+</span><br><span class="hljs-section">| Thursday      |           1 |</span><br><span class="hljs-section">+---------------+-------------+</span><br><br><span class="hljs-code">+----------+</span>-------------<span class="hljs-code">+-------------+</span><br><span class="hljs-section">| hour_val | minute_val  | second_val  |</span><br><span class="hljs-section">+----------+-------------+-------------+</span><br><span class="hljs-section">|       10 |          30 |          45 |</span><br><span class="hljs-section">+----------+-------------+-------------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>NOW()</code> 和 <code>SYSDATE()</code> 的区别：<code>NOW()</code> 在语句开始时固定，<code>SYSDATE()</code> 每次调用实时获取。<code>SYSDATE()</code> 不受 <code>SET TIMESTAMP</code> 影响。</p>
+</blockquote>
+<hr>
+<h3 id="4-2-日期计算"><a href="#4-2-日期计算" class="headerlink" title="4.2 日期计算"></a>4.2 日期计算</h3><table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>DATE_ADD(date, INTERVAL expr unit)</code></td>
+<td>日期加法</td>
+<td><code>DATE_ADD(NOW(), INTERVAL 1 DAY)</code></td>
+</tr>
+<tr>
+<td><code>DATE_SUB(date, INTERVAL expr unit)</code></td>
+<td>日期减法</td>
+<td><code>DATE_SUB(NOW(), INTERVAL 7 DAY)</code></td>
+</tr>
+<tr>
+<td><code>DATEDIFF(expr1, expr2)</code></td>
+<td>日期差（忽略时间部分）</td>
+<td><code>DATEDIFF(&#39;2026-03-26&#39;, &#39;2026-01-01&#39;)</code> → 84</td>
+</tr>
+<tr>
+<td><code>TIMESTAMPDIFF(unit, expr1, expr2)</code></td>
+<td>时间差（指定单位）</td>
+<td></td>
+</tr>
+<tr>
+<td><code>TIMEDIFF(expr1, expr2)</code></td>
+<td>时间差（保留时间部分）</td>
+<td></td>
+</tr>
+<tr>
+<td><code>DATE_FORMAT(date, format)</code></td>
+<td>格式化日期</td>
+<td><code>DATE_FORMAT(NOW(), &#39;%Y-%m-%d&#39;)</code></td>
+</tr>
+<tr>
+<td><code>STR_TO_DATE(str, format)</code></td>
+<td>按格式解析字符串为日期</td>
+<td><code>STR_TO_DATE(&#39;2026-03-26&#39;, &#39;%Y-%m-%d&#39;)</code></td>
+</tr>
+<tr>
+<td><code>DATE(expr)</code></td>
+<td>提取日期部分</td>
+<td></td>
+</tr>
+<tr>
+<td><code>TIME(expr)</code></td>
+<td>提取时间部分</td>
+<td></td>
+</tr>
+<tr>
+<td><code>UNIX_TIMESTAMP([date])</code></td>
+<td>转 Unix 时间戳</td>
+<td></td>
+</tr>
+<tr>
+<td><code>FROM_UNIXTIME(ts)</code></td>
+<td>Unix 时间戳转日期时间</td>
+<td></td>
+</tr>
+<tr>
+<td><code>MAKEDATE(year, dayofyear)</code></td>
+<td>根据年份和年内天数构造日期</td>
+<td><code>MAKEDATE(2026, 100)</code></td>
+</tr>
+<tr>
+<td><code>MAKETIME(hour, minute, second)</code></td>
+<td>构造时间</td>
+<td><code>MAKETIME(14, 30, 0)</code></td>
+</tr>
+</tbody></table>
+<p><strong>INTERVAL 常用单位：</strong></p>
+<table>
+<thead>
+<tr>
+<th>单位</th>
+<th>说明</th>
+<th>示例值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SECOND</code></td>
+<td>秒</td>
+<td><code>INTERVAL 30 SECOND</code></td>
+</tr>
+<tr>
+<td><code>MINUTE</code></td>
+<td>分钟</td>
+<td><code>INTERVAL 15 MINUTE</code></td>
+</tr>
+<tr>
+<td><code>HOUR</code></td>
+<td>小时</td>
+<td><code>INTERVAL 2 HOUR</code></td>
+</tr>
+<tr>
+<td><code>DAY</code></td>
+<td>天</td>
+<td><code>INTERVAL 5 DAY</code></td>
+</tr>
+<tr>
+<td><code>WEEK</code></td>
+<td>周</td>
+<td><code>INTERVAL 1 WEEK</code></td>
+</tr>
+<tr>
+<td><code>MONTH</code></td>
+<td>月</td>
+<td><code>INTERVAL 3 MONTH</code></td>
+</tr>
+<tr>
+<td><code>QUARTER</code></td>
+<td>季度</td>
+<td><code>INTERVAL 2 QUARTER</code></td>
+</tr>
+<tr>
+<td><code>YEAR</code></td>
+<td>年</td>
+<td><code>INTERVAL 1 YEAR</code></td>
+</tr>
+</tbody></table>
+<p><strong>日期计算示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> DATE_ADD(NOW(), <span class="hljs-type">INTERVAL</span> <span class="hljs-number">1</span> <span class="hljs-keyword">MONTH</span>) <span class="hljs-keyword">AS</span> next_month;<br><span class="hljs-keyword">SELECT</span> DATE_SUB(NOW(), <span class="hljs-type">INTERVAL</span> <span class="hljs-number">7</span> <span class="hljs-keyword">DAY</span>) <span class="hljs-keyword">AS</span> last_week;<br><span class="hljs-keyword">SELECT</span> DATEDIFF(<span class="hljs-string">&#x27;2026-03-26&#x27;</span>, <span class="hljs-string">&#x27;2026-01-01&#x27;</span>) <span class="hljs-keyword">AS</span> days_diff;<br><span class="hljs-keyword">SELECT</span> TIMESTAMPDIFF(<span class="hljs-keyword">HOUR</span>, <span class="hljs-string">&#x27;2026-03-26 08:00:00&#x27;</span>, NOW()) <span class="hljs-keyword">AS</span> hours_elapsed;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-type">DATE</span>(NOW()) <span class="hljs-keyword">AS</span> date_part, <span class="hljs-type">TIME</span>(NOW()) <span class="hljs-keyword">AS</span> time_part;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+---------------------+</span><br><span class="hljs-section">| next_month          |</span><br><span class="hljs-section">+---------------------+</span><br><span class="hljs-section">| 2026-04-26 10:30:45 |</span><br><span class="hljs-section">+---------------------+</span><br><br><span class="hljs-code">+---------------------+</span><br><span class="hljs-section">| last_week           |</span><br><span class="hljs-section">+---------------------+</span><br><span class="hljs-section">| 2026-03-19 10:30:45 |</span><br><span class="hljs-section">+---------------------+</span><br><br><span class="hljs-code">+------------+</span><br><span class="hljs-section">| days_diff  |</span><br><span class="hljs-section">+------------+</span><br><span class="hljs-section">|         84 |</span><br><span class="hljs-section">+------------+</span><br><br><span class="hljs-code">+---------------+</span><br><span class="hljs-section">| hours_elapsed |</span><br><span class="hljs-section">+---------------+</span><br><span class="hljs-section">|             2 |</span><br><span class="hljs-section">+---------------+</span><br><br><span class="hljs-code">+------------+</span>------------+<br><span class="hljs-section">| date_part  | time_part  |</span><br><span class="hljs-section">+------------+------------+</span><br><span class="hljs-section">| 2026-03-26 | 10:30:45   |</span><br><span class="hljs-section">+------------+------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>DATE_FORMAT 常用格式化符号：</strong></p>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>%Y</code></td>
+<td>4 位年份</td>
+<td><code>2026</code></td>
+</tr>
+<tr>
+<td><code>%m</code></td>
+<td>2 位月份（01~12）</td>
+<td><code>03</code></td>
+</tr>
+<tr>
+<td><code>%d</code></td>
+<td>2 位日期（01~31）</td>
+<td><code>26</code></td>
+</tr>
+<tr>
+<td><code>%H</code></td>
+<td>24 小时制（00~23）</td>
+<td><code>10</code></td>
+</tr>
+<tr>
+<td><code>%i</code></td>
+<td>分钟（00~59）</td>
+<td><code>30</code></td>
+</tr>
+<tr>
+<td><code>%S</code> &#x2F; <code>%s</code></td>
+<td>秒（00~59）</td>
+<td><code>45</code></td>
+</tr>
+<tr>
+<td><code>%T</code></td>
+<td>24 小时制时间</td>
+<td><code>10:30:45</code></td>
+</tr>
+<tr>
+<td><code>%W</code></td>
+<td>完整星期名</td>
+<td><code>Thursday</code></td>
+</tr>
+<tr>
+<td><code>%a</code></td>
+<td>缩写的星期名</td>
+<td><code>Thu</code></td>
+</tr>
+</tbody></table>
+<p><strong>日期格式化示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> DATE_FORMAT(NOW(), <span class="hljs-string">&#x27;%Y-%m-%d %H:%i:%s&#x27;</span>) <span class="hljs-keyword">AS</span> formatted;<br><span class="hljs-keyword">SELECT</span> DATE_FORMAT(NOW(), <span class="hljs-string">&#x27;%W, %M %d, %Y&#x27;</span>) <span class="hljs-keyword">AS</span> human_readable;<br><span class="hljs-keyword">SELECT</span> STR_TO_DATE(<span class="hljs-string">&#x27;26/03/2026&#x27;</span>, <span class="hljs-string">&#x27;%d/%m/%Y&#x27;</span>) <span class="hljs-keyword">AS</span> parsed_date;<br><span class="hljs-keyword">SELECT</span> UNIX_TIMESTAMP(NOW()) <span class="hljs-keyword">AS</span> unix_ts, FROM_UNIXTIME(UNIX_TIMESTAMP(NOW())) <span class="hljs-keyword">AS</span> back_to_date;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+---------------------+</span><br><span class="hljs-section">| formatted           |</span><br><span class="hljs-section">+---------------------+</span><br><span class="hljs-section">| 2026-03-26 10:30:45 |</span><br><span class="hljs-section">+---------------------+</span><br><br><span class="hljs-code">+--------------------------+</span><br><span class="hljs-section">| human_readable           |</span><br><span class="hljs-section">+--------------------------+</span><br><span class="hljs-section">| Thursday, March 26, 2026  |</span><br><span class="hljs-section">+--------------------------+</span><br><br><span class="hljs-code">+---------------+</span><br><span class="hljs-section">| parsed_date    |</span><br><span class="hljs-section">+---------------+</span><br><span class="hljs-section">| 2026-03-26     |</span><br><span class="hljs-section">+---------------+</span><br><br><span class="hljs-code">+---------------+</span>---------------------+<br><span class="hljs-section">| unix_ts       | back_to_date        |</span><br><span class="hljs-section">+---------------+---------------------+</span><br><span class="hljs-section">| 1742947245    | 2026-03-26 10:30:45 |</span><br><span class="hljs-section">+---------------+---------------------+</span><br></code></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="五、条件判断函数"><a href="#五、条件判断函数" class="headerlink" title="五、条件判断函数"></a>五、条件判断函数</h2><h3 id="5-1-IF-与-IFNULL"><a href="#5-1-IF-与-IFNULL" class="headerlink" title="5.1 IF 与 IFNULL"></a>5.1 IF 与 IFNULL</h3><table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>IF(condition, val_true, val_false)</code></td>
+<td>条件为真返回 val_true，否则返回 val_false</td>
+<td><code>IF(5 &gt; 3, &#39;yes&#39;, &#39;no&#39;)</code> → <code>&#39;yes&#39;</code></td>
+</tr>
+<tr>
+<td><code>IFNULL(expr, fallback)</code></td>
+<td>expr 非 NULL 返回本身，否则返回 fallback</td>
+<td><code>IFNULL(NULL, &#39;default&#39;)</code> → <code>&#39;default&#39;</code></td>
+</tr>
+<tr>
+<td><code>NULLIF(expr1, expr2)</code></td>
+<td>两值相等返回 NULL，否则返回 expr1</td>
+<td><code>NULLIF(5, 5)</code> → NULL</td>
+</tr>
+</tbody></table>
+<p><strong>条件函数示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> IF(<span class="hljs-number">10</span> <span class="hljs-operator">&gt;</span> <span class="hljs-number">5</span>, <span class="hljs-string">&#x27;大于&#x27;</span>, <span class="hljs-string">&#x27;小于或等于&#x27;</span>) <span class="hljs-keyword">AS</span> comparison;<br><span class="hljs-keyword">SELECT</span> IFNULL(<span class="hljs-keyword">NULL</span>, <span class="hljs-string">&#x27;无数据&#x27;</span>) <span class="hljs-keyword">AS</span> null_handled, IFNULL(<span class="hljs-string">&#x27;有数据&#x27;</span>, <span class="hljs-string">&#x27;无数据&#x27;</span>) <span class="hljs-keyword">AS</span> not_null;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">NULLIF</span>(<span class="hljs-number">5</span>, <span class="hljs-number">5</span>) <span class="hljs-keyword">AS</span> same_is_null, <span class="hljs-built_in">NULLIF</span>(<span class="hljs-number">5</span>, <span class="hljs-number">3</span>) <span class="hljs-keyword">AS</span> diff_returns_first;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------------+</span><br><span class="hljs-section">| comparison |</span><br><span class="hljs-section">+------------+</span><br><span class="hljs-section">| 大于       |</span><br><span class="hljs-section">+------------+</span><br><br><span class="hljs-code">+-------------+</span>----------+<br><span class="hljs-section">| null_handled | not_null  |</span><br><span class="hljs-section">+-------------+----------+</span><br><span class="hljs-section">| 无数据        | 有数据     |</span><br><span class="hljs-section">+-------------+----------+</span><br><br><span class="hljs-code">+--------------+</span>------------------+<br><span class="hljs-section">| same_is_null | diff_returns_first |</span><br><span class="hljs-section">+--------------+-------------------+</span><br><span class="hljs-section">|         NULL |                 5 |</span><br><span class="hljs-section">+--------------+-------------------+</span><br></code></pre></td></tr></table></figure>
+
+<hr>
+<h3 id="5-2-CASE-表达式"><a href="#5-2-CASE-表达式" class="headerlink" title="5.2 CASE 表达式"></a>5.2 CASE 表达式</h3><p><code>CASE</code> 提供多条件分支功能。</p>
+<p><strong>搜索 CASE 表达式（推荐）：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CASE</span><br>    <span class="hljs-keyword">WHEN</span> condition1 <span class="hljs-keyword">THEN</span> result1<br>    <span class="hljs-keyword">WHEN</span> condition2 <span class="hljs-keyword">THEN</span> result2<br>    ...<br>    [<span class="hljs-keyword">ELSE</span> result_n]<br><span class="hljs-keyword">END</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>简单 CASE 表达式：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CASE</span> expression<br>    <span class="hljs-keyword">WHEN</span> value1 <span class="hljs-keyword">THEN</span> result1<br>    <span class="hljs-keyword">WHEN</span> value2 <span class="hljs-keyword">THEN</span> result2<br>    ...<br>    [<span class="hljs-keyword">ELSE</span> result_n]<br><span class="hljs-keyword">END</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>CASE 表达式示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> name, score,<br>    <span class="hljs-keyword">CASE</span><br>        <span class="hljs-keyword">WHEN</span> score <span class="hljs-operator">&gt;=</span> <span class="hljs-number">90</span> <span class="hljs-keyword">THEN</span> <span class="hljs-string">&#x27;优秀&#x27;</span><br>        <span class="hljs-keyword">WHEN</span> score <span class="hljs-operator">&gt;=</span> <span class="hljs-number">80</span> <span class="hljs-keyword">THEN</span> <span class="hljs-string">&#x27;良好&#x27;</span><br>        <span class="hljs-keyword">WHEN</span> score <span class="hljs-operator">&gt;=</span> <span class="hljs-number">60</span> <span class="hljs-keyword">THEN</span> <span class="hljs-string">&#x27;及格&#x27;</span><br>        <span class="hljs-keyword">ELSE</span> <span class="hljs-string">&#x27;不及格&#x27;</span><br>    <span class="hljs-keyword">END</span> <span class="hljs-keyword">AS</span> grade<br><span class="hljs-keyword">FROM</span> students;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-------+</span>-------<span class="hljs-code">+--------+</span><br><span class="hljs-section">| name  | score | grade  |</span><br><span class="hljs-section">+-------+-------+--------+</span><br>| Alice |    95 | 优秀   |<br>| Bob   |    72 | 及格   |<br><span class="hljs-section">| Carol |    55 | 不及格 |</span><br><span class="hljs-section">+-------+-------+--------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>简单 CASE 示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> order_status,<br>    <span class="hljs-keyword">CASE</span> order_status<br>        <span class="hljs-keyword">WHEN</span> <span class="hljs-string">&#x27;pending&#x27;</span> <span class="hljs-keyword">THEN</span> <span class="hljs-string">&#x27;等待处理&#x27;</span><br>        <span class="hljs-keyword">WHEN</span> <span class="hljs-string">&#x27;processing&#x27;</span> <span class="hljs-keyword">THEN</span> <span class="hljs-string">&#x27;处理中&#x27;</span><br>        <span class="hljs-keyword">WHEN</span> <span class="hljs-string">&#x27;completed&#x27;</span> <span class="hljs-keyword">THEN</span> <span class="hljs-string">&#x27;已完成&#x27;</span><br>        <span class="hljs-keyword">WHEN</span> <span class="hljs-string">&#x27;cancelled&#x27;</span> <span class="hljs-keyword">THEN</span> <span class="hljs-string">&#x27;已取消&#x27;</span><br>        <span class="hljs-keyword">ELSE</span> <span class="hljs-string">&#x27;未知状态&#x27;</span><br>    <span class="hljs-keyword">END</span> <span class="hljs-keyword">AS</span> status_cn<br><span class="hljs-keyword">FROM</span> orders;<br></code></pre></td></tr></table></figure>
+
+<p><strong>在聚合中使用 CASE：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span><br>    <span class="hljs-built_in">COUNT</span>(<span class="hljs-keyword">CASE</span> <span class="hljs-keyword">WHEN</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;active&#x27;</span> <span class="hljs-keyword">THEN</span> <span class="hljs-number">1</span> <span class="hljs-keyword">END</span>) <span class="hljs-keyword">AS</span> active_count,<br>    <span class="hljs-built_in">COUNT</span>(<span class="hljs-keyword">CASE</span> <span class="hljs-keyword">WHEN</span> status <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;inactive&#x27;</span> <span class="hljs-keyword">THEN</span> <span class="hljs-number">1</span> <span class="hljs-keyword">END</span>) <span class="hljs-keyword">AS</span> inactive_count<br><span class="hljs-keyword">FROM</span> users;<br></code></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="六、聚合函数"><a href="#六、聚合函数" class="headerlink" title="六、聚合函数"></a>六、聚合函数</h2><p>聚合函数对一组行进行计算，返回单个值。常与 <code>GROUP BY</code> 配合使用。</p>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>COUNT(*)</code></td>
+<td>统计所有行（含 NULL）</td>
+<td></td>
+</tr>
+<tr>
+<td><code>COUNT(expr)</code></td>
+<td>统计非 NULL 的行数</td>
+<td></td>
+</tr>
+<tr>
+<td><code>COUNT(DISTINCT expr)</code></td>
+<td>去重计数</td>
+<td><code>COUNT(DISTINCT city)</code></td>
+</tr>
+<tr>
+<td><code>SUM(expr)</code></td>
+<td>求和</td>
+<td><code>SUM(salary)</code></td>
+</tr>
+<tr>
+<td><code>AVG(expr)</code></td>
+<td>平均值</td>
+<td><code>AVG(score)</code></td>
+</tr>
+<tr>
+<td><code>MAX(expr)</code></td>
+<td>最大值</td>
+<td><code>MAX(price)</code></td>
+</tr>
+<tr>
+<td><code>MIN(expr)</code></td>
+<td>最小值</td>
+<td><code>MIN(price)</code></td>
+</tr>
+<tr>
+<td><code>GROUP_CONCAT(expr [SEPARATOR sep])</code></td>
+<td>连接分组内的值</td>
+<td><code>GROUP_CONCAT(name SEPARATOR &#39;, &#39;)</code></td>
+</tr>
+</tbody></table>
+<p><strong>聚合函数示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span><br>    <span class="hljs-built_in">COUNT</span>(<span class="hljs-operator">*</span>) <span class="hljs-keyword">AS</span> total_count,<br>    <span class="hljs-built_in">COUNT</span>(<span class="hljs-keyword">DISTINCT</span> department) <span class="hljs-keyword">AS</span> dept_count,<br>    <span class="hljs-built_in">SUM</span>(salary) <span class="hljs-keyword">AS</span> total_salary,<br>    <span class="hljs-built_in">AVG</span>(salary) <span class="hljs-keyword">AS</span> avg_salary,<br>    <span class="hljs-built_in">MAX</span>(salary) <span class="hljs-keyword">AS</span> max_salary,<br>    <span class="hljs-built_in">MIN</span>(salary) <span class="hljs-keyword">AS</span> min_salary<br><span class="hljs-keyword">FROM</span> employees;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-------------+</span>-------------<span class="hljs-code">+--------------+</span>-------------<span class="hljs-code">+-------------+</span>-------------+<br><span class="hljs-section">| total_count | dept_count | total_salary | avg_salary  | max_salary  | min_salary  |</span><br><span class="hljs-section">+-------------+-------------+--------------+-------------+-------------+-------------+</span><br><span class="hljs-section">|          10 |           3 |      650000  |  65000.0000 |     120000  |      30000  |</span><br><span class="hljs-section">+-------------+-------------+--------------+-------------+-------------+-------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>GROUP_CONCAT 示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> department, GROUP_CONCAT(name <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> name SEPARATOR <span class="hljs-string">&#x27;, &#x27;</span>) <span class="hljs-keyword">AS</span> members<br><span class="hljs-keyword">FROM</span> employees<br><span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> department;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------------+</span>------------------------+<br><span class="hljs-section">| department | members                |</span><br><span class="hljs-section">+------------+------------------------+</span><br>| IT         | Alice, Bob, Charlie    |<br><span class="hljs-section">| Sales      | David, Eve              |</span><br><span class="hljs-section">+------------+------------------------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>GROUP_CONCAT</code> 默认最大长度为 1024 字节，可通过 <code>SET SESSION group_concat_max_len = 10240;</code> 调整。</p>
+</blockquote>
+<p><strong>HAVING 子句</strong>：对分组后的结果进行过滤（类似于 WHERE，但作用于聚合之后）。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> department, <span class="hljs-built_in">AVG</span>(salary) <span class="hljs-keyword">AS</span> avg_sal<br><span class="hljs-keyword">FROM</span> employees<br><span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> department<br><span class="hljs-keyword">HAVING</span> <span class="hljs-built_in">AVG</span>(salary) <span class="hljs-operator">&gt;</span> <span class="hljs-number">50000</span>;<br></code></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="七、信息函数"><a href="#七、信息函数" class="headerlink" title="七、信息函数"></a>七、信息函数</h2><p>信息函数返回关于当前数据库会话、连接或表达式的元信息。</p>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>DATABASE()</code> &#x2F; <code>SCHEMA()</code></td>
+<td>当前数据库名</td>
+<td></td>
+</tr>
+<tr>
+<td><code>USER()</code></td>
+<td>当前用户名（包含主机名）</td>
+<td></td>
+</tr>
+<tr>
+<td><code>CURRENT_USER()</code></td>
+<td>认证时的用户名</td>
+<td></td>
+</tr>
+<tr>
+<td><code>VERSION()</code></td>
+<td>MySQL 服务器版本</td>
+<td></td>
+</tr>
+<tr>
+<td><code>CONNECTION_ID()</code></td>
+<td>当前连接 ID</td>
+<td></td>
+</tr>
+<tr>
+<td><code>LAST_INSERT_ID()</code></td>
+<td>最近一次自增插入的值</td>
+<td></td>
+</tr>
+<tr>
+<td><code>ROW_COUNT()</code></td>
+<td>受影响行数（INSERT&#x2F;UPDATE&#x2F;DELETE）</td>
+<td></td>
+</tr>
+<tr>
+<td><code>FOUND_ROWS()</code></td>
+<td>SELECT 瞬时去重后的总行数</td>
+<td></td>
+</tr>
+<tr>
+<td><code>CHARSET(str)</code></td>
+<td>字符串的字符集</td>
+<td><code>CHARSET(&#39;abc&#39;)</code> → <code>&#39;utf8mb4&#39;</code></td>
+</tr>
+<tr>
+<td><code>COLLATION(str)</code></td>
+<td>字符串的排序规则</td>
+<td></td>
+</tr>
+</tbody></table>
+<p><strong>信息函数示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> DATABASE() <span class="hljs-keyword">AS</span> current_db, <span class="hljs-keyword">USER</span>() <span class="hljs-keyword">AS</span> current_usr, VERSION() <span class="hljs-keyword">AS</span> mysql_version;<br><span class="hljs-keyword">SELECT</span> CONNECTION_ID() <span class="hljs-keyword">AS</span> conn_id, LAST_INSERT_ID() <span class="hljs-keyword">AS</span> last_id;<br><span class="hljs-keyword">SELECT</span> CHARSET(<span class="hljs-string">&#x27;你好&#x27;</span>) <span class="hljs-keyword">AS</span> charset_val, <span class="hljs-keyword">COLLATION</span>(<span class="hljs-string">&#x27;abc&#x27;</span>) <span class="hljs-keyword">AS</span> collation_val;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-------------+</span>--------------------<span class="hljs-code">+------------------+</span><br><span class="hljs-section">| current_db  | current_usr        | mysql_version    |</span><br><span class="hljs-section">+-------------+--------------------+------------------+</span><br><span class="hljs-section">| test_db     | root@localhost     | 8.4.0            |</span><br><span class="hljs-section">+-------------+--------------------+------------------+</span><br><br><span class="hljs-code">+---------+</span>----------+<br><span class="hljs-section">| conn_id | last_id  |</span><br><span class="hljs-section">+---------+----------+</span><br><span class="hljs-section">|      42 |        0 |</span><br><span class="hljs-section">+---------+----------+</span><br><br><span class="hljs-code">+------------+</span>---------------+<br><span class="hljs-section">| charset_val | collation_val |</span><br><span class="hljs-section">+------------+---------------+</span><br><span class="hljs-section">| utf8mb4    | utf8mb4_0900_ai_ci |</span><br><span class="hljs-section">+------------+---------------+</span><br></code></pre></td></tr></table></figure>
+
+<hr>
+<h2 id="八、其他常用函数"><a href="#八、其他常用函数" class="headerlink" title="八、其他常用函数"></a>八、其他常用函数</h2><h3 id="8-1-加密与哈希函数"><a href="#8-1-加密与哈希函数" class="headerlink" title="8.1 加密与哈希函数"></a>8.1 加密与哈希函数</h3><table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>MD5(str)</code></td>
+<td>MD5 哈希（128 位，32 位十六进制）</td>
+</tr>
+<tr>
+<td><code>SHA1(str)</code></td>
+<td>SHA-1 哈希（160 位，40 位十六进制）</td>
+</tr>
+<tr>
+<td><code>SHA2(str, hash_len)</code></td>
+<td>SHA-2 哈希（224&#x2F;256&#x2F;384&#x2F;512 位）</td>
+</tr>
+<tr>
+<td><code>HEX(str_or_num)</code></td>
+<td>转为十六进制字符串，或数字转十六进制</td>
+</tr>
+<tr>
+<td><code>PASSWORD(str)</code></td>
+<td>密码哈希（MySQL 8.0 已废弃）</td>
+</tr>
+<tr>
+<td><code>ENCODE(str, pass_str)</code></td>
+<td>编码（双向，对称加密）</td>
+</tr>
+<tr>
+<td><code>DECODE(str, pass_str)</code></td>
+<td>解码</td>
+</tr>
+<tr>
+<td><code>AES_ENCRYPT(str, key)</code></td>
+<td>AES 加密</td>
+</tr>
+<tr>
+<td><code>AES_DECRYPT(crypt_str, key)</code></td>
+<td>AES 解密</td>
+</tr>
+<tr>
+<td><code>RANDOM_BYTES(len)</code></td>
+<td>生成随机字节序列</td>
+</tr>
+<tr>
+<td><code>SHA2(&#39;password&#39;, 256)</code></td>
+<td>推荐：SHA-256 哈希（不可逆）</td>
+</tr>
+</tbody></table>
+<p><strong>加密函数示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> MD5(<span class="hljs-string">&#x27;hello&#x27;</span>) <span class="hljs-keyword">AS</span> md5_hash, SHA1(<span class="hljs-string">&#x27;hello&#x27;</span>) <span class="hljs-keyword">AS</span> sha1_hash;<br><span class="hljs-keyword">SELECT</span> SHA2(<span class="hljs-string">&#x27;hello&#x27;</span>, <span class="hljs-number">256</span>) <span class="hljs-keyword">AS</span> sha256_hash, SHA2(<span class="hljs-string">&#x27;hello&#x27;</span>, <span class="hljs-number">512</span>) <span class="hljs-keyword">AS</span> sha512_hash;<br><span class="hljs-keyword">SELECT</span> HEX(RANDOM_BYTES(<span class="hljs-number">16</span>)) <span class="hljs-keyword">AS</span> random_token;<br><span class="hljs-keyword">SELECT</span> AES_ENCRYPT(<span class="hljs-string">&#x27;secret&#x27;</span>, <span class="hljs-string">&#x27;key123&#x27;</span>) <span class="hljs-keyword">AS</span> encrypted, AES_DECRYPT(AES_ENCRYPT(<span class="hljs-string">&#x27;secret&#x27;</span>, <span class="hljs-string">&#x27;key123&#x27;</span>), <span class="hljs-string">&#x27;key123&#x27;</span>) <span class="hljs-keyword">AS</span> decrypted;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+--------------------------------+</span>------------------------------------------+<br><span class="hljs-section">| md5_hash                       | sha1_hash                                |</span><br><span class="hljs-section">+--------------------------------+------------------------------------------+</span><br><span class="hljs-section">| 5d41402abc4b2a76b9719d911017c592 | aaf4c61ddcc5e8a2dabede0f3b482cd9aea9434 |</span><br><span class="hljs-section">+--------------------------------+------------------------------------------+</span><br><br><span class="hljs-code">+------------------------------------------------------------------+</span>------------------------------------------------------------------+<br><span class="hljs-section">| sha256_hash                               | sha512_hash                                                                                                    |</span><br><span class="hljs-section">+------------------------------------------------------------------+------------------------------------------------------------------+</span><br>| 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 | 9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca72323c3d99ba5c11d7c7acc6e14b8c5da0c4663475c2e5c3adef46f73bcdec043f<span class="hljs-code">+------------------------------------------------------------------+</span>------------------------------------------------------------------+<br><span class="hljs-section">| 2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824 | 9b71d224bd62f3785d96d46ad3ea3d73319bfbc2890caadae2dff72519673ca72323c3d99ba5c11d7c7acc6e14b8c5da0c4663475c2e5c3adef46f73bcdec043f |</span><br><span class="hljs-section">+------------------------------------------------------------------+------------------------------------------------------------------+</span><br><br><span class="hljs-code">+------------------------+</span><br><span class="hljs-section">| random_token           |</span><br><span class="hljs-section">+------------------------+</span><br><span class="hljs-section">| DBEACBB6C33B96CBF5854866A8BD40C3 |</span><br><span class="hljs-section">+------------------------+</span><br><br><span class="hljs-code">+--------------------------------+</span>-------------+<br><span class="hljs-section">| encrypted                       | decrypted    |</span><br><span class="hljs-section">+--------------------------------+-------------+</span><br><span class="hljs-section">| CD4C7F51AB05D5B409EE18971CB34175 | secret        |</span><br><span class="hljs-section">+--------------------------------+-------------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>密码存储建议</strong>：不要使用 MD5&#x2F;SHA1 存储密码（可被彩虹表破解）。推荐使用 <code>SHA2(..., 256)</code> 加盐，或应用层使用 bcrypt&#x2F;Argon2 等专业密码哈希算法。</p>
+</blockquote>
+<hr>
+<h3 id="8-2-类型转换函数"><a href="#8-2-类型转换函数" class="headerlink" title="8.2 类型转换函数"></a>8.2 类型转换函数</h3><table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>CAST(expr AS type)</code></td>
+<td>将表达式转为指定类型</td>
+<td><code>CAST(&#39;123&#39; AS SIGNED)</code></td>
+</tr>
+<tr>
+<td><code>CONVERT(expr, type)</code></td>
+<td>同 CAST 语法（MySQL 风格）</td>
+<td><code>CONVERT(&#39;2026-03-26&#39;, DATE)</code></td>
+</tr>
+<tr>
+<td><code>CONVERT(expr USING charset)</code></td>
+<td>字符集转换</td>
+<td><code>CONVERT(&#39;你好&#39; USING utf8mb4)</code></td>
+</tr>
+</tbody></table>
+<p><strong>可用类型</strong>：<code>BINARY</code>、<code>CHAR</code>、<code>DATE</code>、<code>DATETIME</code>、<code>DECIMAL</code>、<code>DOUBLE</code>、<code>FLOAT</code>、<code>INT</code>&#x2F;<code>INTEGER</code>、<code>SIGNED</code>、<code>TIME</code>、<code>UNSIGNED</code>。</p>
+<p><strong>类型转换示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">CAST</span>(<span class="hljs-string">&#x27;123&#x27;</span> <span class="hljs-keyword">AS</span> SIGNED) <span class="hljs-operator">+</span> <span class="hljs-number">10</span> <span class="hljs-keyword">AS</span> cast_result;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">CONVERT</span>(<span class="hljs-string">&#x27;2026-03-26&#x27;</span>, <span class="hljs-type">DATE</span>) <span class="hljs-keyword">AS</span> converted_date;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">CAST</span>(<span class="hljs-string">&#x27;3.14&#x27;</span> <span class="hljs-keyword">AS</span> <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">3</span>,<span class="hljs-number">2</span>)) <span class="hljs-keyword">AS</span> decimal_val;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">CONVERT</span>(<span class="hljs-string">&#x27;hello&#x27;</span> <span class="hljs-keyword">USING</span> utf8mb4) <span class="hljs-keyword">AS</span> charset_converted;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+--------------+</span><br><span class="hljs-section">| cast_result  |</span><br><span class="hljs-section">+--------------+</span><br><span class="hljs-section">|          133 |</span><br><span class="hljs-section">+--------------+</span><br><br><span class="hljs-code">+------------------+</span><br><span class="hljs-section">| converted_date    |</span><br><span class="hljs-section">+------------------+</span><br><span class="hljs-section">| 2026-03-26        |</span><br><span class="hljs-section">+------------------+</span><br><br><span class="hljs-code">+-------------+</span><br><span class="hljs-section">| decimal_val  |</span><br><span class="hljs-section">+-------------+</span><br><span class="hljs-section">|        3.14 |</span><br><span class="hljs-section">+-------------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>隐式转换</strong>：MySQL 在表达式中也会自动进行类型转换，但显式 <code>CAST</code> 使意图更清晰，也避免隐式转换带来的意外行为。</p>
+</blockquote>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/MySQL/" class="category-chain-item">MySQL</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%86%85%E7%BD%AE%E5%87%BD%E6%95%B0/" class="print-no-link">#内置函数</a>
+      
+        <a href="/tags/%E8%BF%90%E7%AE%97%E7%AC%A6/" class="print-no-link">#运算符</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/mysql/mysql-84-sql-statements.html" title="MySQL 8.4 SQL 语句">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">MySQL 8.4 SQL 语句</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/mysql/mysql-84-data-types.html" title="MySQL 8.4 数据类型">
+                        <span class="hidden-mobile">MySQL 8.4 数据类型</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
