@@ -253,17 +253,17 @@ d.round(precision=None)
 **示例**
 
 ```python
-from decimal import Decimal
+from decimal import Decimal, ROUND_FLOOR, ROUND_CEILING
 
 d = Decimal('3.14159')
 
-print(f"绝对值: abs({d}) = {d.abs()}")
+print(f"绝对值: abs({d}) = {abs(d)}")
 print(f"量化: quantize(0.01) = {d.quantize(Decimal('0.01'))}")
 print(f"量化: quantize(0.0001) = {d.quantize(Decimal('0.0001'))}")
 
 d2 = Decimal('3.7')
-print(f"向下取整: floor({d2}) = {d2.floor()}")
-print(f"向上取整: ceil({d2}) = {d2.ceil()}")
+print(f"向下取整: floor({d2}) = {d2.to_integral_value(rounding=ROUND_FLOOR)}")
+print(f"向上取整: ceil({d2}) = {d2.to_integral_value(rounding=ROUND_CEILING)}")
 
 d3 = Decimal('123.456')
 print(f"四舍五入: round({d3}, 1) = {d3.__round__(1)}")
@@ -469,26 +469,26 @@ Context(prec=None, rounding=None, Emin=None, Emax=None, capitals=None, ...)
 **示例**
 
 ```python
-from decimal import Decimal, Context, getcontext
+from decimal import Decimal, Context, localcontext
 
 # 创建高精度上下文
 high_precision = Context(prec=50)
 low_precision = Context(prec=5)
 
-# 使用高精度上下文计算
-with low_precision:
+# 使用 localcontext 设置上下文
+with localcontext(low_precision):
     d1 = Decimal('1') / Decimal('3')
     print(f"低精度(5位): 1/3 = {d1}")
 
-with high_precision:
+with localcontext(high_precision):
     d2 = Decimal('1') / Decimal('3')
     print(f"高精度(50位): 1/3 = {d2}")
 
-# 混合使用
-with low_precision:
+# 嵌套使用
+with localcontext(low_precision):
     result = Decimal('1') / Decimal('3')
     print(f"\n内部计算结果: {result}")
-    with high_precision:
+    with localcontext(high_precision):
         precise = Decimal('1') / Decimal('3')
         print(f"临时高精度: 1/3 = {precise}")
 ```
@@ -560,9 +560,12 @@ ctx = getcontext()
 for flag in ctx.flags:
     ctx.flags[flag] = False
 
-# 触发除零
-result = Decimal('1') / Decimal('0')
-print(f"结果: {result}")
+# 触发除零（trap_errors 未开启时会抛出异常）
+try:
+    result = Decimal('1') / Decimal('0')
+    print(f"结果: {result}")
+except DivisionByZero:
+    print("捕获到 DivisionByZero 异常")
 print(f"DivisionByZero标志: {ctx.flags[DivisionByZero]}")
 ```
 

@@ -202,7 +202,7 @@ import urllib.request
 # 创建密码管理器
 password_mgr = urllib.request.HTTPPasswordMgr()
 password_mgr.add_password(
-    realm='Private Area',
+    realm='Fake Realm',
     uri='https://httpbin.org/basic-auth/user/passwd',
     user='user',
     passwd='passwd'
