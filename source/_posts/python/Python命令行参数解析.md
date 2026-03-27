@@ -423,7 +423,7 @@ parser.add_argument('--known', default='default')
 print("=== parse_known_args解析 ===")
 args, extras = parser.parse_known_args(['--known', 'value', '--unknown', 'x'])
 print(f"已知参数: known={args.known}")
-print(f"未知参数: {exras}")
+print(f"未知参数: {extras}")
 ```
 
 输出：
@@ -631,8 +631,8 @@ parser.add_argument('-v', '--verbose', action='store_true', help='详细输出')
 parser.add_argument('-c', '--count', type=int, default=1, help='处理次数')
 parser.add_argument('--mode', choices=['copy', 'move', 'delete'], default='copy')
 
-# 解析参数
-args = parser.parse_args()
+# 解析参数（显式传入模拟参数列表，避免依赖 sys.argv）
+args = parser.parse_args(['data.txt', '-o', 'result.txt', '-v'])
 
 # 使用参数
 print(f"输入文件: {args.input_file}")
