@@ -74,10 +74,10 @@ time thread [label] [err_code] [subsystem] msg
 
 | 优先级 | `prio` 值 | `label` 字符串 |
 |--------|-----------|---------------|
-| SYSTEM | 0 | `System` |
-| ERROR | 1 | `Error` |
-| WARNING | 2 | `Warning` |
-| INFORMATION | 3 | `Note` 或 `Information` |
+| `SYSTEM` | 0 | `System` |
+| `ERROR` | 1 | `Error` |
+| `WARNING` | 2 | `Warning` |
+| `INFORMATION` | 3 | `Note` 或 `Information` |
 
 > SYSTEM 优先级为启动/关闭等系统消息，无法被过滤。
 
