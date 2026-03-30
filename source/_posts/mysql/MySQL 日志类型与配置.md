@@ -569,6 +569,16 @@ SELECT @@binlog_format;
 
 `ROW` 模式下，所有修改数据的语句都以行变化形式记录。但部分语句（如 `CREATE TABLE`、`ALTER TABLE` 等 DDL）仍以语句形式记录。
 
+使用 `mysqlbinlog` 查看 `ROW` 格式日志时，必须加 `-v` 选项才能将行事件还原为可读 SQL，否则显示为二进制标记：
+
+```bash
+# 不带 -v：显示为二进制标记
+mysqlbinlog binlog.000009
+
+# 带 -v：还原为可读 SQL（-vv 包含更多列信息）
+mysqlbinlog binlog.000009 -v
+```
+
 > 使用 `STATEMENT` 格式时，某些不确定的语句可能导致主从数据不一致。`ROW` 格式精度更高，但日志体积通常更大。
 
 ### 4.3 二进制日志事务压缩
