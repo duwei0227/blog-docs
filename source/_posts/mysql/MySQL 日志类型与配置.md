@@ -354,8 +354,19 @@ Create Table: CREATE TABLE `general_log` (
 | `user_host` | 客户端用户和主机信息 |
 | `thread_id` | 连接线程 ID |
 | `server_id` | 服务器 ID |
-| `command_type` | 命令类型（如 `Query`） |
+| `command_type` | 命令类型 |
 | `argument` | 执行的语句内容（二进制格式） |
+
+`command_type` 字段支持的类型：
+
+| `command_type` 值 | 说明 |
+|------------------|------|
+| `Connect` | 客户端连接或断开连接 |
+| `Query` | 执行的 SQL 查询语句 |
+| `Quit` | 客户端退出连接 |
+| `Prepare` | 预处理语句（`PREPARE`） |
+| `Execute` | 执行预处理语句（`EXECUTE`） |
+| `Init DB` | 切换数据库（`USE db_name`） |
 
 查看日志内容：
 
