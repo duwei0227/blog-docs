@@ -470,11 +470,8 @@ SHOW BINLOG EVENTS IN 'binlog.000009' LIMIT 10;
 **查看最近的日志事件：**
 
 ```sql
--- 按时间倒序查看最近 10 条
+-- 查看最近 10 条事件
 SHOW BINLOG EVENTS IN 'binlog.000009' LIMIT 10;
-
--- 从指定位置开始查看后续事件
-SHOW BINLOG EVENTS IN 'binlog.000009' FROM 1000 LIMIT 20;
 ```
 
 **过滤特定数据库的变更：**
