@@ -435,6 +435,58 @@ ls -la /var/lib/mysql/binlog*
 | `binlog.000001` 等 | 二进制日志文件，编号递增 |
 | `binlog.index` | 二进制日志索引文件，记录所有日志文件名 |
 
+### 4.2 查看二进制日志内容
+
+**方式一：SQL 语句**
+
+```sql
+SHOW BINLOG EVENTS IN 'binlog.000009' LIMIT 10;
+```
+
+```
++-----------+-----+---------------+-----------+-------------+---------------------------------------+
+| Log_name  | Pos | Event_type    | Server_id | End_log_pos | Info                                  |
++-----------+-----+---------------+-----------+-------------+---------------------------------------+
+| binlog.000009 |   4 | Format_desc     |         1 |         127 | Server ver: 8.4.8, Binlog ver: 4  |
+| binlog.000009 | 127 | Previous_gtids |         1 |         158 |                                      |
+| binlog.000009 | 158 | Anonymous_Gtid |         1 |         235 | SET @@SESSION.GTID_NEXT= 'ANONYMOUS' |
+| binlog.000009 | 235 | Query          |         1 |         384 | CREATE DATABASE IF NOT EXISTS test... |
+| binlog.000009 | 384 | Anonymous_Gtid |         1 |         461 | SET @@SESSION.GTID_NEXT= 'ANONYMOUS' |
++-----------+-----+---------------+-----------+-------------+---------------------------------------+
+```
+
+主要事件类型说明：
+
+| Event_type | 说明 |
+|------------|------|
+| `Format_desc` | 日志格式描述 |
+| `Previous_gtids` | 前一个日志的 GTID 集合 |
+| `Gtid` | GTID 事务标识 |
+| `Query` | DDL/DML 语句 |
+| `Xid` | 事务提交标识 |
+| `Table_map` | 表结构映射 |
+| `Write_rows` / `Update_rows` / `Delete_rows` | 行数据变更（ROW 格式） |
+
+**方式二：mysqlbinlog 命令行工具**
+
+```bash
+mysqlbinlog /var/lib/mysql/binlog.000009 | head -50
+```
+
+```
+# The proper term is pseudo_replica_mode...
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
+/*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
+DELIMITER /*!*/;
+SET @@SESSION.GTID_NEXT= 'AUTOMATIC' /* added by mysqlbinlog */ /*!*/;
+DELIMITER ;
+# End of log file
+/*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
+/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
+```
+
+> `mysqlbinlog` 需要读取权限，可能需要 `sudo` 或调整文件权限。`-v` 选项可显示更详细的可读格式，`--base64-output=DECODE_ROWS` 解码行事件。
+
 二进制日志默认格式为 `ROW`，过期时间为 30 天（2592000 秒）：
 
 ```sql
