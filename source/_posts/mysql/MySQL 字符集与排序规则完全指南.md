@@ -323,7 +323,9 @@ SELECT 'a ' = 'a' AS result;  -- utf8mb4_0900_bin: NO PAD
 
 > `utf8mb4_bin`（`PAD SPACE`）忽略尾部空格，`'a '` 与 `'a'` 相等；`utf8mb4_0900_bin`（`NO PAD`）将尾部空格视为有效字符，`'a '` 与 `'a'` 不相等。
 
-查看排序规则的 `PAD` 属性：
+查看排序规则的 `PAD` 属性有两种方式：
+
+**方式一：查询指定排序规则**
 
 ```sql
 SELECT COLLATION_NAME, PAD_ATTRIBUTE
@@ -343,6 +345,23 @@ WHERE COLLATION_NAME IN (
 | utf8mb4_bin         | PAD SPACE    |
 | utf8mb4_general_ci  | PAD SPACE    |
 +----------------------+--------------+
+```
+
+**方式二：查询当前会话使用的排序规则**
+
+```sql
+SELECT @@collation_connection AS current_collation,
+       PAD_ATTRIBUTE
+FROM INFORMATION_SCHEMA.COLLATIONS
+WHERE COLLATION_NAME = @@collation_connection;
+```
+
+```
++------------------------+--------------+
+| current_collation      | PAD_ATTRIBUTE|
++------------------------+--------------+
+| utf8mb4_0900_ai_ci   | NO PAD       |
++------------------------+--------------+
 ```
 
 > 所有 `0900` 系列排序规则均为 `NO PAD`，早期排序规则为 `PAD SPACE`。
