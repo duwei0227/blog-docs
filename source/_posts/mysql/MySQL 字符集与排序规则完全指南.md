@@ -11,7 +11,7 @@ categories: MySQL
 
 ## 一、字符集与排序规则概述
 
-字符集（Character Set）定义了 MySQL 可以存储的字符集合，排序规则（Collation）则定义了字符之间的比较和排序规则。每个字符集对应一个或多个排序规则。
+`字符集`（`Character Set`）定义了 MySQL 可以存储的字符集合，`排序规则`（`Collation`）则定义了字符之间的比较和排序规则。每个字符集对应一个或多个排序规则。
 
 MySQL 8.4 默认字符集为 `utf8mb4`，默认排序规则为 `utf8mb4_0900_ai_ci`。查看所有可用字符集：
 
@@ -59,9 +59,9 @@ for CHARACTER SET 'latin1'
 
 **验证：** 执行上述语句返回 `ERROR 1253`，确认字符集与排序规则必须匹配。
 
-## 二、MySQL 中的 Unicode 支持
+## 二、MySQL 中的 `Unicode` 支持
 
-Unicode 字符集支持 BMP（Basic Multilingual Plane，即 `U+0000` 至 `U+FFFF`）字符和补充字符（`U+10000` 及以上）。MySQL 8.4 支持的 Unicode 字符集如下：
+`Unicode` 字符集支持 `BMP`（`Basic Multilingual Plane`，即 `U+0000` 至 `U+FFFF`）字符和补充字符（`U+10000` 及以上）。MySQL 8.4 支持的 `Unicode` 字符集如下：
 
 | 字符集 | 支持范围 | 每字符存储空间 | 状态 |
 |--------|---------|--------------|------|
@@ -184,7 +184,7 @@ CREATE TABLE t1 (
 
 > 列 `c1` 的字符集为 `latin1`，排序规则为 `latin1_swedish_ci`（`latin1` 的默认排序规则），而非 `latin1_danish_ci`。
 
-## 四、字符集 Introducer 与 `COLLATE` 子句
+## 四、字符集 `Introducer` 与 `COLLATE` 子句
 
 字符集 introducer（引入器）用于显式指定字面量字符串的字符集，`_charset_name` 语法：
 
@@ -219,11 +219,11 @@ MySQL 排序规则命名遵循统一规范，后缀表示排序特性：
 
 | 后缀 | 含义 |
 |------|------|
-| `_ai` | 重音不敏感（Accent Insensitive） |
-| `_as` | 重音敏感（Accent Sensitive） |
-| `_ci` | 大小写不敏感（Case Insensitive） |
-| `_cs` | 大小写敏感（Case Sensitive） |
-| `_ks` | 假名敏感（Kana Sensitive） |
+| `_ai` | 重音不敏感 |
+| `_as` | 重音敏感 |
+| `_ci` | 大小写不敏感 |
+| `_cs` | 大小写敏感 |
+| `_ks` | 假名敏感 |
 | `_bin` | 二进制（按码点值比较） |
 
 **验证 —— 大小写与重音敏感性：**
@@ -247,11 +247,11 @@ SELECT 'a' = 'A' COLLATE utf8mb4_0900_as_cs AS as_cs;
 
 ### 5.1 UCA 版本号
 
-排序规则名称中的数字表示 Unicode Collation Algorithm（UCA）版本：
+排序规则名称中的数字表示 `Unicode Collation Algorithm`（`UCA`）版本：
 
-- `utf8mb4_0900_ai_ci` 基于 UCA 9.0.0
-- `utf8mb4_unicode_520_ci` 基于 UCA 5.2.0
-- `utf8mb4_unicode_ci`（无版本号）基于 UCA 4.0.0
+- `utf8mb4_0900_ai_ci` 基于 `UCA` 9.0.0
+- `utf8mb4_unicode_520_ci` 基于 `UCA` 5.2.0
+- `utf8mb4_unicode_ci`（无版本号）基于 `UCA` 4.0.0
 
 ### 5.2 语言特定排序规则
 
@@ -274,7 +274,7 @@ ORDER BY COLLATION_NAME;
 | 属性 | 行为 |
 |------|------|
 | `PAD SPACE` | 尾部空格在比较中忽略（默认） |
-| `NO PAD` | 尾部空格在比较中与其他字符等价（UCA 9.0.0+ 排序规则） |
+| `NO PAD` | 尾部空格在比较中与其他字符等价（`UCA` 9.0.0+ 排序规则） |
 
 **验证 —— 尾部空格比较：**
 
@@ -330,7 +330,7 @@ WHERE COLLATION_NAME IN (
 
 > 所有 `0900` 系列排序规则均为 `NO PAD`，早期排序规则为 `PAD SPACE`。
 
-## 七、Unicode 排序规则详解
+## 七、`Unicode` 排序规则详解
 
 ### 7.1 `_general_ci` 与 `_unicode_ci` 的区别
 
@@ -385,10 +385,10 @@ SELECT HEX(WEIGHT_STRING('ß' COLLATE utf8mb4_unicode_ci)) AS ss_weight;
 
 | 排序规则 | Ä = A | Ö = O | Ü = U | ß = s | ß = ss |
 |----------|-------|-------|-------|-------|--------|
-| `latin1_german1_ci` (DIN-1) | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `latin1_german2_ci` (DIN-2) | ✅ | ✅ | ✅ | ❌ | ✅ |
+| `latin1_german1_ci` (`DIN-1`) | ✅ | ✅ | ✅ | ✅ | ❌ |
+| `latin1_german2_ci` (`DIN-2`) | ✅ | ✅ | ✅ | ❌ | ✅ |
 
-**验证 —— German DIN-1 vs DIN-2：**
+**验证 —— `DIN-1` vs `DIN-2`：**
 
 ```sql
 CREATE TABLE german1 (c CHAR(10))
@@ -406,7 +406,7 @@ SELECT 'german1_ci' AS col, c FROM german1 WHERE c = 'Bär';
 +----------------+------+
 ```
 
-> `latin1_german1_ci`（DIN-1）中 `Ä = A`，所以 `'Bar'` 也满足 `WHERE c = 'Bär'`。
+> `latin1_german1_ci`（`DIN-1`）中 `Ä = A`，所以 `'Bar'` 也满足 `WHERE c = 'Bär'`。
 
 ```sql
 CREATE TABLE german2 (c CHAR(10))
@@ -423,11 +423,11 @@ SELECT 'german2_ci' AS col, c FROM german2 WHERE c = 'Bär';
 +----------------+------+
 ```
 
-> `latin1_german2_ci`（DIN-2）中 `Ä = AE`（不等于 `A`），所以只有 `'Bär'` 匹配。
+> `latin1_german2_ci`（`DIN-2`）中 `Ä = AE`（不等于 `A`），所以只有 `'Bär'` 匹配。
 
 ### 7.3 日语假名敏感排序
 
-日语排序规则支持假名敏感性（Kana Sensitivity，`_ks` 后缀）：
+日语排序规则支持假名敏感性（`Kana Sensitivity`，`_ks` 后缀）：
 
 - `utf8mb4_ja_0900_as_cs`：平假名和片假名在排序时视为相等
 - `utf8mb4_ja_0900_as_cs_ks`：区分平假名和片假名
@@ -439,9 +439,9 @@ SELECT 'german2_ci' AS col, c FROM german2 WHERE c = 'Bär';
 - `utf8mb4_bin`：基于码点值比较，`PAD SPACE`
 - `utf8mb4_0900_bin`：基于 UTF-8 编码字节比较，`NO PAD`，性能更好
 
-## 八、排序规则强制转换（Coercibility）
+## 八、排序规则强制转换（`Coercibility`）
 
-当比较中两个操作数具有不同排序规则时，MySQL 根据强制转换值（Coercibility）决定使用哪个排序规则。值越低优先级越高：
+当比较中两个操作数具有不同排序规则时，MySQL 根据强制转换值（`Coercibility`）决定使用哪个排序规则。值越低优先级越高：
 
 | 强制值 | 来源 | 示例 |
 |--------|------|------|
@@ -487,7 +487,7 @@ SELECT COERCIBILITY(NULL) AS coercibility_6;
 +---------------+
 ```
 
-强制转换规则补充：若两边强制值相同且均为 Unicode 或均为非 Unicode，则报错；若一边为 Unicode 而另一边不是，Unicode 端获胜并自动转换非 Unicode 端。
+强制转换规则补充：若两边强制值相同且均为 `Unicode` 或均为非 `Unicode`，则报错；若一边为 `Unicode` 而另一边不是，`Unicode` 端获胜并自动转换非 `Unicode` 端。
 
 ## 九、连接字符集与排序规则
 
@@ -553,9 +553,9 @@ SELECT @@character_set_client, @@character_set_connection,
 
 - `ucs2`、`utf16`、`utf16le`、`utf32`
 
-## 十、`NCHAR` 与 National Character
+## 十、`NCHAR` 与 `National Character`
 
-标准 SQL 的 `NCHAR` 表示使用预定义字符集，MySQL 将其实现为 `utf8mb3`（已弃用）。使用 `NCHAR`/`NATIONAL CHAR` 会产生警告：
+标准 SQL 的 `NCHAR` 表示使用预定义字符集，MySQL 将其实现为 `utf8mb3`（已弃用）。使用 `NCHAR`/`NATIONAL` 会产生警告：
 
 ```sql
 CREATE TABLE t_warn2 (c1 NCHAR(10));
@@ -667,8 +667,8 @@ SELECT DAYNAME('2020-01-01'), MONTHNAME('2020-01-01');
 
 ## 十四、字符集使用建议
 
-1. **新项目使用 `utf8mb4`**：`utf8mb3` 已弃用，`utf8mb4` 支持完整的 Unicode 字符（包括 emoji）
-2. **默认排序规则 `utf8mb4_0900_ai_ci`**：基于 UCA 9.0.0，准确性高，性能好
+1. **新项目使用 `utf8mb4`**：`utf8mb3` 已弃用，`utf8mb4` 支持完整的 `Unicode` 字符（包括 emoji）
+2. **默认排序规则 `utf8mb4_0900_ai_ci`**：基于 `UCA` 9.0.0，准确性高，性能好
 3. **需要大小写敏感时**：使用 `utf8mb4_0900_as_cs`
 4. **多语言应用**：使用语言特定排序规则（如 `utf8mb4_zh_0900_as_cs`）
 5. **避免使用 `NCHAR`**：改用 `CHAR(x) CHARACTER SET utf8mb4`
