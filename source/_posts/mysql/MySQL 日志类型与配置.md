@@ -51,7 +51,7 @@ SELECT @@log_error;
 
 本机错误日志路径为 `/var/log/mysql/mysqld.log`。
 
-修改日志路径示例（在配置文件中）：
+修改日志路径示例（在配置文件中，路径为 `/etc/my.cnf.d/mysql-server.cnf`）：
 
 ```ini
 [mysqld]
