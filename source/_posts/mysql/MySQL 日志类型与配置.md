@@ -70,14 +70,18 @@ time thread [label] [err_code] [subsystem] msg
 
 每条消息包含：时间戳、线程 ID、优先级标签、错误码、子系统、消息内容。
 
-`label` 为优先级的字符串形式，`subsystem` 标识产生该事件的 MySQL 子系统：
+`label` 为优先级的字符串形式，对应关系如下：
 
-| 优先级 | `prio` 值 | `label` 字符串 | 说明 |
-|--------|-----------|---------------|------|
-| SYSTEM | 0 | `System` | 启动/关闭等系统消息，无法过滤 |
-| ERROR | 1 | `Error` | 错误 |
-| WARNING | 2 | `Warning` | 警告 |
-| INFORMATION | 3 | `Note` 或 `Information` | 信息 |
+| 优先级 | `prio` 值 | `label` 字符串 |
+|--------|-----------|---------------|
+| SYSTEM | 0 | `System` |
+| ERROR | 1 | `Error` |
+| WARNING | 2 | `Warning` |
+| INFORMATION | 3 | `Note` 或 `Information` |
+
+> SYSTEM 优先级为启动/关闭等系统消息，无法被过滤。
+
+`subsystem` 标识产生该事件的 MySQL 子系统：
 
 | `subsystem` 值 | 说明 |
 |---------------|------|
