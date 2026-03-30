@@ -414,6 +414,27 @@ SELECT @@log_bin, @@log_bin_basename;
 +--------+------------------------+
 ```
 
+二进制日志文件位于 `/var/lib/mysql/` 目录下：
+
+```bash
+ls -la /var/lib/mysql/binlog*
+```
+
+```
+-rw-r-----. 1 mysql mysql  2569 Mar 25 11:57 binlog.000001
+-rw-r-----. 1 mysql mysql  1158 Mar 25 16:37 binlog.000002
+-rw-r-----. 1 mysql mysql 12874 Mar 25 20:02 binlog.000003
+...
+-rw-r-----. 1 mysql mysql   144 Mar 30 08:19 binlog.index
+```
+
+日志文件说明：
+
+| 文件 | 说明 |
+|------|------|
+| `binlog.000001` 等 | 二进制日志文件，编号递增 |
+| `binlog.index` | 二进制日志索引文件，记录所有日志文件名 |
+
 二进制日志默认格式为 `ROW`，过期时间为 30 天（2592000 秒）：
 
 ```sql
