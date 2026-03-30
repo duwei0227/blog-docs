@@ -489,6 +489,40 @@ SHOW BINLOG EVENTS IN 'binlog.000009' LIMIT 20;
 mysqlbinlog /var/lib/mysql/binlog.000009 | head -50
 ```
 
+常用选项：
+
+| 选项 | 说明 |
+|------|------|
+| `--start-position=#` | 从指定位置开始读取 |
+| `--stop-position=#` | 读到指定位置停止 |
+| `--start-datetime=datetime` | 从指定时间开始读取 |
+| `--stop-datetime=datetime` | 读到指定时间停止 |
+| `--database=db_name` | 只显示指定数据库的事件 |
+| `-v, --verbose` | 将行事件重构为可读 SQL（`-vv` 包含更多列信息） |
+| `--include-gtids=gtid_set` | 只输出指定 GTID 的事务 |
+| `--exclude-gtids=gtid_set` | 排除指定 GTID 的事务 |
+| `--stop-never` | 持续监听新事件（用于实时跟踪） |
+| `--raw` | 输出原始二进制格式（需配合 `-R` 远程读取） |
+
+常用示例：
+
+```bash
+# 从指定位置读取到结束
+mysqlbinlog /var/lib/mysql/binlog.000009 --start-position=1000
+
+# 读取指定位置范围
+mysqlbinlog /var/lib/mysql/binlog.000009 --start-position=1000 --stop-position=2000
+
+# 只看特定数据库的事件
+mysqlbinlog /var/lib/mysql/binlog.000009 --database=test_charsets
+
+# 行事件重构为可读 SQL
+mysqlbinlog /var/lib/mysql/binlog.000009 -v
+
+# 从指定时间开始
+mysqlbinlog /var/lib/mysql/binlog.000009 --start-datetime='2026-03-30 10:00:00'
+```
+
 > `mysqlbinlog` 需要读取权限，可能需要 `sudo` 或调整文件权限。`-v` 选项可显示更详细的可读格式，`--base64-output=DECODE_ROWS` 解码行事件。
 
 ### 4.3 三种日志格式
