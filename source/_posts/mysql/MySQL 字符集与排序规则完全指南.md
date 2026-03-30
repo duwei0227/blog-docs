@@ -109,7 +109,7 @@ SHOW VARIABLES LIKE 'character_set_system';
 
 ## 三、字符集与排序规则的四个级别
 
-MySQL 在四个层级上设置字符集和排序规则：服务器（server）、数据库（database）、表（table）、列（column）。
+MySQL 在四个层级上设置字符集和排序规则：`server`（服务器）、`database`（数据库）、`table`（表）、`column`（列）。
 
 ### 3.1 服务器级别
 
