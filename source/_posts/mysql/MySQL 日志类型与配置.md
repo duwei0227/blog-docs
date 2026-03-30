@@ -371,11 +371,15 @@ Create Table: CREATE TABLE `general_log` (
 查看日志内容：
 
 ```sql
-SELECT event_time, thread_id, command_type, argument
+-- argument 是 mediumblob（二进制），需要转换后查看
+SELECT event_time, thread_id, command_type,
+       CONVERT(argument USING utf8mb4) AS argument_text
 FROM mysql.general_log
 ORDER BY event_time DESC
 LIMIT 10;
 ```
+
+> `argument` 字段类型为 `mediumblob`，存储的是二进制内容。使用 `CONVERT(argument USING utf8mb4)` 或 `CAST(argument AS CHAR)` 将其转换为可读字符串。
 
 > 该表默认使用 `CSV` 存储引擎，也可转换为 `MyISAM` 引擎。`INSERT`、`DELETE`、`UPDATE` 操作只能在服务器内部进行，用户无法直接修改日志表。
 
