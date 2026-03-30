@@ -629,6 +629,24 @@ SELECT @@slow_query_log, @@slow_query_log_file, @@long_query_time;
 SET GLOBAL long_query_time = 1.5;
 ```
 
+慢查询日志的输出目标由 `log_output` 系统变量控制，与通用查询日志共享同一配置：
+
+| 值 | 说明 |
+|----|------|
+| `FILE` | 写入日志文件（默认） |
+| `TABLE` | 写入 `mysql.slow_log` 表 |
+| `FILE,TABLE` | 同时写入文件和表 |
+| `NONE` | 不记录，即使 `slow_query_log = 1` 也不记录 |
+
+```sql
+-- 查看当前输出目标
+SELECT @@log_output;
+
+-- 修改为同时写入文件和表
+SET GLOBAL log_output = 'FILE,TABLE';
+SET GLOBAL slow_query_log = 1;
+```
+
 ### 5.1 输出为 FILE
 
 `log_output = 'FILE'` 时，慢查询日志写入文件。
