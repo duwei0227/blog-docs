@@ -323,7 +323,7 @@ SELECT 'a ' = 'a' AS result;  -- utf8mb4_0900_bin: NO PAD
 
 > `utf8mb4_bin`（`PAD SPACE`）忽略尾部空格，`'a '` 与 `'a'` 相等；`utf8mb4_0900_bin`（`NO PAD`）将尾部空格视为有效字符，`'a '` 与 `'a'` 不相等。
 
-查看排序规则的 `PAD` 属性有两种方式：
+**查看排序规则的 `PAD` 属性有两种方式：**
 
 **方式一：查询指定排序规则**
 
@@ -372,6 +372,10 @@ WHERE COLLATION_NAME = @@collation_connection;
 
 `utf8mb4_general_ci` 性能更好但精度较低，不支持扩展（expansion）和收缩（contraction）；`utf8mb4_unicode_ci` 支持这些特性。
 
+**扩展（expansion）**指一个字符在排序时被展开为多个字符参与比较。最典型的例子是德语 `ß`（eszett）。在 `unicode_ci` 排序规则中，`ß` 被展开为 `ss`（两个字符的权重），因此 `ß` 与 `ss` 在比较时等价：`WHERE c = 'ß'` 能匹配到 `'ss'`。而 `general_ci` 不支持扩展，`ß` 与 `ss` 各有独立权重，互不相等。
+
+**收缩（contraction）**指多个字符在排序时被收缩为一个单元参与比较。典型场景是西班牙语中的 `ch` 和 `ll`。传统西班牙语排序中，`ch` 被视为独立字母，位于 `c` 和 `d` 之间；`ll` 位于 `l` 和 `m` 之间。`unicode_ci` 支持这种多字符收缩，`general_ci` 不支持。
+
 **验证 —— 德语 `ß` 的处理：**
 
 ```sql
@@ -396,26 +400,24 @@ SELECT * FROM g1 WHERE c = 'ss';
 
 > `utf8mb4_unicode_ci` 中 `ß` 与 `ss` 在比较时等价。
 
-**验证 —— UCA 4.0.0 扩展权重：**
+**验证 —— 扩展与不扩展的权重对比：**
 
 ```sql
-SELECT HEX(WEIGHT_STRING('a' COLLATE utf8mb4_unicode_ci)) AS a_weight;
-SELECT HEX(WEIGHT_STRING('ß' COLLATE utf8mb4_unicode_ci)) AS ss_weight;
+SELECT HEX(WEIGHT_STRING('ß' COLLATE utf8mb4_unicode_ci)) AS unicode_ci_weight;
+SELECT HEX(WEIGHT_STRING('ss' COLLATE utf8mb4_unicode_ci)) AS ss_in_unicode_ci;
+SELECT HEX(WEIGHT_STRING('ß' COLLATE utf8mb4_general_ci)) AS general_ci_weight;
+SELECT HEX(WEIGHT_STRING('s' COLLATE utf8mb4_general_ci)) AS s_in_general_ci;
 ```
 
 ```
-+-----------+
-| a_weight  |
-+-----------+
-| 0E33      |
-+-----------+
-| ss_weight |
-+-----------+
-| 0FEA0FEA  |
-+-----------+
++-------------------+------------------+-------------------+----------------+
+| unicode_ci_weight | ss_in_unicode_ci | general_ci_weight | s_in_general_ci |
++-------------------+------------------+-------------------+----------------+
+| 0FEA0FEA         | 0FEA0FEA        | 0053             | 0053           |
++-------------------+------------------+-------------------+----------------+
 ```
 
-> `ß` 的权重为 `0FEA0FEA`（两个权重元素），表示它被展开为 `ss` 进行排序——这就是扩展（expansion）。
+> `utf8mb4_unicode_ci` 中 `ß` 与 `ss` 的权重完全相同（`0FEA0FEA`），说明 `ß` 被展开为 `ss` 两个字符参与排序——这就是扩展。`utf8mb4_general_ci` 中 `ß` 的权重仅为 `0053`（与 `s` 相同），不发生展开。
 
 ### 7.2 German 排序规则差异
 
