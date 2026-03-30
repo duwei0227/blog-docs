@@ -302,6 +302,81 @@ SET GLOBAL log_output = 'FILE';  -- 或 TABLE，或 FILE,TABLE
 
 > 默认输出目标为 `FILE`。如果设为 `NONE`，即使 `general_log = 1` 也不会记录。
 
+**永久配置：** 在配置文件中设置（`/etc/my.cnf.d/mysql-server.cnf`）：
+
+```ini
+[mysqld]
+general_log = 1
+log_output = TABLE
+general_log_file = /var/lib/mysql/general.log
+```
+
+**临时配置：** 运行时 `SET GLOBAL`（重启后失效）：
+
+```sql
+SET GLOBAL general_log = 1;
+SET GLOBAL log_output = 'TABLE';
+SET GLOBAL general_log_file = '/var/lib/mysql/general.log';
+```
+
+### 3.1 输出目标为 TABLE 时的存储
+
+`log_output = 'TABLE'` 时，日志数据存储在 `mysql.general_log` 表中：
+
+```sql
+SELECT @@log_output;
+SHOW CREATE TABLE mysql.general_log\G
+```
+
+```
++-------------+
+| log_output  |
++-------------+
+| FILE        |
++-------------+
+*************************** 1. row ***************************
+       Table: general_log
+Create Table: CREATE TABLE `general_log` (
+  `event_time` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+  `user_host` mediumtext NOT NULL,
+  `thread_id` bigint unsigned NOT NULL,
+  `server_id` int unsigned NOT NULL,
+  `command_type` varchar(64) NOT NULL,
+  `argument` mediumblob NOT NULL
+) ENGINE=CSV DEFAULT CHARSET=utf8mb3 COMMENT='General log'
+```
+
+表结构说明：
+
+| 字段 | 说明 |
+|------|------|
+| `event_time` | 事件时间戳，精度到微秒 |
+| `user_host` | 客户端用户和主机信息 |
+| `thread_id` | 连接线程 ID |
+| `server_id` | 服务器 ID |
+| `command_type` | 命令类型（如 `Query`） |
+| `argument` | 执行的语句内容（二进制格式） |
+
+查看日志内容：
+
+```sql
+SELECT event_time, thread_id, command_type, argument
+FROM mysql.general_log
+ORDER BY event_time DESC
+LIMIT 10;
+```
+
+> 该表默认使用 `CSV` 存储引擎，也可转换为 `MyISAM` 引擎。`INSERT`、`DELETE`、`UPDATE` 操作只能在服务器内部进行，用户无法直接修改日志表。
+
+### 3.2 会话级禁用
+
+会话级禁用通用查询日志（需 `general_log = 1` 前提下）：
+
+```sql
+SET SESSION sql_log_off = ON;  -- 当前会话禁用
+SET SESSION sql_log_off = OFF; -- 恢复记录
+```
+
 密码在日志中会被自动重写，不会明文出现。如果需要诊断目的查看原始语句，可使用 `--log-raw` 选项启动服务器（生产环境慎用）。
 
 日志记录顺序为服务器接收顺序，与执行顺序可能不一致。不同于二进制日志（先执行后记录），通用查询日志可能包含未实际执行的语句。
