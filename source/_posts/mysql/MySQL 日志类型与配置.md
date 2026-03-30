@@ -467,7 +467,24 @@ SHOW BINLOG EVENTS IN 'binlog.000009' LIMIT 10;
 | `Table_map` | 表结构映射 |
 | `Write_rows` / `Update_rows` / `Delete_rows` | 行数据变更（ROW 格式） |
 
-**方式二：mysqlbinlog 命令行工具**
+**查看最近的日志事件：**
+
+```sql
+-- 按时间倒序查看最近 10 条
+SHOW BINLOG EVENTS IN 'binlog.000009' LIMIT 10;
+
+-- 从指定位置开始查看后续事件
+SHOW BINLOG EVENTS IN 'binlog.000009' FROM 1000 LIMIT 20;
+```
+
+**过滤特定数据库的变更：**
+
+```sql
+SHOW BINLOG EVENTS IN 'binlog.000009' 
+WHERE Info LIKE '%test_charsets%' OR Info LIKE '%mydb%';
+```
+
+> `SHOW BINLOG EVENTS` 默认从文件开头遍历，性能较差。大文件建议使用 `mysqlbinlog` 配合 `--start-position` 选项。
 
 ```bash
 mysqlbinlog /var/lib/mysql/binlog.000009 | head -50
@@ -487,75 +504,7 @@ DELIMITER ;
 
 > `mysqlbinlog` 需要读取权限，可能需要 `sudo` 或调整文件权限。`-v` 选项可显示更详细的可读格式，`--base64-output=DECODE_ROWS` 解码行事件。
 
-### 4.3 查看最新添加的内容
-
-**查看最近的日志事件：**
-
-```sql
--- 按时间倒序查看最近 10 条
-SHOW BINLOG EVENTS IN 'binlog.000009' LIMIT 10;
-
--- 从指定位置开始查看后续事件
-SHOW BINLOG EVENTS IN 'binlog.000009' FROM 1000 LIMIT 20;
-```
-
-**查看特定数据库的变更：**
-
-```sql
--- 过滤包含特定数据库名的 Query 事件
-SHOW BINLOG EVENTS IN 'binlog.000009' 
-WHERE Info LIKE '%test_charsets%' OR Info LIKE '%mydb%';
-```
-
-**使用 GTID 查看：**
-
-```sql
--- 查看特定 GTID 事务
-SHOW BINLOG EVENTS IN 'binlog.000009' 
-WHERE Event_type = 'Gtid' AND Info LIKE '%ANONYMOUS%';
-
--- 从指定 GTID 位置开始
-SHOW BINLOG EVENTS IN 'binlog.000009' 
-FROM (SELECT MAX(End_log_pos) FROM mysql.general_log WHERE argument LIKE '%specific_keyword%');
-```
-
-> `SHOW BINLOG EVENTS` 默认从文件开头遍历，性能较差。大文件建议使用 `mysqlbinlog` 配合 `--start-position` 选项。
-
-二进制日志默认格式为 `ROW`，过期时间为 30 天（2592000 秒）：
-
-```sql
-SELECT @@binlog_format, @@binlog_expire_logs_seconds;
-```
-
-```
-+---------------+----------------------------+
-| binlog_format | binlog_expire_logs_seconds |
-+---------------+----------------------------+
-| ROW           |                    2592000 |
-+---------------+----------------------------+
-```
-
-查看当前所有二进制日志文件：
-
-```sql
-SHOW BINARY LOGS;
-```
-
-```
-+-----------+-----------+-----------+
-| Log_name  | File_size | Encrypted |
-+-----------+-----------+-----------+
-| binlog.000001 |     2569 | No       |
-| binlog.000002 |     1158 | No       |
-| binlog.000003 |    12874 | No       |
-| binlog.000004 |    39395 | No       |
-| binlog.000005 |     5503 | No       |
-+-----------+-----------+-----------+
-```
-
-新文件在以下情况创建：服务器启动或重启、日志刷新、当前文件达到 `max_binlog_size`。
-
-### 4.2 三种日志格式
+### 4.3 三种日志格式
 
 `binlog_format` 系统变量控制二进制日志的格式：
 
@@ -601,7 +550,7 @@ SELECT @@binlog_format;
 
 > 使用 `STATEMENT` 格式时，某些不确定的语句可能导致主从数据不一致。`ROW` 格式精度更高，但日志体积通常更大。
 
-### 4.3 二进制日志事务压缩
+### 4.4 二进制日志事务压缩
 
 MySQL 8.0.20+ 支持二进制日志事务压缩，使用 `zstd` 算法压缩事务载荷：
 
