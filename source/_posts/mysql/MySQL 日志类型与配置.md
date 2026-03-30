@@ -484,22 +484,12 @@ SHOW BINLOG EVENTS IN 'binlog.000009' FROM 1000 LIMIT 20;
 SHOW BINLOG EVENTS IN 'binlog.000009' LIMIT 20;
 ```
 
-> `SHOW BINLOG EVENTS` 不支持 `WHERE` 子句，也无法直接按数据库过滤。查看特定数据库的变更需要结合外部工具或使用 `mysqlbinlog` 命令（可能需要 sudo 权限）。
+> `SHOW BINLOG EVENTS` 不支持 `WHERE` 子句，也无法直接按数据库过滤。查看特定数据库的变更需要结合外部工具。
+
+**方式二：mysqlbinlog 命令行工具**
 
 ```bash
 mysqlbinlog /var/lib/mysql/binlog.000009 | head -50
-```
-
-```
-# The proper term is pseudo_replica_mode...
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=1*/;
-/*!50003 SET @OLD_COMPLETION_TYPE=@@COMPLETION_TYPE,COMPLETION_TYPE=0*/;
-DELIMITER /*!*/;
-SET @@SESSION.GTID_NEXT= 'AUTOMATIC' /* added by mysqlbinlog */ /*!*/;
-DELIMITER ;
-# End of log file
-/*!50003 SET COMPLETION_TYPE=@OLD_COMPLETION_TYPE*/;
-/*!50530 SET @@SESSION.PSEUDO_SLAVE_MODE=0*/;
 ```
 
 > `mysqlbinlog` 需要读取权限，可能需要 `sudo` 或调整文件权限。`-v` 选项可显示更详细的可读格式，`--base64-output=DECODE_ROWS` 解码行事件。
@@ -550,7 +540,7 @@ SELECT @@binlog_format;
 
 > 使用 `STATEMENT` 格式时，某些不确定的语句可能导致主从数据不一致。`ROW` 格式精度更高，但日志体积通常更大。
 
-### 4.4 二进制日志事务压缩
+### 4.3 二进制日志事务压缩
 
 MySQL 8.0.20+ 支持二进制日志事务压缩，使用 `zstd` 算法压缩事务载荷：
 
