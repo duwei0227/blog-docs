@@ -1,5 +1,5 @@
 ---
-title: MySQL 字符集与排序规则完全指南
+title: MySQL 字符集与排序规则
 date: 2026-03-30 08:30:00
 tags:
   - 字符集
@@ -10,8 +10,6 @@ categories: MySQL
 ---
 
 MySQL 8.4 Reference Manual Chapter 12
-
-# MySQL 字符集与排序规则完全指南
 
 ## 一、字符集与排序规则概述
 
