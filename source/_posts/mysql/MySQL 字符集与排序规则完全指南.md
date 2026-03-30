@@ -421,58 +421,7 @@ SELECT HEX(WEIGHT_STRING('s' COLLATE utf8mb4_general_ci)) AS s_in_general_ci;
 
 > `utf8mb4_unicode_ci` 中 `ß` 与 `ss` 的权重完全相同（`0FEA0FEA`），说明 `ß` 被展开为 `ss` 两个字符参与排序——这就是扩展。`utf8mb4_general_ci` 中 `ß` 的权重仅为 `0053`（与 `s` 相同），不发生展开。
 
-### 7.2 German 排序规则差异
-
-| 排序规则 | Ä = A | Ö = O | Ü = U | ß = s | ß = ss |
-|----------|-------|-------|-------|-------|--------|
-| `latin1_german1_ci` (`DIN-1`) | ✅ | ✅ | ✅ | ✅ | ❌ |
-| `latin1_german2_ci` (`DIN-2`) | ✅ | ✅ | ✅ | ❌ | ✅ |
-
-**验证 —— `DIN-1` vs `DIN-2`：**
-
-```sql
-CREATE TABLE german1 (c CHAR(10))
-    CHARACTER SET latin1 COLLATE latin1_german1_ci;
-INSERT INTO german1 VALUES ('Bar'), ('Bär');
-SELECT 'german1_ci' AS col, c FROM german1 WHERE c = 'Bär';
-```
-
-```
-+----------------+------+
-| col            | c    |
-+----------------+------+
-| german1_ci     | Bar  |
-| german1_ci     | Bär  |
-+----------------+------+
-```
-
-> `latin1_german1_ci`（`DIN-1`）中 `Ä = A`，所以 `'Bar'` 也满足 `WHERE c = 'Bär'`。
-
-```sql
-CREATE TABLE german2 (c CHAR(10))
-    CHARACTER SET latin1 COLLATE latin1_german2_ci;
-INSERT INTO german2 VALUES ('Bar'), ('Bär');
-SELECT 'german2_ci' AS col, c FROM german2 WHERE c = 'Bär';
-```
-
-```
-+----------------+------+
-| col            | c    |
-+----------------+------+
-| german2_ci     | Bär  |
-+----------------+------+
-```
-
-> `latin1_german2_ci`（`DIN-2`）中 `Ä = AE`（不等于 `A`），所以只有 `'Bär'` 匹配。
-
-### 7.3 日语假名敏感排序
-
-日语排序规则支持假名敏感性（`Kana Sensitivity`，`_ks` 后缀）：
-
-- `utf8mb4_ja_0900_as_cs`：平假名和片假名在排序时视为相等
-- `utf8mb4_ja_0900_as_cs_ks`：区分平假名和片假名
-
-### 7.4 二进制排序规则
+### 7.2 二进制排序规则
 
 `utf8mb4` 有两个二进制排序规则：
 
