@@ -629,32 +629,27 @@ SELECT @@slow_query_log, @@slow_query_log_file, @@long_query_time;
 SET GLOBAL long_query_time = 1.5;
 ```
 
-### 5.1 日志参数
+### 5.1 输出为 FILE
 
-| 参数 | 说明 |
-|------|------|
-| `log_slow_admin_statements` | 是否记录管理语句（`ALTER TABLE`、`ANALYZE TABLE` 等），默认关闭 |
-| `log_queries_not_using_indexes` | 是否记录未使用索引的查询，默认关闭 |
-| `log_throttle_queries_not_using_indexes` | 每分钟压制未使用索引的查询数量上限，默认 0（不压制） |
-| `log_slow_extra` | 是否输出额外字段（`Thread_id`、`Bytes_received` 等），默认关闭 |
+`log_output = 'FILE'` 时，慢查询日志写入文件。
 
-服务器判断是否记录某查询的顺序：
+日志文件路径由 `slow_query_log_file` 控制，默认为数据目录下的 `host_name-slow.log`：
 
-1. 管理语句必须 `log_slow_admin_statements = 1` 才能记录
-2. 执行时间达到 `long_query_time` **或** `log_queries_not_using_indexes = 1` 且未使用索引
-3. 检查行数达到 `min_examined_row_limit`
-4. 未被 `log_throttle_queries_not_using_indexes` 压制
-
-启用未使用索引的查询记录并压制（每分钟最多 10 条）：
-
-```sql
-SET GLOBAL log_queries_not_using_indexes = 1;
-SET GLOBAL log_throttle_queries_not_using_indexes = 10;
+```bash
+ls -la /var/lib/mysql/probiecoder-slow.log
 ```
 
-### 5.2 日志内容
+文件每条记录格式：
 
-启用 `log_slow_extra` 后，FILE 输出的慢查询日志每条记录包含：
+```
+# Time: 2026-03-30T10:00:01.123456Z
+# User@Host: root[root] @ localhost []
+# Query_time: 2.534120  Lock_time: 0.000089 Rows_sent: 5  Rows_examined: 50000
+SET timestamp=1743328801;
+SELECT * FROM large_table WHERE status = 1;
+```
+
+启用 `log_slow_extra` 后，FILE 输出包含更多字段：
 
 | 字段 | 说明 |
 |------|------|
@@ -671,10 +666,64 @@ SET GLOBAL log_throttle_queries_not_using_indexes = 10;
 | `Created_tmp_tables` | 内存创建临时表数 |
 | `Start` / `End` | 执行开始和结束时间戳 |
 
-日志文件分析工具 `mysqldumpslow` 可汇总慢查询日志：
+`mysqldumpslow` 工具可汇总慢查询日志：
 
 ```bash
 mysqldumpslow /var/lib/mysql/probiecoder-slow.log
+mysqldumpslow -s r -t 5 /var/lib/mysql/probiecoder-slow.log  # 按返回行数排序，显示前5
+```
+
+### 5.2 输出为 TABLE
+
+`log_output = 'TABLE'` 时，慢查询日志写入 `mysql.slow_log` 表：
+
+```sql
+SET GLOBAL slow_query_log = 1;
+SET GLOBAL log_output = 'TABLE';
+```
+
+表结构：
+
+```sql
+SHOW CREATE TABLE mysql.slow_log\G
+```
+
+`slow_log` 表结构与 `general_log` 类似，包含 `start_time`、`user_host`、`query_time`、`rows_examined`、`rows_sent`、`db`、`sql_text` 等字段。`sql_text` 字段类型为 `blob`，查看时需转换：
+
+```sql
+SELECT start_time, query_time, rows_examined,
+       CONVERT(sql_text USING utf8mb4) AS sql_text
+FROM mysql.slow_log
+ORDER BY start_time DESC
+LIMIT 10;
+```
+
+### 5.3 记录条件与参数
+
+服务器判断是否记录某查询的顺序：
+
+1. 管理语句必须 `log_slow_admin_statements = 1` 才能记录
+2. 执行时间达到 `long_query_time` **或** `log_queries_not_using_indexes = 1` 且未使用索引
+3. 检查行数达到 `min_examined_row_limit`
+4. 未被 `log_throttle_queries_not_using_indexes` 压制
+
+常用参数：
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `slow_query_log` | 0 | 是否启用 |
+| `long_query_time` | 10.0 秒 | 触发阈值，最小 0，可精确到微秒 |
+| `min_examined_row_limit` | 0 | 检查行数下限 |
+| `log_slow_admin_statements` | 0 | 是否记录管理语句 |
+| `log_queries_not_using_indexes` | 0 | 是否记录未使用索引的查询 |
+| `log_throttle_queries_not_using_indexes` | 0 | 每分钟压制未使用索引查询数量上限 |
+| `log_slow_extra` | 0 | 是否输出额外字段（FILE 模式） |
+
+启用未使用索引的查询记录并压制（每分钟最多 10 条）：
+
+```sql
+SET GLOBAL log_queries_not_using_indexes = 1;
+SET GLOBAL log_throttle_queries_not_using_indexes = 10;
 ```
 
 ## 六、日志维护
