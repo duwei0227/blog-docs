@@ -523,10 +523,10 @@ SHOW BINLOG EVENTS IN 'binlog.000009' LIMIT 10;
 | `Table_map` | 表结构映射 |
 | `Write_rows` / `Update_rows` / `Delete_rows` | 行数据变更（ROW 格式） |
 
-**查看最近的日志事件：**
+**查看日志事件：**
 
 ```sql
--- 查看最近 10 条事件
+-- 从文件开头遍历，限制返回 10 条
 SHOW BINLOG EVENTS IN 'binlog.000009' LIMIT 10;
 ```
 
