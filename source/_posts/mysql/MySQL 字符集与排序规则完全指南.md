@@ -9,8 +9,6 @@ tags:
 categories: MySQL
 ---
 
-MySQL 8.4 Reference Manual Chapter 12
-
 ## 一、字符集与排序规则概述
 
 字符集（Character Set）定义了 MySQL 可以存储的字符集合，排序规则（Collation）则定义了字符之间的比较和排序规则。每个字符集对应一个或多个排序规则。
