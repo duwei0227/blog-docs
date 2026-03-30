@@ -480,13 +480,11 @@ SHOW BINLOG EVENTS IN 'binlog.000009' FROM 1000 LIMIT 20;
 **过滤特定数据库的变更：**
 
 ```sql
--- 先查看所有，再通过外部程序过滤
-SHOW BINLOG EVENTS IN 'binlog.000009' LIMIT 100;
--- 或使用 mysqlbinlog 管道过滤
-shell> mysqlbinlog /var/lib/mysql/binlog.000009 | grep 'test_charsets'
+-- 使用 LIMIT 控制返回数量（从文件开头遍历，性能较差）
+SHOW BINLOG EVENTS IN 'binlog.000009' LIMIT 20;
 ```
 
-> `SHOW BINLOG EVENTS` 不支持 `WHERE` 子句。大文件建议使用 `mysqlbinlog` 配合管道工具（如 `grep`）过滤。
+> `SHOW BINLOG EVENTS` 不支持 `WHERE` 子句，也无法直接按数据库过滤。查看特定数据库的变更需要结合外部工具或使用 `mysqlbinlog` 命令（可能需要 sudo 权限）。
 
 ```bash
 mysqlbinlog /var/lib/mysql/binlog.000009 | head -50
