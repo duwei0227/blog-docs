@@ -264,7 +264,7 @@ SELECT 'a' = 'A' COLLATE utf8mb4_0900_as_cs AS as_cs;
 
 ### 5.1 UCA 版本号
 
-排序规则名称中的数字表示 `Unicode Collation Algorithm`（`UCA`）版本：
+`UCA`（`Unicode Collation Algorithm`）是 Unicode 联盟制定的统一排序算法，用于定义全球所有语言字符的排序规则和比较逻辑。MySQL 的 `Unicode` 排序规则基于 `UCA` 实现，名称中的数字表示所采用的 `UCA` 版本：
 
 - `utf8mb4_0900_ai_ci` 基于 `UCA` 9.0.0
 - `utf8mb4_unicode_520_ci` 基于 `UCA` 5.2.0
