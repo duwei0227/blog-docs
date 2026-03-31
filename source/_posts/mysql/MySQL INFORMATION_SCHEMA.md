@@ -406,17 +406,45 @@ WHERE EVENT_SCHEMA = 'mysql';
 
 `VIEWS` 表记录了所有视图的定义信息，包括视图体、是否可更新、检查选项等。
 
+关键列说明：
+- `TABLE_CATALOG`：所属目录名，恒为 `def`
+- `TABLE_SCHEMA`：视图所属数据库名
+- `TABLE_NAME`：视图名
+- `VIEW_DEFINITION`：视图定义（`SELECT` 语句）
+- `CHECK_OPTION`：`NONE`、`CASCADED` 或 `LOCAL`，表示检查选项
+- `IS_UPDATABLE`：`YES` 或 `NO`，视图是否可更新
+- `DEFINER`：定义者（`'user_name'@'host_name'` 格式）
+- `SECURITY_TYPE`：`DEFINER` 或 `INVOKER`
+- `CHARACTER_SET_CLIENT`：定义视图时的字符集
+- `COLLATION_CONNECTION`：定义视图时的排序规则
+
 ```sql
-SELECT TABLE_SCHEMA, TABLE_NAME, VIEW_DEFINITION,
-       CHECK_OPTION, IS_UPDATABLE
+SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, VIEW_DEFINITION,
+       CHECK_OPTION, IS_UPDATABLE, DEFINER, SECURITY_TYPE
 FROM information_schema.VIEWS
 WHERE TABLE_SCHEMA = 'sys'
 LIMIT 3;
 ```
 
+```output
++--------------+---------------+---------------+--------------------------------------------------+--------------+---------------+----------------------+---------------+
+| TABLE_CATALOG | TABLE_SCHEMA | TABLE_NAME    | VIEW_DEFINITION                                  | CHECK_OPTION | IS_UPDATABLE | DEFINER              | SECURITY_TYPE |
++--------------+---------------+---------------+--------------------------------------------------+--------------+---------------+----------------------+---------------+
+| def          | sys           | host_summary  | SELECT IF((`performance_schema`... AS `host`)... | NONE         | NO            | mysql.sys@localhost | INVOKER       |
+| def          | sys           | host_summary_by_file_io | SELECT IF((`performance_schema`... AS `host`)... | NONE         | NO            | mysql.sys@localhost | INVOKER       |
+| def          | sys           | host_summary_by_file_io_type | SELECT IF((`performance_schema`... AS `event_name`)... | NONE         | YES           | mysql.sys@localhost | INVOKER       |
++--------------+---------------+---------------+--------------------------------------------------+--------------+---------------+----------------------+---------------+
+```
+
 ### 3.10 字符集与排序规则 CHARACTER_SETS 表
 
 `CHARACTER_SETS` 表列出了 MySQL 支持的所有字符集，包括字符集名、默认排序规则、描述和最大长度。
+
+关键列说明：
+- `CHARACTER_SET_NAME`：字符集名
+- `DEFAULT_COLLATE_NAME`：默认排序规则名
+- `DESCRIPTION`：描述
+- `MAXLEN`：最大字节长度
 
 ```sql
 SELECT CHARACTER_SET_NAME, DEFAULT_COLLATE_NAME, DESCRIPTION, MAXLEN
@@ -440,9 +468,18 @@ ORDER BY CHARACTER_SET_NAME;
 
 `COLLATIONS` 表列出了所有排序规则及其属性，包括是否为默认排序规则、是否编译进服务器、排序长度和填充属性。
 
+关键列说明：
+- `COLLATION_NAME`：排序规则名
+- `CHARACTER_SET_NAME`：所属字符集
+- `ID`：排序规则 ID
+- `IS_DEFAULT`：是否为该字符集默认排序规则
+- `IS_COMPILED`：是否编译进服务器
+- `SORTLEN`：排序长度
+- `PAD_ATTRIBUTE`：`PAD SPACE` 或 `NO PAD`
+
 ```sql
 SELECT COLLATION_NAME, CHARACTER_SET_NAME,
-       IS_DEFAULT, IS_COMPILED, PAD_ATTRIBUTE
+       ID, IS_DEFAULT, IS_COMPILED, SORTLEN, PAD_ATTRIBUTE
 FROM information_schema.COLLATIONS
 WHERE CHARACTER_SET_NAME = 'utf8mb4'
 ORDER BY COLLATION_NAME
@@ -450,15 +487,15 @@ LIMIT 5;
 ```
 
 ```output
-+--------------------+--------------------+-----------+-------------+--------------+
-| COLLATION_NAME     | CHARACTER_SET_NAME | IS_DEFAULT | IS_COMPILED | PAD_ATTRIBUTE |
-+--------------------+--------------------+-----------+--------------+---------------+
-| utf8mb4_general_ci  | utf8mb4            |            | YES         | PAD SPACE     |
-| utf8mb4_bin         | utf8mb4            |            | YES         | PAD SPACE     |
-| utf8mb4_unicode_ci  | utf8mb4            |            | YES         | PAD SPACE     |
-| utf8mb4_0900_ai_ci  | utf8mb4            | YES        | YES         | NO PAD        |
-| utf8mb4_0900_as_cs  | utf8mb4            |            | YES         | NO PAD        |
-+--------------------+--------------------+-----------+--------------+---------------+
++----------------------+--------------------+------+------------+-------------+---------+--------------+
+| COLLATION_NAME       | CHARACTER_SET_NAME | ID   | IS_DEFAULT | IS_COMPILED | SORTLEN | PAD_ATTRIBUTE |
++----------------------+--------------------+------+------------+-------------+---------+--------------+
+| utf8mb4_0900_ai_ci   | utf8mb4            |  255 | Yes        | Yes         |       0 | NO PAD        |
+| utf8mb4_0900_as_ci   | utf8mb4            |  305 |            | Yes         |       0 | NO PAD        |
+| utf8mb4_0900_as_cs   | utf8mb4            |  278 |            | Yes         |       0 | NO PAD        |
+| utf8mb4_0900_bin    | utf8mb4            |  309 |            | Yes         |       1 | NO PAD        |
+| utf8mb4_bg_0900_ai_ci| utf8mb4            |  318 |            | Yes         |       0 | NO PAD        |
++----------------------+--------------------+------+------------+-------------+---------+--------------+
 ```
 
 这里需要注意 `PAD_ATTRIBUTE` 列的两个取值：`PAD SPACE` 表示排序比较时考虑尾部空格（`utf8mb4_general_ci` 等旧排序规则），而 `NO PAD` 表示尾部空格在比较中被忽略（`utf8mb4_0900_ai_ci` 等 MySQL 8.0 新排序规则）。
@@ -467,24 +504,46 @@ LIMIT 5;
 
 `PLUGINS` 表记录了服务器已安装的所有插件信息，包括插件名、类型、状态、加载方式等。
 
+关键列说明：
+- `PLUGIN_NAME`：插件名
+- `PLUGIN_VERSION`：插件版本
+- `PLUGIN_STATUS`：状态（`ACTIVE`、`INACTIVE` 等）
+- `PLUGIN_TYPE`：类型（`STORAGE ENGINE`、`AUTHENTICATION` 等）
+- `PLUGIN_LIBRARY`：共享库文件名（可为 `NULL` 表示内置）
+- `PLUGIN_AUTHOR`：作者
+- `PLUGIN_DESCRIPTION`：描述
+- `PLUGIN_LICENSE`：许可证
+- `LOAD_OPTION`：`ON`、`OFF` 或 `FORCE`
+
 ```sql
-SELECT PLUGIN_NAME, PLUGIN_TYPE, PLUGIN_STATUS, LOAD_OPTION
+SELECT PLUGIN_NAME, PLUGIN_TYPE, PLUGIN_VERSION,
+       PLUGIN_STATUS, PLUGIN_AUTHOR, LOAD_OPTION
 FROM information_schema.PLUGINS
 WHERE PLUGIN_TYPE IN ('STORAGE ENGINE', 'AUTHENTICATION')
 ORDER BY PLUGIN_TYPE, PLUGIN_NAME;
 ```
 
 ```output
-+----------------------+------------------+---------------+-------------+
-| PLUGIN_NAME          | PLUGIN_TYPE      | PLUGIN_STATUS | LOAD_OPTION |
-+----------------------+------------------+---------------+-------------+
-| mysql_native_password | AUTHENTICATION   | ACTIVE        | ON          |
-| sha256_password       | AUTHENTICATION   | ACTIVE        | ON          |
-| caching_sha2_password | AUTHENTICATION   | ACTIVE        | ON          |
-| InnoDB                | STORAGE ENGINE   | ACTIVE        | ON          |
-| MyISAM                | STORAGE ENGINE   | ACTIVE        | ON          |
-| MEMORY                | STORAGE ENGINE   | ACTIVE        | ON          |
-+----------------------+------------------+---------------+-------------+
++-------------------------+------------------+----------------+---------------+------------------+------------+
+| PLUGIN_NAME             | PLUGIN_TYPE      | PLUGIN_VERSION | PLUGIN_STATUS | PLUGIN_AUTHOR    | LOAD_OPTION |
++-------------------------+------------------+----------------+---------------+------------------+------------+
+| caching_sha2_password   | AUTHENTICATION   | 1.0            | ACTIVE        | Oracle Corporation | FORCE     |
+| mysql_native_password   | AUTHENTICATION   | 1.1            | DISABLED      | Oracle Corporation | OFF       |
+| sha256_password         | AUTHENTICATION   | 1.1            | ACTIVE        | Oracle Corporation | FORCE     |
+| ARCHIVE                 | STORAGE ENGINE  | 3.0            | ACTIVE        | Oracle Corporation | ON        |
+| binlog                  | STORAGE ENGINE  | 1.0            | ACTIVE        | Oracle Corporation | FORCE     |
+| BLACKHOLE               | STORAGE ENGINE  | 1.0            | ACTIVE        | Oracle Corporation | ON        |
+| CSV                     | STORAGE ENGINE  | 1.0            | ACTIVE        | Oracle Corporation | FORCE     |
+| FEDERATED               | STORAGE ENGINE  | 1.0            | DISABLED      | Oracle Corporation | OFF       |
+| InnoDB                  | STORAGE ENGINE  | 8.4            | ACTIVE        | Oracle Corporation | FORCE     |
+| MEMORY                  | STORAGE ENGINE  | 1.0            | ACTIVE        | Oracle Corporation | ON        |
+| MRG_MYISAM              | STORAGE ENGINE  | 1.0            | ACTIVE        | Oracle Corporation | ON        |
+| MyISAM                  | STORAGE ENGINE  | 1.0            | ACTIVE        | Oracle Corporation | ON        |
+| ndbcluster              | STORAGE ENGINE  | 1.0            | DISABLED      | Oracle Corporation | OFF       |
+| ndbinfo                 | STORAGE ENGINE  | 0.1            | DISABLED      | Oracle Corporation | OFF       |
+| PERFORMANCE_SCHEMA      | STORAGE ENGINE  | 0.1            | ACTIVE        | Oracle Corporation | FORCE     |
+| TempTable               | STORAGE ENGINE  | 1.0            | ACTIVE        | Oracle Corporation | FORCE     |
++-------------------------+------------------+----------------+---------------+------------------+------------+
 ```
 
 ### 3.13 存储引擎 ENGINES 表
@@ -497,6 +556,14 @@ ORDER BY PLUGIN_TYPE, PLUGIN_NAME;
 | `DEFAULT` | 支持、已启用且为默认引擎 |
 | `NO` | 不支持（编译时未包含） |
 | `DISABLED` | 支持但已禁用 |
+
+关键列说明：
+- `ENGINE`：引擎名
+- `SUPPORT`：`YES`、`DEFAULT`、`NO`、`DISABLED`
+- `COMMENT`：描述
+- `TRANSACTIONS`：`YES` 或 `NO`
+- `XA`：`YES` 或 `NO`
+- `SAVEPOINTS`：`YES` 或 `NO`
 
 ```sql
 SELECT ENGINE, SUPPORT, COMMENT, TRANSACTIONS, XA, SAVEPOINTS
@@ -556,6 +623,13 @@ FROM information_schema.ENABLED_ROLES;
 
 MySQL 8.0 引入的资源组功能允许将线程绑定到特定 CPU 或设置优先级。该表记录了所有资源组的信息。
 
+关键列说明：
+- `RESOURCE_GROUP_NAME`：资源组名
+- `RESOURCE_GROUP_TYPE`：`SYSTEM` 或 `USER`
+- `RESOURCE_GROUP_ENABLED`：`0`（禁用）或 `1`（启用）
+- `VCPU_IDS`：分配的 CPU ID 列表
+- `THREAD_PRIORITY`：线程优先级（系统资源组为负数，用户资源组为正数）
+
 ```sql
 SELECT RESOURCE_GROUP_NAME, RESOURCE_GROUP_TYPE,
        RESOURCE_GROUP_ENABLED, VCPU_IDS, THREAD_PRIORITY
@@ -607,18 +681,36 @@ ORDER BY FILE_ID;
 
 `OPTIMIZER_TRACE` 表提供了优化器跟踪功能产生的信息，用于调试和理解查询优化过程。启用跟踪需要设置 `optimizer_trace` 系统变量。
 
+关键列说明：
+- `QUERY`：被跟踪的 SQL 语句文本
+- `TRACE`：优化器决策过程的 JSON 跟踪信息
+- `MISSING_BYTES_BEYOND_MAX_MEM_SIZE`：因内存限制未包含的字节数
+- `INSUFFICIENT_PRIVILEGES`：是否因权限不足无法完成跟踪（`0` 或 `1`）
+
 ```sql
 SET optimizer_trace = 'enabled=on';
-SELECT COUNT(*) FROM mysql.user;  -- 执行待分析的查询
+SELECT COUNT(*) FROM mysql.user;
 SELECT QUERY, LEFT(TRACE, 200) AS trace_preview,
-       MISSING_BYTES_BEYOND_MAX_MEM_SIZE
+       MISSING_BYTES_BEYOND_MAX_MEM_SIZE, INSUFFICIENT_PRIVILEGES
 FROM information_schema.OPTIMIZER_TRACE
 LIMIT 1;
+```
+
+```output
++--------------------------------+---------------------------------------------+--------------------------------------+-------------------------+
+| QUERY                          | trace_preview                               | MISSING_BYTES_BEYOND_MAX_MEM_SIZE    | INSUFFICIENT_PRIVILEGES |
++--------------------------------+---------------------------------------------+--------------------------------------+-------------------------+
+| SELECT COUNT(*) FROM mysql.user | {\n  "steps": [\n    {\n      "join_preparation": { |                                      0 |                             0 |
++--------------------------------+---------------------------------------------+--------------------------------------+-------------------------+
 ```
 
 ### 3.19 关键字 KEYWORDS 表
 
 `KEYWORDS` 表列出 MySQL 视为关键字的所有词语，并标明是否为保留字。保留关键字在某些上下文中需要特殊引用处理（使用反引号）。
+
+关键列说明：
+- `WORD`：关键字词语
+- `RESERVED`：`1` 表示保留关键字，`0` 表示非保留关键字
 
 ```sql
 SELECT WORD, RESERVED
