@@ -463,7 +463,7 @@ LIMIT 5;
 
 这里需要注意 `PAD_ATTRIBUTE` 列的两个取值：`PAD SPACE` 表示排序比较时考虑尾部空格（`utf8mb4_general_ci` 等旧排序规则），而 `NO PAD` 表示尾部空格在比较中被忽略（`utf8mb4_0900_ai_ci` 等 MySQL 8.0 新排序规则）。
 
-### 3.12 插件与存储引擎 PLUGINS 表
+### 3.12 插件 PLUGINS 表
 
 `PLUGINS` 表记录了服务器已安装的所有插件信息，包括插件名、类型、状态、加载方式等。
 
@@ -487,7 +487,7 @@ ORDER BY PLUGIN_TYPE, PLUGIN_NAME;
 +----------------------+------------------+---------------+-------------+
 ```
 
-### 3.13 插件与存储引擎 ENGINES 表
+### 3.13 存储引擎 ENGINES 表
 
 `ENGINES` 表列出 MySQL 支持的所有存储引擎及其属性。`SUPPORT` 列的可能值为：
 
