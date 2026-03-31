@@ -616,26 +616,7 @@ FROM information_schema.OPTIMIZER_TRACE
 LIMIT 1;
 ```
 
-### 3.19 语句分析（已弃用） PROFILING 表
-
-> ⚠️ 注意：`PROFILING` 表已在 MySQL 8.0 中弃用，建议迁移到 Performance Schema 的语句分析功能。
-
-该表提供语句性能分析信息，与已弃用的 `SHOW PROFILE` 和 `SHOW PROFILES` 语句产生的信息相同。内容包括每个执行状态的时间、CPU 使用、上下文切换、块 I/O 操作等。
-
-### 3.20 连接与进程（已弃用） PROCESSLIST 表
-
-> ⚠️ 注意：`PROCESSLIST` 表已在 MySQL 8.0 中弃用，建议使用 Performance Schema 的 `threads` 表。
-
-该表提供 MySQL 当前执行的线程信息。查询此表需要 `PROCESS` 权限。
-
-```sql
-SELECT ID, USER, HOST, DB, COMMAND, TIME, STATE
-FROM information_schema.PROCESSLIST
-ORDER BY TIME DESC
-LIMIT 5;
-```
-
-### 3.21 关键字 KEYWORDS 表
+### 3.19 关键字 KEYWORDS 表
 
 `KEYWORDS` 表列出 MySQL 视为关键字的所有词语，并标明是否为保留字。保留关键字在某些上下文中需要特殊引用处理（使用反引号）。
 
@@ -664,7 +645,7 @@ LIMIT 10;
 +----------+-----------+
 ```
 
-### 3.22 列统计信息 COLUMN_STATISTICS 表
+### 3.20 列统计信息 COLUMN_STATISTICS 表
 
 `COLUMN_STATISTICS` 表提供列值直方图统计信息，以 JSON 格式存储。这是优化器选择执行计划的重要依据，通过 `ANALYZE TABLE` 命令更新。
 
@@ -674,45 +655,6 @@ FROM information_schema.COLUMN_STATISTICS
 WHERE SCHEMA_NAME = 'mysql'
 LIMIT 5;
 ```
-
-### 3.23 CHECK 约束 CHECK_CONSTRAINTS 表
-
-`CHECK_CONSTRAINTS` 表记录了表和列级 CHECK 约束的定义信息。`CHECK_CLAUSE` 列包含约束条件的表达式文本。
-
-### 3.24 空间数据 ST_SPATIAL_REFERENCE_SYSTEMS 表
-
-该表列出了所有可用的空间参考系统（SRS），基于 EPSG 数据集构建。`SRS_ID = 0` 表示无单位的笛卡尔平面坐标系，是特殊的合法空间参考系统。
-
-```sql
-SELECT SRS_NAME, SRS_ID, ORGANIZATION, DESCRIPTION
-FROM information_schema.ST_SPATIAL_REFERENCE_SYSTEMS
-WHERE SRS_ID IN (0, 4326, 3857)
-ORDER BY SRS_ID;
-```
-
-```output
-+----------+-------+--------------+-----------------------------+
-| SRS_NAME | SRS_ID | ORGANIZATION | DESCRIPTION                  |
-+----------+-------+--------------+-----------------------------+
-| SRS 0    |     0 |              | Cartesian coordinate system |
-| WGS 84   |  4326 | EPSG         |                             |
-| WGS 84 / |  3857 | EPSG         |                             |
-+----------+-------+--------------+-----------------------------+
-```
-
-### 3.25 空间数据 ST_GEOMETRY_COLUMNS 表
-
-> ⚠️ 注意：该表已在 MySQL 8.4 中弃用，建议直接使用 `COLUMNS` 表。
-
-该表记录了存储空间数据（`GEOMETRY`、`POINT`、`LINESTRING` 等类型）的列信息，基于 SQL/MM 标准实现。
-
-### 3.26 用户属性 USER_ATTRIBUTES 表
-
-`USER_ATTRIBUTES` 表提供用户账户的注释和属性信息，存储在 `mysql.user` 系统表的 `ATTRIBUTE` 和 `UNIQUE_ATTRIBUTES` 列中。
-
-### 3.27 NDB Cluster 专用表 ndb_transid_mysql_connection_map 表
-
-此表是 NDB Cluster 专用的 `INFORMATION_SCHEMA` 插件，提供 NDB 事务、事务协调器与 MySQL 服务器之间的映射关系。仅在使用 NDB Cluster 时可用。
 
 # 四、InnoDB 专用表详解
 
