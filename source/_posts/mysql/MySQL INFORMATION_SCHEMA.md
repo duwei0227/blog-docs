@@ -1013,10 +1013,3 @@ WHERE MAXLEN > 1;
 
 支持 `WHERE` 子句的 `SHOW` 语句包括：`SHOW CHARACTER SET`、`SHOW COLLATION`、`SHOW COLUMNS`、`SHOW DATABASES`、`SHOW FUNCTION STATUS`、`SHOW INDEX`、`SHOW OPEN TABLES`、`SHOW PROCEDURE STATUS`、`SHOW STATUS`、`SHOW TABLE STATUS`、`SHOW TABLES`、`SHOW TRIGGERS`、`SHOW VARIABLES`。
 
-# 六、总结
-
-`INFORMATION_SCHEMA` 是 MySQL 提供的一套完整的元数据访问接口，覆盖了从数据库、表、列、索引、约束等结构信息，到权限、角色、事件、触发器等对象信息，再到 InnoDB 内部状态、事务、锁等运行时信息。其设计遵循 SQL 标准，同时通过 MySQL 扩展列（如 `TABLES.ENGINE`）满足自身需求。
-
-使用 `INFORMATION_SCHEMA` 的核心优势在于元数据查询的标准化和可编程性。通过 `SELECT` 语句，可以灵活地组合、过滤和转换元数据，构建数据库管理工具和自动化脚本。相比之下，`SHOW` 语句虽然更简洁，但功能受限。
-
-在 MySQL 8.4 中，部分早期 `INFORMATION_SCHEMA` 表（如 `PROCESSLIST`、`PROFILING` 等）已标记为弃用，官方建议迁移到 Performance Schema 的对应实现。InnoDB 相关的 `INFORMATION_SCHEMA` 表是诊断 InnoDB 内部行为的重要工具，尤其在分析锁等待、长事务等问题时不可或缺。
