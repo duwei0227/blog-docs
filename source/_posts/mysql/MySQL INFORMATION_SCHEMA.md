@@ -735,6 +735,13 @@ LIMIT 10;
 
 `COLUMN_STATISTICS` 表提供列值直方图统计信息，以 JSON 格式存储。这是优化器选择执行计划的重要依据，通过 `ANALYZE TABLE` 命令更新。
 
+关键列说明：
+
+- `SCHEMA_NAME`：数据库名
+- `TABLE_NAME`：表名
+- `COLUMN_NAME`：列名
+- `HISTOGRAM`：列值的直方图统计信息，以 JSON 格式存储
+
 ```sql
 SELECT SCHEMA_NAME, TABLE_NAME, COLUMN_NAME
 FROM information_schema.COLUMN_STATISTICS
