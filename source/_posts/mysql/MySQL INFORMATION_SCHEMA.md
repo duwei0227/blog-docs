@@ -710,8 +710,22 @@ LIMIT 5;
 - `TABLE_ID`：所属表的 ID
 - `NAME`：列名
 - `POS`：列在表中的位置（从 0 开始）
-- `MTYPE`：主类型（1=VARCHAR, 6=INT, 14=GEOMETRY 等）
-- `PRTYPE`：精确类型（含 MySQL 数据类型、字符集代码和可空性）
+- `MTYPE`：主类型，各值含义如下表
+
+| 值 | 类型 |
+|----|------|
+| 1 | VARCHAR |
+| 2 | CHAR |
+| 6 | INT（包括 TINYINT、SMALLINT、MEDIUMINT、INT、BIGINT） |
+| 9 | FLOAT |
+| 10 | DOUBLE |
+| 11 | DECIMAL |
+| 14 | GEOMETRY |
+
+- `PRTYPE`：`MySQL` 精确类型，以二进制位表示含义：
+  - 低 1 位：可空性（0=非 NULL，1=NULL）
+  - 中间 8 位：`MySQL` 数据类型代码
+  - 高位：字符集代码
 - `LEN`：列长度（字节）
 
 ```sql
