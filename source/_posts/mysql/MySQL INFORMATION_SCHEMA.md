@@ -1093,11 +1093,7 @@ LIMIT 5;
 +----------+----------+----------------+
 ```
 
-## 4.8 压缩信息（已弃用）
-
-InnoDB 压缩相关的 `INFORMATION_SCHEMA` 表已在 MySQL 8.4 中弃用，包括 `INNODB_CMP`、`INNODB_CMP_RESET`、`INNODB_CMP_PER_INDEX`、`INNODB_CMP_PER_INDEX_RESET`、`INNODB_CMPMEM` 和 `INNODB_CMPMEM_RESET`。
-
-### 4.9.1 全文索引信息 INNODB_FT_INDEX_CACHE 表
+### 4.8.1 全文索引信息 INNODB_FT_INDEX_CACHE 表
 
 记录最近插入行的全文索引令牌信息，用于增量构建倒排索引。
 
@@ -1118,7 +1114,7 @@ SELECT WORD, POSITION FROM information_schema.INNODB_FT_INDEX_CACHE LIMIT 3;
 Empty set
 ```
 
-### 4.9.2 全文索引信息 INNODB_FT_DELETED 表
+### 4.8.2 全文索引信息 INNODB_FT_DELETED 表
 
 记录从 InnoDB 全文索引中删除的行，物理删除延迟执行以避免性能冲击。
 
@@ -1134,7 +1130,7 @@ SELECT DOC_ID FROM information_schema.INNODB_FT_DELETED LIMIT 5;
 Empty set
 ```
 
-### 4.9.3 全文索引信息 INNODB_FT_BEING_DELETED 表
+### 4.8.3 全文索引信息 INNODB_FT_BEING_DELETED 表
 
 `INNODB_FT_BEING_DELETED` 表是 `INNODB_FT_DELETED` 的快照，用于在 `OPTIMIZE TABLE` 时提供一致的视图。
 
@@ -1150,7 +1146,7 @@ SELECT DOC_ID FROM information_schema.INNODB_FT_BEING_DELETED LIMIT 5;
 Empty set
 ```
 
-### 4.9.4 全文索引信息 INNODB_FT_CONFIG 表
+### 4.8.4 全文索引信息 INNODB_FT_CONFIG 表
 
 记录全文索引的元数据，包括爬取状态、文档计数等。
 
@@ -1167,7 +1163,7 @@ SELECT `KEY`, VALUE FROM information_schema.INNODB_FT_CONFIG LIMIT 5;
 Empty set
 ```
 
-### 4.9.5 全文索引信息 INNODB_FT_DEFAULT_STOPWORD 表
+### 4.8.5 全文索引信息 INNODB_FT_DEFAULT_STOPWORD 表
 
 InnoDB 全文索引使用的默认停用词列表。
 
@@ -1196,7 +1192,7 @@ SELECT VALUE FROM information_schema.INNODB_FT_DEFAULT_STOPWORD LIMIT 10;
 +------------+
 ```
 
-### 4.10.1 性能指标 INNODB_METRICS 表
+### 4.9.1 性能指标 INNODB_METRICS 表
 
 `INNODB_METRICS` 表提供了 InnoDB 内部的性能指标集合，涵盖计数器、 Gauge 和状态信息。可以通过 `STATUS` 列筛选不同类型的指标。
 
@@ -1227,7 +1223,7 @@ LIMIT 5;
 +-------------------------------+----------------------+-------------+---------+
 ```
 
-### 4.11.1 临时表 INNODB_TEMP_TABLE_INFO 表
+### 4.10.1 临时表 INNODB_TEMP_TABLE_INFO 表
 
 `INNODB_TEMP_TABLE_INFO` 表记录了用户创建的 InnoDB 临时表信息。该表在首次查询时创建，仅存在于内存中，不持久化到磁盘。
 
@@ -1246,7 +1242,7 @@ FROM information_schema.INNODB_TEMP_TABLE_INFO;
 +----------+---------------+-------+-------+
 ```
 
-### 4.11.2 临时表 INNODB_SESSION_TEMP_TABLESPACES 表
+### 4.10.2 临时表 INNODB_SESSION_TEMP_TABLESPACES 表
 
 记录会话级临时表空间的元数据。
 
