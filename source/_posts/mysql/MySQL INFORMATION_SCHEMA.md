@@ -710,7 +710,14 @@ LIMIT 5;
 - `TABLE_ID`：所属表的 ID
 - `NAME`：列名
 - `POS`：列在表中的位置（从 0 开始）
-- `MTYPE`：主类型，各值含义如下表
+- `MTYPE`：主类型，数值含义见下方表格
+- `PRTYPE`：`MySQL` 精确类型，以二进制位表示含义：
+  - 低 1 位：可空性（0=非 NULL，1=NULL）
+  - 中间 8 位：`MySQL` 数据类型代码
+  - 高位：字符集代码
+- `LEN`：列长度（字节）
+
+MTYPE 值含义：
 
 | 值 | 类型 |
 |----|------|
@@ -721,12 +728,6 @@ LIMIT 5;
 | 10 | DOUBLE |
 | 11 | DECIMAL |
 | 14 | GEOMETRY |
-
-- `PRTYPE`：`MySQL` 精确类型，以二进制位表示含义：
-  - 低 1 位：可空性（0=非 NULL，1=NULL）
-  - 中间 8 位：`MySQL` 数据类型代码
-  - 高位：字符集代码
-- `LEN`：列长度（字节）
 
 ```sql
 SELECT TABLE_ID, NAME, POS, MTYPE, PRTYPE, LEN
