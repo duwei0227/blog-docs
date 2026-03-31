@@ -414,10 +414,6 @@ WHERE TABLE_SCHEMA = 'sys'
 LIMIT 3;
 ```
 
-### VIEW_ROUTINE_USAGE 与 VIEW_TABLE_USAGE
-
-这两个表分别记录了视图中使用的存储函数和表/视图的依赖关系，可用于分析视图依赖链。
-
 ### 3.10 字符集与排序规则 CHARACTER_SETS 表
 
 `CHARACTER_SETS` 表列出了 MySQL 支持的所有字符集，包括字符集名、默认排序规则、描述和最大长度。
