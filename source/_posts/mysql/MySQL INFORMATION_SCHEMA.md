@@ -548,7 +548,18 @@ ORDER BY PLUGIN_TYPE, PLUGIN_NAME;
 
 ### 3.13 存储引擎 ENGINES 表
 
-`ENGINES` 表列出 MySQL 支持的所有存储引擎及其属性。`SUPPORT` 列的可能值为：
+`ENGINES` 表列出 MySQL 支持的所有存储引擎及其属性。
+
+关键列说明：
+
+- `ENGINE`：`varchar(64)`，存储引擎的名称，如 `InnoDB`、`MyISAM`、`MEMORY`、`CSV`
+- `SUPPORT`：`varchar(8)`，服务器对该引擎的支持级别，各值含义见下表
+- `COMMENT`：`varchar(80)`，引擎的简短描述
+- `TRANSACTIONS`：`varchar(3)`，`YES` 表示支持事务，`NULL` 表示未知
+- `XA`：`varchar(3)`，`YES` 表示支持 XA 两阶段提交，`NULL` 表示未知
+- `SAVEPOINTS`：`varchar(3)`，`YES` 表示支持 `SAVEPOINT`，`NULL` 表示未知
+
+`SUPPORT` 列的可能值为：
 
 | 值 | 含义 |
 |----|------|
@@ -556,14 +567,6 @@ ORDER BY PLUGIN_TYPE, PLUGIN_NAME;
 | `DEFAULT` | 支持、已启用且为默认引擎 |
 | `NO` | 不支持（编译时未包含） |
 | `DISABLED` | 支持但已禁用 |
-
-关键列说明：
-- `ENGINE`：引擎名
-- `SUPPORT`：`YES`、`DEFAULT`、`NO`、`DISABLED`
-- `COMMENT`：描述
-- `TRANSACTIONS`：`YES` 或 `NO`
-- `XA`：`YES` 或 `NO`
-- `SAVEPOINTS`：`YES` 或 `NO`
 
 ```sql
 SELECT ENGINE, SUPPORT, COMMENT, TRANSACTIONS, XA, SAVEPOINTS
