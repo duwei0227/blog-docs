@@ -419,21 +419,21 @@ WHERE EVENT_SCHEMA = 'mysql';
 - `COLLATION_CONNECTION`：定义视图时的排序规则
 
 ```sql
-SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, VIEW_DEFINITION,
-       CHECK_OPTION, IS_UPDATABLE, DEFINER, SECURITY_TYPE
+SELECT TABLE_SCHEMA, TABLE_NAME, CHECK_OPTION,
+       IS_UPDATABLE, DEFINER, SECURITY_TYPE
 FROM information_schema.VIEWS
 WHERE TABLE_SCHEMA = 'sys'
 LIMIT 3;
 ```
 
 ```output
-+--------------+---------------+---------------+--------------------------------------------------+--------------+---------------+----------------------+---------------+
-| TABLE_CATALOG | TABLE_SCHEMA | TABLE_NAME    | VIEW_DEFINITION                                  | CHECK_OPTION | IS_UPDATABLE | DEFINER              | SECURITY_TYPE |
-+--------------+---------------+---------------+--------------------------------------------------+--------------+---------------+----------------------+---------------+
-| def          | sys           | host_summary  | SELECT IF((`performance_schema`... AS `host`)... | NONE         | NO            | mysql.sys@localhost | INVOKER       |
-| def          | sys           | host_summary_by_file_io | SELECT IF((`performance_schema`... AS `host`)... | NONE         | NO            | mysql.sys@localhost | INVOKER       |
-| def          | sys           | host_summary_by_file_io_type | SELECT IF((`performance_schema`... AS `event_name`)... | NONE         | YES           | mysql.sys@localhost | INVOKER       |
-+--------------+---------------+---------------+--------------------------------------------------+--------------+---------------+----------------------+---------------+
++-------------+-----------------------------+---------------+---------------+-------------------------+---------------+
+| TABLE_SCHEMA | TABLE_NAME                  | CHECK_OPTION | IS_UPDATABLE | DEFINER                 | SECURITY_TYPE |
++-------------+-----------------------------+---------------+---------------+-------------------------+---------------+
+| sys         | host_summary                | NONE         | NO           | mysql.sys@localhost     | INVOKER       |
+| sys         | host_summary_by_file_io     | NONE         | NO           | mysql.sys@localhost     | INVOKER       |
+| sys         | host_summary_by_file_io_type | NONE         | YES          | mysql.sys@localhost     | INVOKER       |
++-------------+-----------------------------+---------------+---------------+-------------------------+---------------+
 ```
 
 ### 3.10 字符集与排序规则 CHARACTER_SETS 表
