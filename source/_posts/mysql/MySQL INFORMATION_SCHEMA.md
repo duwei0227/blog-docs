@@ -613,7 +613,7 @@ SELECT ROLE_NAME, IS_DEFAULT, IS_MANDATORY
 FROM information_schema.ENABLED_ROLES;
 ```
 
-### 3.16 资源组 RESOURCE_GROUPS 表
+### 3.14 资源组 RESOURCE_GROUPS 表
 
 MySQL 8.0 引入的资源组功能允许将线程绑定到特定 CPU 或设置优先级。该表记录了所有资源组的信息。
 
@@ -641,7 +641,7 @@ FROM information_schema.RESOURCE_GROUPS;
 
 `THREAD_PRIORITY` 的取值范围中，负数表示高优先级（系统资源组从 -20 到 0），正数表示低优先级（用户资源组从 0 到 19）。
 
-### 3.17 文件与表空间 FILES 表
+### 3.15 文件与表空间 FILES 表
 
 `FILES` 表记录了 MySQL 表空间数据存储所在的文件信息，包括 InnoDB 数据文件、NDB Cluster 磁盘数据文件等。
 
@@ -670,85 +670,6 @@ ORDER BY FILE_ID;
 ...
 +--------+---------------------------+-------------+------------------+-------------+----------------+----------+
 ```
-
-### 3.18 优化器跟踪 OPTIMIZER_TRACE 表
-
-`OPTIMIZER_TRACE` 表提供了优化器跟踪功能产生的信息，用于调试和理解查询优化过程。启用跟踪需要设置 `optimizer_trace` 系统变量。
-
-关键列说明：
-- `QUERY`：被跟踪的 SQL 语句文本
-- `TRACE`：优化器决策过程的 JSON 跟踪信息
-- `MISSING_BYTES_BEYOND_MAX_MEM_SIZE`：因内存限制未包含的字节数
-- `INSUFFICIENT_PRIVILEGES`：是否因权限不足无法完成跟踪（`0` 或 `1`）
-
-```sql
-SET optimizer_trace = 'enabled=on';
-SELECT COUNT(*) FROM mysql.user;
-SELECT QUERY, LEFT(TRACE, 200) AS trace_preview,
-       MISSING_BYTES_BEYOND_MAX_MEM_SIZE, INSUFFICIENT_PRIVILEGES
-FROM information_schema.OPTIMIZER_TRACE
-LIMIT 1;
-```
-
-```output
-+--------------------------------+---------------------------------------------+--------------------------------------+-------------------------+
-| QUERY                          | trace_preview                               | MISSING_BYTES_BEYOND_MAX_MEM_SIZE    | INSUFFICIENT_PRIVILEGES |
-+--------------------------------+---------------------------------------------+--------------------------------------+-------------------------+
-| SELECT COUNT(*) FROM mysql.user | {\n  "steps": [\n    {\n      "join_preparation": { |                                      0 |                             0 |
-+--------------------------------+---------------------------------------------+--------------------------------------+-------------------------+
-```
-
-### 3.19 关键字 KEYWORDS 表
-
-`KEYWORDS` 表列出 MySQL 视为关键字的所有词语，并标明是否为保留字。保留关键字在某些上下文中需要特殊引用处理（使用反引号）。
-
-关键列说明：
-- `WORD`：关键字词语
-- `RESERVED`：`1` 表示保留关键字，`0` 表示非保留关键字
-
-```sql
-SELECT WORD, RESERVED
-FROM information_schema.KEYWORDS
-WHERE RESERVED = 1
-ORDER BY WORD
-LIMIT 10;
-```
-
-```output
-+----------+-----------+
-| WORD     | RESERVED  |
-+----------+-----------+
-| accessible |       1   |
-| add         |       1   |
-| admin       |       1   |
-| after       |       1   |
-| against     |       1   |
-| algorithm   |       1   |
-| all         |       1   |
-| alter       |       1   |
-| always      |       1   |
-| analyze     |       1   |
-+----------+-----------+
-```
-
-### 3.20 列统计信息 COLUMN_STATISTICS 表
-
-`COLUMN_STATISTICS` 表提供列值直方图统计信息，以 JSON 格式存储。这是优化器选择执行计划的重要依据，通过 `ANALYZE TABLE` 命令更新。
-
-关键列说明：
-
-- `SCHEMA_NAME`：数据库名
-- `TABLE_NAME`：表名
-- `COLUMN_NAME`：列名
-- `HISTOGRAM`：列值的直方图统计信息，以 JSON 格式存储
-
-```sql
-SELECT SCHEMA_NAME, TABLE_NAME, COLUMN_NAME
-FROM information_schema.COLUMN_STATISTICS
-WHERE SCHEMA_NAME = 'mysql'
-LIMIT 5;
-```
-
 # 四、InnoDB 专用表详解
 
 InnoDB `INFORMATION_SCHEMA` 表（共 29 个）提供了 InnoDB 存储引擎内部的元数据和运行时状态信息。这些表对于理解 InnoDB 内部结构、诊断性能和锁问题至关重要。
