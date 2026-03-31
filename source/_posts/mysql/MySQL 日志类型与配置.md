@@ -651,6 +651,26 @@ SET GLOBAL slow_query_log = 1;
 
 `log_output = 'FILE'` 时，慢查询日志写入文件。
 
+启用慢查询日志：
+
+```sql
+SET GLOBAL slow_query_log = 1;
+SET GLOBAL log_output = 'FILE';
+```
+
+启用后，可在 FILE 输出中记录更丰富的调试信息。`log_slow_extra` 是 MySQL 8.0.14 引入的系统变量，默认关闭。启用后，慢查询日志除了包含基本字段外，还输出 Handler 读操作统计、排序统计、临时表统计等信息：
+
+```sql
+SET GLOBAL log_slow_extra = 1;
+```
+
+或在配置文件中设置：
+
+```ini
+[mysqld]
+log_slow_extra = 1
+```
+
 日志文件路径由 `slow_query_log_file` 控制，默认为数据目录下的 `host_name-slow.log`：
 
 ```bash
