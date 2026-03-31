@@ -982,34 +982,3 @@ FROM information_schema.INNODB_TEMP_TABLE_INFO;
 ### INNODB_SESSION_TEMP_TABLESPACES 表
 
 记录会话级临时表空间的元数据。
-
-# 五、SHOW 语句扩展
-
-MySQL 在实现 `INFORMATION_SCHEMA` 的同时，也对 `SHOW` 语句进行了扩展：
-
-## 8.1 查询 INFORMATION_SCHEMA 自身
-
-`SHOW` 语句可以像查询普通数据库一样查询 `INFORMATION_SCHEMA`：
-
-```sql
-SHOW TABLES FROM information_schema
-WHERE Tables_in_information_schema LIKE 'INNODB%';
-```
-
-## 8.2 WHERE 子句支持
-
-多个 `SHOW` 语句支持 `WHERE` 子句，提供比 `LIKE` 更灵活的过滤能力：
-
-```sql
-SHOW CHARACTER SET WHERE Maxlen > 1;
-```
-
-该查询返回所有多字节字符集，与以下等价：
-
-```sql
-SELECT * FROM information_schema.CHARACTER_SETS
-WHERE MAXLEN > 1;
-```
-
-支持 `WHERE` 子句的 `SHOW` 语句包括：`SHOW CHARACTER SET`、`SHOW COLLATION`、`SHOW COLUMNS`、`SHOW DATABASES`、`SHOW FUNCTION STATUS`、`SHOW INDEX`、`SHOW OPEN TABLES`、`SHOW PROCEDURE STATUS`、`SHOW STATUS`、`SHOW TABLE STATUS`、`SHOW TABLES`、`SHOW TRIGGERS`、`SHOW VARIABLES`。
-
