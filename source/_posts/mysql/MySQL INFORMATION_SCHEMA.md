@@ -1,11 +1,10 @@
 ---
-title: MySQL INFORMATION_SCHEMA 完全指南
+title: MySQL INFORMATION_SCHEMA
 date: 2026-03-31 08:56:00
 tags:
   - INFORMATION_SCHEMA
   - 元数据
   - 数据字典
-  - 系统表
 categories: MySQL
 ---
 
