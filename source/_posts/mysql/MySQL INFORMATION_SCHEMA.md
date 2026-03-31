@@ -552,21 +552,12 @@ ORDER BY PLUGIN_TYPE, PLUGIN_NAME;
 
 关键列说明：
 
-- `ENGINE`：`varchar(64)`，存储引擎的名称，如 `InnoDB`、`MyISAM`、`MEMORY`、`CSV`
-- `SUPPORT`：`varchar(8)`，服务器对该引擎的支持级别，各值含义见下表
-- `COMMENT`：`varchar(80)`，引擎的简短描述
-- `TRANSACTIONS`：`varchar(3)`，`YES` 表示支持事务，`NULL` 表示未知
-- `XA`：`varchar(3)`，`YES` 表示支持 XA 两阶段提交，`NULL` 表示未知
-- `SAVEPOINTS`：`varchar(3)`，`YES` 表示支持 `SAVEPOINT`，`NULL` 表示未知
-
-`SUPPORT` 列的可能值为：
-
-| 值 | 含义 |
-|----|------|
-| `YES` | 支持且已启用 |
-| `DEFAULT` | 支持、已启用且为默认引擎 |
-| `NO` | 不支持（编译时未包含） |
-| `DISABLED` | 支持但已禁用 |
+- `ENGINE`：存储引擎的名称，如 `InnoDB`、`MyISAM`、`MEMORY`、`CSV`
+- `SUPPORT`：服务器对该引擎的支持级别，可能值为 `YES`（支持且已启用）、`DEFAULT`（支持且为默认引擎）、`NO`（不支持）、`DISABLED`（支持但已禁用）
+- `COMMENT`：引擎的简短描述
+- `TRANSACTIONS`：是否支持事务，可能值为 `YES`、`NO`、`NULL`（未知）
+- `XA`：是否支持 XA 两阶段提交，可能值为 `YES`、`NO`、`NULL`（未知）
+- `SAVEPOINTS`：是否支持 `SAVEPOINT`，可能值为 `YES`、`NO`、`NULL`（未知）
 
 ```sql
 SELECT ENGINE, SUPPORT, COMMENT, TRANSACTIONS, XA, SAVEPOINTS
