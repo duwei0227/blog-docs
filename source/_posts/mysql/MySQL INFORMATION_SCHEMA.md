@@ -77,7 +77,7 @@ LIMIT 10;
 
 # 二、INFORMATION_SCHEMA 表索引总览
 
-MySQL 8.4 的 `INFORMATION_SCHEMA` 共包含约 78 个表（视图），按功能可分为以下几大类：
+MySQL 8.4 的 `INFORMATION_SCHEMA` 共包含约 78 个表（视图），主要分为以下两大类：
 
 | 类别 | 说明 |
 |------|------|
