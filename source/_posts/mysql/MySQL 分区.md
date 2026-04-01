@@ -217,11 +217,6 @@ FROM INFORMATION_SCHEMA.PARTITIONS
 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rc1';
 ```
 
-| PARTITION_NAME | TABLE_ROWS |
-|----------------|-----------|
-| p0             | 2         |
-| p3             | 1         |
-
 元组比较规则：`ROW(5,10) < ROW(5,12)` 和 `ROW(5,11) < ROW(5,12)` 为真，但 `ROW(5,12) < ROW(5,12)` 为假（相等），所以值 `(5,12)` 落入 `p3`。
 
 #### 2.3.1 RANGE COLUMNS 字符串列分区
@@ -329,17 +324,11 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees';
 | p2             | 1         |
 | p3             | 2         |
 
-验证：store_id=3 → MOD(3,4)=3 → p3；store_id=7 → MOD(7,4)=3 → p3；store_id=12 → MOD(12,4)=0 → p0；store_id=18 → MOD(18,4)=2 → p2。
-```
-
-分区号计算示例——插入 `col3 = '2005-09-15'` 的行：
-
-```
-MOD(YEAR('2005-09-15'), 4) = MOD(2005, 4) = 1
--- 存储到分区 1
-```
+模运算规则：`partition_number = MOD(expr, num)`，其中 `num` 为分区数，MySQL 自动计算表达式结果并取模，余数即为目标分区号（从 0 开始编号）。例如 `MOD(12, 4) = 0`，对应分区 `p0`。
 
 如果省略 `PARTITIONS num`，默认只有 1 个分区。
+
+**为什么不直接用 `store_id` 作为分区键？** `store_id` 的值可能集中在某个范围，导致数据分布不均。用 `MOD(store_id, 4)` 可以将连续值打散到 4 个分区中，使数据更均匀。
 
 ### 2.5 LINEAR HASH 分区
 
@@ -1023,4 +1012,5 @@ CREATE TABLE t1 (
     PRIMARY KEY (a(10), b, c)
 ) PARTITION BY KEY() PARTITIONS 2;
 -- ERROR 6123 (HY000): Column having prefix key part in PARTITION BY KEY clause is not supported
+```
 ```
