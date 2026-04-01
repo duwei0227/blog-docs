@@ -335,7 +335,9 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees';
 `LINEAR HASH` 使用**线性 2 的幂算法**，而非模运算。分区号通过以下步骤计算：
 
 1. 设 `V = 2^CEILING(LOG2(num))`
+
 2. 设 `N = F(column) & (V - 1)`
+
 3. 当 `N >= num` 时，循环：`V = V / 2; N = N & (V - 1)`
 
 ```sql
