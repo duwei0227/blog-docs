@@ -28,7 +28,7 @@ PARTITIONS 6;
 
 这是分区表中最重要的约束：**所有分区表达式使用的列，必须是表中每个唯一键（包括主键）的超集**。换句话说，分区键必须包含表的所有唯一键。
 
-以下表无法分区，因为唯一键 `uk(name)` 与主键 `pk(id)` 没有共同列，无法选择分区键：
+以下表定义中，唯一键 `uk(name)` 与主键 `pk(id)` 没有共同列。如果尝试对该表进行分区，会因为无法选择分区键而失败：
 
 ```sql
 CREATE TABLE tnp (
@@ -38,10 +38,14 @@ CREATE TABLE tnp (
     PRIMARY KEY pk (id),
     UNIQUE KEY uk (name)
 );
--- ERROR: All columns used in partitioning expression must be part of every unique key
+-- 表本身可以正常创建
+
+-- 但如果尝试分区，则报错：
+ALTER TABLE tnp PARTITION BY HASH(id) PARTITIONS 4;
+-- ERROR 1503 (HY000): A PRIMARY KEY must include all columns used in this partitioned table's partitioning function
 ```
 
-解决方式：要么将 `name` 加入主键，要么将 `id` 加入唯一键，要么移除唯一键。
+解决方式：要么将 `name` 加入主键（`PRIMARY KEY pk (id, name)`），要么将 `id` 加入唯一键（`UNIQUE KEY uk (id, name)`），要么移除唯一键。
 
 ### 1.3 分区的优势
 
