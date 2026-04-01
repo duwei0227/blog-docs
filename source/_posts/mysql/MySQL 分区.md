@@ -330,6 +330,8 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees';
 
 **为什么不直接用 `store_id` 作为分区键？** `store_id` 的值可能集中在某个范围，导致数据分布不均。用 `MOD(store_id, 4)` 可以将连续值打散到 4 个分区中，使数据更均匀。
 
+```
+
 ### 2.5 LINEAR HASH 分区
 
 `LINEAR HASH` 使用**线性 2 的幂算法**，而非模运算。分区号通过以下步骤计算：
@@ -348,7 +350,7 @@ CREATE TABLE t1 (
 )
 PARTITION BY LINEAR HASH(YEAR(col3))
 PARTITIONS 6;
-```
+```sql
 
 插入数据，验证线性哈希算法的分区分配：
 
@@ -369,7 +371,7 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 't1';
 | p3             | 1         |
 | p4             | 0         |
 | p5             | 0         |
-```
+```sql
 
 手动验证 `'2003-04-14'` 的分区计算过程：
 
@@ -377,7 +379,7 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 't1';
 V = POWER(2, CEILING(LOG2(6))) = 8
 N = 2003 & (8 - 1) = 2003 & 7 = 3
 3 >= 6 为假 → 存储到分区 3
-```
+```sql
 
 `'1998-10-19'` 的分区计算过程：
 
@@ -386,7 +388,7 @@ V = 8
 N = 1998 & (8 - 1) = 1998 & 7 = 6
 6 >= 6 为真 → 迭代: V = 8/2 = 4, N = 6 & (4-1) = 6 & 3 = 2
 2 >= 6 为假 → 存储到分区 2
-```
+```sql
 
 `LINEAR HASH` 的优势在于分区分裂、合并操作更快，适合 TB 级数据表。劣势是数据分布可能不如标准 `HASH` 均匀。
 
@@ -1014,5 +1016,6 @@ CREATE TABLE t1 (
     PRIMARY KEY (a(10), b, c)
 ) PARTITION BY KEY() PARTITIONS 2;
 -- ERROR 6123 (HY000): Column having prefix key part in PARTITION BY KEY clause is not supported
+```
 ```
 ```
