@@ -157,13 +157,18 @@ PARTITION BY LIST(store_id) (
 与 `RANGE` 不同，`LIST` 没有类似 `MAXVALUE` 的兜底机制。如果插入的值不在任何分区列表中，语句报错。使用 `IGNORE` 关键字可以静默跳过不匹配的行：
 
 ```sql
--- 插入不匹配的值会报错
-INSERT INTO h2 VALUES (3, 5);
--- ERROR 1525 (HY000): Table has no partition for value 3
+-- 插入不匹配的值会报错：store_id=21 不属于任何地区分区
+INSERT INTO employees VALUES (99, 'Zara', 'Lee', '2024-01-01', '2024-01-01', 999, 21);
+-- ERROR 1526 (HY000): Table has no partition for value 21
 
--- 使用 IGNORE 静默跳过
-INSERT IGNORE INTO h2 VALUES (2, 5), (6, 10), (7, 5), (3, 1), (1, 9);
--- Query OK, 3 rows affected, 2 warnings (2 rows skipped)
+-- 使用 IGNORE 静默跳过不匹配的行
+INSERT IGNORE INTO employees VALUES
+(99, 'Zara', 'Lee', '2024-01-01', '2024-01-01', 999, 21),
+(100, 'Tom', 'Green', '2024-02-01', '2024-02-01', 100, 1),
+(101, 'Amy', 'Brown', '2024-03-01', '2024-03-01', 101, 12);
+-- Query OK, 2 rows affected, 1 warning
+-- Records: 3  Duplicates: 0  Warnings: 1
+-- Warning: Table has no partition for value 21（该行被静默跳过）
 ```
 
 清空某个地区的所有数据，使用 `TRUNCATE PARTITION`：
