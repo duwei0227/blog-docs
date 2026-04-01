@@ -336,6 +336,13 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees';
 
 `KEY` 分区与 `HASH` 类似，但**哈希函数由 MySQL 自动提供**，无需用户指定表达式。分区键默认为主键（或唯一键），如果表无主键/唯一键，则使用所有 `NOT NULL` 列。
 
+MySQL 内部的哈希函数对不同类型的列有不同的处理方式：
+
+- **整数类型列**：`MOD(column_value, num)`，与 `HASH(expr)` 类似，通过模运算得到分区号
+- **字符串类型列**：MySQL 使用内部的哈希算法将字符串映射为整数值，再进行模运算。该算法未公开文档化，属于 MySQL 内部实现
+
+无论哪种类型，最终都是通过 `MOD(hash_value, num_partitions)` 确定分区。关键区别在于：`HASH` 分区的表达式由用户指定，`KEY` 分区的哈希函数由 MySQL 自动选择，用户无法干预。
+
 ```sql
 -- 主键作为分区键
 CREATE TABLE k1 (
