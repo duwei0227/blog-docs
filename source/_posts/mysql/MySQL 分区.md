@@ -339,7 +339,7 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees';
 MySQL 内部的哈希函数对不同类型的列有不同的处理方式：
 
 - **整数类型列**：`MOD(column_value, num)`，与 `HASH(expr)` 类似，通过模运算得到分区号
-- **字符串类型列**：MySQL 使用内部的哈希算法将字符串映射为整数值，再进行模运算。该算法未公开文档化，属于 MySQL 内部实现
+- **字符串类型列**：MySQL 使用内部的哈希算法将字符串映射为整数值，再进行模运算。
 
 无论哪种类型，最终都是通过 `MOD(hash_value, num_partitions)` 确定分区。关键区别在于：`HASH` 分区的表达式由用户指定，`KEY` 分区的哈希函数由 MySQL 自动选择，用户无法干预。
 
@@ -414,6 +414,8 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tm1';
 
 子分区（Subpartitioning，组合分区）在 `RANGE` 或 `LIST` 分区的基础上，再按 `HASH` 或 `KEY` 划分。总分区数 = 外层分区数 × 子分区数。
 
+以下示例演示数据分布过程：外层按年份 `RANGE` 分区，内层按 `HASH(TO_DAYS(purchased))` 再分：
+
 ```sql
 CREATE TABLE ts (id INT, purchased DATE)
 PARTITION BY RANGE(YEAR(purchased))
@@ -425,9 +427,51 @@ SUBPARTITIONS 2 (
 );
 ```
 
-上例中：3 个 RANGE 分区 × 2 个 HASH 子分区 = 6 个物理分区。
+插入 6 条数据：
 
-显式指定子分区名称和选项：
+```sql
+INSERT INTO ts VALUES
+(1, '1985-06-15'),
+(2, '1995-03-20'),
+(3, '2005-09-10'),
+(4, '1989-12-31'),
+(5, '1998-07-08'),
+(6, '2010-01-01');
+```
+
+查询各子分区的数据分布：
+
+```sql
+SELECT PARTITION_NAME, SUBPARTITION_NAME, TABLE_ROWS
+FROM INFORMATION_SCHEMA.PARTITIONS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'ts'
+ORDER BY PARTITION_NAME, SUBPARTITION_NAME;
+```
+
+| PARTITION_NAME | SUBPARTITION_NAME | TABLE_ROWS |
+|---------------|-------------------|------------|
+| p0            | p0sp0             | 2          |
+| p0            | p0sp1             | 0          |
+| p1            | p1sp0             | 0          |
+| p1            | p1sp1             | 2          |
+| p2            | p2sp0             | 2          |
+| p2            | p2sp1             | 0          |
+
+分布规则分两步计算：
+
+1. **先定外层分区**：根据 `YEAR(purchased)` 落入哪个 `RANGE`
+   - id=1、id=4 → `YEAR` 分别为 1985、1989 → `< 1990` → **p0**
+   - id=2、id=5 → `YEAR` 分别为 1995、1998 → `1990 ≤ YEAR < 2000` → **p1**
+   - id=3、id=6 → `YEAR` 分别为 2005、2010 → `≥ 2000` → **p2**
+
+2. **再定子分区**：在已确定的 RANGE 分区内部，用 `MOD(TO_DAYS(purchased), 2)` 确定子分区
+   - p0 中：id=1 → `MOD(725172, 2) = 0` → **p0sp0**；id=4 → `MOD(726832, 2) = 0` → **p0sp0**
+   - p1 中：id=2 → `MOD(728737, 2) = 1` → **p1sp1**；id=5 → `MOD(729943, 2) = 1` → **p1sp1**
+   - p2 中：id=3 → `MOD(732564, 2) = 0` → **p2sp0**；id=6 → `MOD(734138, 2) = 0` → **p2sp0**
+
+本例中外层 `RANGE` 与内层 `HASH` 相配合，6 条数据均落入各自的子分区中。
+
+显式指定子分区名称（便于维护和管理）：
 
 ```sql
 CREATE TABLE ts (id INT, purchased DATE)
