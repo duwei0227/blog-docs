@@ -660,9 +660,9 @@ INSERT INTO th VALUES (NULL, 'mothra'), (0, 'gigan');
 
 `NULL` 和 `0` 都被存入 `p0`。
 
-## 四、分区管理
 
-### 4.1 RANGE/LIST 分区管理
+
+### 3.4 RANGE/LIST 分区管理
 
 **删除分区**（`DROP PARTITION`）会删除分区及其所有数据：
 
@@ -807,52 +807,70 @@ ALTER TABLE clients ADD PARTITION PARTITIONS 6;
 
 
 
-### 4.2 分区维护操作
-
-分区维护语句均采用 `ALTER TABLE ... <operation> PARTITION` 格式，直接作用于指定分区：
-
-| 语句                                          | 作用                     |
-|---------------------------------------------|--------------------------|
-| `ALTER TABLE t ANALYZE PARTITION p0;`        | 分析分区，收集统计信息        |
-| `ALTER TABLE t CHECK PARTITION p0;`          | 检查指定分区的完整性         |
-| `ALTER TABLE t OPTIMIZE PARTITION p0;`       | 整理碎片，回收空间          |
-| `ALTER TABLE t REBUILD PARTITION p0;`        | 重建分区（先删除再重新插入数据）|
-| `ALTER TABLE t REPAIR PARTITION p0;`         | 修复损坏的分区              |
-| `ALTER TABLE t TRUNCATE PARTITION p0;`       | 清空分区数据，保留分区结构   |
-
 ## 五、分区裁剪
 
 分区裁剪（Partition Pruning）是 MySQL 分区最重要的查询优化手段。**裁剪的原理**：查询时只扫描可能包含匹配行的分区，排除不相关分区。执行效果可能使查询快一个数量级。
 
 ### 5.1 适用条件
 
-当 `WHERE` 条件可以归约为以下两种形式之一时，MySQL 即可执行裁剪：
+建表并插入测试数据：
+
+```sql
+CREATE TABLE t1 (
+    id INT,
+    fname VARCHAR(50),
+    lname VARCHAR(50),
+    region_code TINYINT UNSIGNED
+)
+PARTITION BY HASH(region_code)
+PARTITIONS 4;
+
+INSERT INTO t1 VALUES
+(1, 'Alice', 'Smith',   4),  -- MOD(4,4)=0 → p0
+(2, 'Bob',   'Jones',    5),  -- MOD(5,4)=1 → p1
+(3, 'Carol', 'White',   6),  -- MOD(6,4)=2 → p2
+(4, 'Dave',  'Brown',    7),  -- MOD(7,4)=3 → p3
+(5, 'Eve',   'Taylor',  10); -- MOD(10,4)=2 → p2
+```
+
+分区分布：`region_code=4→p0`、`5→p1`、`6→p2`、`7→p3`、`10→p2`。
+
+当 `WHERE` 条件可以归约为以下形式时，MySQL 即可执行裁剪：
 
 **形式一：分区列 = 常量**
 
 ```sql
-SELECT fname, lname, region_code, dob
-FROM t1
-WHERE region_code = 126;
+SELECT * FROM t1 WHERE region_code = 6;
 ```
 
-MySQL 直接计算 `MOD(126, 4) = 2`，只扫描分区 `p1`。
+`EXPLAIN` 显示 `partitions: p2`，只扫描 `p2`：
+
+```
+ partitions: p2
+```
 
 **形式二：分区列 IN (常量列表)**
 
 ```sql
-SELECT fname, lname, region_code, dob
-FROM t1
-WHERE region_code IN (126, 127, 128, 129);
+SELECT * FROM t1 WHERE region_code IN (6, 7);
 ```
 
-MySQL 评估每个值对应的分区，仅扫描相关分区。
+`EXPLAIN` 显示 `partitions: p2,p3`，扫描 `p2` 和 `p3`：
+
+```
+ partitions: p2,p3
+```
 
 **形式三：短范围可转化为 IN 列表**
 
 ```sql
-SELECT * FROM t4 WHERE region_code > 2 AND region_code < 6;
--- 优化器转化为 WHERE region_code IN (3, 4, 5)
+SELECT * FROM t1 WHERE region_code > 4 AND region_code < 8;
+```
+
+`EXPLAIN` 显示 `partitions: p1,p2,p3`，扫描 `p1`、`p2`、`p3`（对应 `region_code=5,6,7`）：
+
+```
+ partitions: p1,p2,p3
 ```
 
 > **重要限制**：范围包含的值数量必须小于分区数，否则无法裁剪。如果范围覆盖 9 个值而表只有 8 个分区，优化器不会进行裁剪。
@@ -1018,87 +1036,3 @@ JOIN departments PARTITION (p0) AS d ON e.department_id = d.id;
 
 每个 `PARTITION` 选项位于表名之后、别名之前。
 
-## 七、限制与注意事项
-
-### 7.1 分区表达式限制
-
-分区表达式必须满足以下约束：
-
-- 允许使用 `+`、`-`、`*`、`DIV` 运算符，结果必须是整数或 `NULL`
-- 不允许 `/`、`%`（模运算符）、位运算符（`|`、`&`、`^`、`<<`、`>>`、`~`）
-- 不允许存储过程、存储函数、可加载函数或插件
-- 不允许声明变量或用户变量
-
-```sql
--- DIV 允许
-PARTITION BY HASH(col1 DIV 2)
-
--- / 不允许
-PARTITION BY HASH(col1 / 2)
--- ERROR: Division operator not allowed in partitioning function
-```
-
-### 7.2 Server SQL Mode 的影响
-
-分区表达式的求值结果可能随 `SQL_MODE` 改变。**强烈建议创建分区表后不要修改 `SQL_MODE`**。
-
-以下示例中，`BIGINT UNSIGNED` 列减去有符号整数时，`NO_UNSIGNED_SUBTRACTION` 模式决定了分区是否有效：
-
-```sql
-SET sql_mode = 'NO_UNSIGNED_SUBTRACTION';
-CREATE TABLE tu (c1 BIGINT UNSIGNED)
-PARTITION BY RANGE(c1 - 10) (
-    PARTITION p0 VALUES LESS THAN (-5),
-    PARTITION p1 VALUES LESS THAN (0),
-    PARTITION p2 VALUES LESS THAN (5),
-    PARTITION p3 VALUES LESS THAN (10),
-    PARTITION p4 VALUES LESS THAN (MAXVALUE)
-);
-
--- 修改 SQL_MODE 后，表无法访问
-SET sql_mode = '';
-SELECT * FROM tu;
--- ERROR 1563 (HY000): Partition constant is out of partition function domain
-```
-
-主从复制环境中，**源库和从库的 `SQL_MODE` 必须保持一致**，否则分区表达式求值结果可能不同，导致数据分布不一致或插入失败。
-
-### 7.3 分区数量上限
-
-不包含 `NDB` 存储引擎的表，**最大分区数为 8192**（包括子分区）。如果创建大量分区时遇到 "Out of resources" 错误，可尝试增大 `open_files_limit` 系统变量。
-
-### 7.4 InnoDB 分区与外键
-
-使用 `InnoDB` 存储引擎的分区表**不支持外键**：
-
-- 分区表不能引用外键，也不能被外键引用
-- 如果表定义中已存在外键，则不能对该表进行分区
-- 反之，已分区的表无法创建外键
-
-### 7.5 其他限制
-
-- **FULLTEXT 索引**：分区表不支持 `FULLTEXT` 索引和全文搜索
-- **临时表**：临时表不能分区
-- **日志表**：MySQL 的日志表不能分区
-- **分区键类型**：默认情况下分区键必须是整数或返回整数的表达式。`KEY` 分区和 `COLUMNS` 分区除外，它们支持更多数据类型
-- **`ADD COLUMN ALGORITHM=INSTANT`**：对分区表执行此操作后，将无法再使用分区交换
-- **分区裁剪限制**：`HASH`/`KEY` 分区的裁剪只支持整数列上的等值查询
-- **子分区限制**：
-  - `SUBPARTITION BY KEY` 必须显式指定列（不能省略）
-  - 子分区数必须全局一致
-  - 子分区名必须全局唯一
-- **DATA DIRECTORY / INDEX DIRECTORY**：表级别的这两个选项被忽略，但可以在单个分区上指定
-- **列前缀索引**：`KEY` 分区的分区键中不能包含带前缀的列索引
-
-```sql
--- 以下语句报错，因为主键使用了列前缀
-CREATE TABLE t1 (
-    a VARCHAR(10000),
-    b VARCHAR(25),
-    c VARCHAR(10),
-    PRIMARY KEY (a(10), b, c)
-) PARTITION BY KEY() PARTITIONS 2;
--- ERROR 6123 (HY000): Column having prefix key part in PARTITION BY KEY clause is not supported
-```
-```
-```
