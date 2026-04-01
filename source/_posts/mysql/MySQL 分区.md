@@ -199,13 +199,12 @@ ALTER TABLE employees TRUNCATE PARTITION pWest;
 - 支持**多列**作为分区键
 - 支持**非整数类型**：整数类型、`DATE`、`DATETIME`、`CHAR`、`VARCHAR`、`BINARY`、`VARBINARY`
 
-**RANGE COLUMNS** 的核心语义与 `RANGE` 不同：比较的是**元组（元组即多列值的列表）**，而不是标量值。例如：
+**RANGE COLUMNS** 的核心语义与 `RANGE` 不同：比较的是**元组（元组即多列值的列表）**，而不是标量值。
+
+以下示例演示元组比较语义——插入 `(5,10)`、`(5,11)`、`(5,12)` 三个元组：
 
 ```sql
-CREATE TABLE rc1 (
-    a INT,
-    b INT
-)
+CREATE TABLE rc1 (a INT, b INT)
 PARTITION BY RANGE COLUMNS(a, b) (
     PARTITION p0 VALUES LESS THAN (5, 12),
     PARTITION p3 VALUES LESS THAN (MAXVALUE, MAXVALUE)
@@ -216,25 +215,25 @@ INSERT INTO rc1 VALUES (5,10), (5,11), (5,12);
 SELECT PARTITION_NAME, TABLE_ROWS
 FROM INFORMATION_SCHEMA.PARTITIONS
 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rc1';
+```
 
 | PARTITION_NAME | TABLE_ROWS |
 |----------------|-----------|
 | p0             | 2         |
 | p3             | 1         |
 
-原因：`ROW(5,10) < ROW(5,12)` 和 `ROW(5,11) < ROW(5,12)` 为真，但 `ROW(5,12) < ROW(5,12)` 为假（相等），所以值 `(5,12)` 落入 `p3`。
+元组比较规则：`ROW(5,10) < ROW(5,12)` 和 `ROW(5,11) < ROW(5,12)` 为真，但 `ROW(5,12) < ROW(5,12)` 为假（相等），所以值 `(5,12)` 落入 `p3`。
 
-使用字符串列进行 `RANGE COLUMNS` 分区（按姓氏首字母划分）：
+#### 2.3.1 RANGE COLUMNS 字符串列分区
+
+按姓氏首字母进行 `RANGE COLUMNS` 分区，验证字符串分区键的行为：
 
 ```sql
 CREATE TABLE employees_by_lname (
-    id INT NOT NULL,
-    fname VARCHAR(30),
-    lname VARCHAR(30),
+    id INT NOT NULL, fname VARCHAR(30), lname VARCHAR(30),
     hired DATE NOT NULL DEFAULT '1970-01-01',
     separated DATE NOT NULL DEFAULT '9999-12-31',
-    job_code INT NOT NULL,
-    store_id INT NOT NULL
+    job_code INT NOT NULL, store_id INT NOT NULL
 )
 PARTITION BY RANGE COLUMNS (lname) (
     PARTITION p0 VALUES LESS THAN ('g'),
@@ -242,11 +241,7 @@ PARTITION BY RANGE COLUMNS (lname) (
     PARTITION p2 VALUES LESS THAN ('t'),
     PARTITION p3 VALUES LESS THAN (MAXVALUE)
 );
-```
 
-插入数据验证（按姓氏划分）：
-
-```sql
 INSERT INTO employees_by_lname VALUES
 (1, 'Alice', 'Brown', '1990-01-01', '2010-01-01', 100, 1),  -- lname='Brown'  < 'g' → p0
 (2, 'Bob', 'Green', '1992-03-15', '2012-03-15', 200, 2),     -- lname='Green'  < 'm' → p1
@@ -255,6 +250,7 @@ INSERT INTO employees_by_lname VALUES
 SELECT PARTITION_NAME, TABLE_ROWS
 FROM INFORMATION_SCHEMA.PARTITIONS
 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees_by_lname';
+```
 
 | PARTITION_NAME | TABLE_ROWS |
 |----------------|-----------|
@@ -262,17 +258,16 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees_by_lname';
 | p1             | 1         |
 | p2             | 1         |
 | p3             | 0         |
-```
 
 实际排序依赖列的字符集和排序规则。此处使用默认的 `utf8mb4_0900_ai_ci`（大小写不敏感），字母 G 排在 F 之后、M 之前。
+
+#### 2.3.2 LIST COLUMNS 日期分区
 
 使用 `DATE` 列进行 `LIST COLUMNS` 分区：
 
 ```sql
 CREATE TABLE customers (
-    first_name VARCHAR(25),
-    last_name VARCHAR(25),
-    renewal DATE
+    first_name VARCHAR(25), last_name VARCHAR(25), renewal DATE
 )
 PARTITION BY LIST COLUMNS(renewal) (
     PARTITION pWeek_1 VALUES IN('2010-02-01', '2010-02-02', '2010-02-03',
@@ -280,11 +275,7 @@ PARTITION BY LIST COLUMNS(renewal) (
     PARTITION pWeek_2 VALUES IN('2010-02-08', '2010-02-09', '2010-02-10',
         '2010-02-11', '2010-02-12', '2010-02-13', '2010-02-14')
 );
-```
 
-插入数据验证（按续费日期划分）：
-
-```sql
 INSERT INTO customers VALUES
 ('Alice', 'Anderson', '2010-02-03'), -- renewal='2010-02-03' → pWeek_1
 ('Bob', 'Miller', '2010-02-10'),    -- renewal='2010-02-10' → pWeek_2
@@ -293,6 +284,7 @@ INSERT INTO customers VALUES
 SELECT PARTITION_NAME, TABLE_ROWS
 FROM INFORMATION_SCHEMA.PARTITIONS
 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'customers';
+```
 
 | PARTITION_NAME | TABLE_ROWS |
 |----------------|-----------|
