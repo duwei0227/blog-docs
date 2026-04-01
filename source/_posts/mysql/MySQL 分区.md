@@ -805,59 +805,20 @@ ALTER TABLE clients COALESCE PARTITION 4;
 ALTER TABLE clients ADD PARTITION PARTITIONS 6;
 ```
 
-### 4.2 分区交换
 
-分区交换（Exchange）允许将一个分区与一张**非分区表**互换，不触发任何触发器：
 
-```sql
--- 原始分区表
-CREATE TABLE e (
-    id INT NOT NULL,
-    fname VARCHAR(30),
-    lname VARCHAR(30)
-)
-PARTITION BY RANGE (id) (
-    PARTITION p0 VALUES LESS THAN (50),
-    PARTITION p1 VALUES LESS THAN (100),
-    PARTITION p2 VALUES LESS THAN (150),
-    PARTITION p3 VALUES LESS THAN (MAXVALUE)
-);
+### 4.2 分区维护操作
 
--- 创建非分区表
-CREATE TABLE e2 LIKE e;
-ALTER TABLE e2 REMOVE PARTITIONING;
+分区维护语句均采用 `ALTER TABLE ... <operation> PARTITION` 格式，直接作用于指定分区：
 
--- 交换分区 p0 和非分区表 e2
-ALTER TABLE e EXCHANGE PARTITION p0 WITH TABLE e2;
-```
-
-交换后，`p0` 的数据移入 `e2`，`e2` 的数据移入 `p0`。
-
-**带验证的交换**：默认执行行级验证，交换的表中不能有不符合目标分区定义的数据：
-
-```sql
--- 非分区表包含不符合的数据
-INSERT INTO e2 VALUES (51, 'Ellen', 'McDonald');
-
-ALTER TABLE e EXCHANGE PARTITION p0 WITH TABLE e2;
--- ERROR 1707 (HY000): Found row that does not match the partition
-
--- 跳过验证
-ALTER TABLE e EXCHANGE PARTITION p0 WITH TABLE e2 WITHOUT VALIDATION;
--- Query OK, 0 rows affected
-```
-
-`WITHOUT VALIDATION` 在交换大量行时显著提升性能（跳过逐行验证），但需管理员自行确保数据合法性。
-
-### 4.3 分区维护操作
-
-| 语句                              | 作用                     |
-|----------------------------------|--------------------------|
-| `ANALYZE TABLE t;`               | 分析表，收集统计信息        |
-| `CHECK TABLE t PARTITION (p0);`  | 检查指定分区的完整性         |
-| `OPTIMIZE TABLE t PARTITION (p0);` | 整理碎片，回收空间          |
-| `REPAIR TABLE t PARTITION (p0);` | 修复损坏的分区              |
-| `ALTER TABLE t TRUNCATE PARTITION (p0);` | 清空分区数据，保留结构  |
+| 语句                                          | 作用                     |
+|---------------------------------------------|--------------------------|
+| `ALTER TABLE t ANALYZE PARTITION p0;`        | 分析分区，收集统计信息        |
+| `ALTER TABLE t CHECK PARTITION p0;`          | 检查指定分区的完整性         |
+| `ALTER TABLE t OPTIMIZE PARTITION p0;`       | 整理碎片，回收空间          |
+| `ALTER TABLE t REBUILD PARTITION p0;`        | 重建分区（先删除再重新插入数据）|
+| `ALTER TABLE t REPAIR PARTITION p0;`         | 修复损坏的分区              |
+| `ALTER TABLE t TRUNCATE PARTITION p0;`       | 清空分区数据，保留分区结构   |
 
 ## 五、分区裁剪
 
