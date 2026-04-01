@@ -106,14 +106,6 @@ FROM INFORMATION_SCHEMA.PARTITIONS
 WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees';
 ```
 
-| PARTITION_NAME | TABLE_ROWS |
-|----------------|-----------|
-| p0             | 1         |
-| p1             | 1         |
-| p2             | 0         |
-| p3             | 1         |
-| p4–p9          | 0         |
-
 添加带 `MAXVALUE` 的兜底分区，避免插入超出范围的 `store_id` 时报错：
 
 ```sql
@@ -270,6 +262,7 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees_by_lname';
 | p1             | 1         |
 | p2             | 1         |
 | p3             | 0         |
+```
 
 实际排序依赖列的字符集和排序规则。此处使用默认的 `utf8mb4_0900_ai_ci`（大小写不敏感），字母 G 排在 F 之后、M 之前。
 
@@ -308,7 +301,7 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'customers';
 
 ### 2.4 HASH 分区
 
-`HASH` 分区根据分区键表达式的**模运算结果**决定分区。MySQL 计算 `MOD(expr, num)`，其中 `num` 为分区数。MySQL 计算 `MOD(expr, num)`，其中 `num` 为分区数。
+`HASH` 分区根据分区键表达式的**模运算结果**决定分区。MySQL 计算 `MOD(expr, num)`，其中 `num` 为分区数。
 
 ```sql
 CREATE TABLE employees (
@@ -439,6 +432,7 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'k1';
 | p0             | 2         |
 | p1             | 1         |
 
+```sql
 -- 无主键但有唯一键，唯一键作为分区键
 CREATE TABLE k2 (
     id INT NOT NULL,
