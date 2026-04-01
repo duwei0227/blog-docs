@@ -26,9 +26,9 @@ PARTITIONS 6;
 
 ### 1.2 分区与主键/唯一键的关系
 
-这是分区表中最重要的约束：**所有分区表达式使用的列，必须是表中每个唯一键（包括主键）的超集**。换句话说，分区键必须包含表的所有唯一键。
+这是分区表中最重要的约束：**分区键必须是表中每个唯一键的超集**——即每个唯一键的所有列必须全部出现在分区键中。反过来说，MySQL 8.4 要求分区键是每个唯一键的子集。
 
-以下表定义中，唯一键 `uk(name)` 与主键 `pk(id)` 没有共同列。如果尝试对该表进行分区，会因为无法选择分区键而失败：
+以下表定义中，唯一键 `uk(name)` 与主键 `pk(id)` 没有共同列。由于主键 `(id)` 和唯一键 `(name)` 之间没有交集，不存在任何分区键能同时是两者的超集，因此该表**无法分区**：
 
 ```sql
 CREATE TABLE tnp (
@@ -40,12 +40,22 @@ CREATE TABLE tnp (
 );
 -- 表本身可以正常创建
 
--- 但如果尝试分区，则报错：
+-- 尝试按 id 分区：唯一键 uk(name) 不包含列 id，报错
 ALTER TABLE tnp PARTITION BY HASH(id) PARTITIONS 4;
--- ERROR 1503 (HY000): A PRIMARY KEY must include all columns used in this partitioned table's partitioning function
+-- ERROR 1503 (HY000): A UNIQUE INDEX must include all columns
+-- in this partitioned table's partitioning function
+
+-- 尝试按 name 分区：主键 pk(id) 不包含列 name，报错
+ALTER TABLE tnp PARTITION BY KEY(name) PARTITIONS 4;
+-- ERROR 1503 (HY000): A PRIMARY KEY must include all columns
+-- in this partitioned table's partitioning function
 ```
 
-解决方式：要么将 `name` 加入主键（`PRIMARY KEY pk (id, name)`），要么将 `id` 加入唯一键（`UNIQUE KEY uk (id, name)`），要么移除唯一键。
+解决方式：
+
+- **将 `name` 加入主键**：主键改为 `(id, name)`，唯一键变为仅 `(id)`，此时可以按 `name` 进行 `KEY` 分区
+- **将 `id` 加入唯一键**：唯一键改为 `(id, name)`，主键仍为 `(id)`，此时可以按 `id` 进行 `HASH` 分区
+- **移除唯一键**：只保留主键，直接按 `id` 分区
 
 ### 1.3 分区的优势
 
