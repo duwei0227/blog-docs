@@ -332,66 +332,6 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees';
 
 ```
 
-### 2.5 LINEAR HASH 分区
-
-`LINEAR HASH` 使用**线性 2 的幂算法**，而非模运算。分区号通过以下步骤计算：
-
-1. 设 `V = 2^CEILING(LOG2(num))`
-
-2. 设 `N = F(column) & (V - 1)`
-
-3. 当 `N >= num` 时，循环：`V = V / 2; N = N & (V - 1)`
-
-```sql
-CREATE TABLE t1 (
-    col1 INT,
-    col2 CHAR(5),
-    col3 DATE
-)
-PARTITION BY LINEAR HASH(YEAR(col3))
-PARTITIONS 6;
-```sql
-
-插入数据，验证线性哈希算法的分区分配：
-
-```sql
-INSERT INTO t1 VALUES
-(1, 'A', '2003-04-14'), -- YEAR=2003, 2003&7=3 → p3
-(2, 'B', '1998-10-19'); -- YEAR=1998, 1998&7=6, 6>=6→再迭代: 6&3=2 → p2
-
-SELECT PARTITION_NAME, TABLE_ROWS
-FROM INFORMATION_SCHEMA.PARTITIONS
-WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 't1';
-
-| PARTITION_NAME | TABLE_ROWS |
-|----------------|-----------|
-| p0             | 0         |
-| p1             | 0         |
-| p2             | 1         |
-| p3             | 1         |
-| p4             | 0         |
-| p5             | 0         |
-```sql
-
-手动验证 `'2003-04-14'` 的分区计算过程：
-
-```
-V = POWER(2, CEILING(LOG2(6))) = 8
-N = 2003 & (8 - 1) = 2003 & 7 = 3
-3 >= 6 为假 → 存储到分区 3
-```sql
-
-`'1998-10-19'` 的分区计算过程：
-
-```
-V = 8
-N = 1998 & (8 - 1) = 1998 & 7 = 6
-6 >= 6 为真 → 迭代: V = 8/2 = 4, N = 6 & (4-1) = 6 & 3 = 2
-2 >= 6 为假 → 存储到分区 2
-```sql
-
-`LINEAR HASH` 的优势在于分区分裂、合并操作更快，适合 TB 级数据表。劣势是数据分布可能不如标准 `HASH` 均匀。
-
 ### 2.6 KEY 分区
 
 `KEY` 分区与 `HASH` 类似，但**哈希函数由 MySQL 自动提供**，无需用户指定表达式。分区键默认为主键（或唯一键），如果表无主键/唯一键，则使用所有 `NOT NULL` 列。
