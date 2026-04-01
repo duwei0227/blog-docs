@@ -332,7 +332,7 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees';
 
 ```
 
-### 2.6 KEY 分区
+### 2.5 KEY 分区
 
 `KEY` 分区与 `HASH` 类似，但**哈希函数由 MySQL 自动提供**，无需用户指定表达式。分区键默认为主键（或唯一键），如果表无主键/唯一键，则使用所有 `NOT NULL` 列。
 
@@ -403,7 +403,7 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tm1';
 | p4–p9          | 0         |
 ```
 
-### 2.7 子分区
+### 2.6 子分区
 
 子分区（Subpartitioning，组合分区）在 `RANGE` 或 `LIST` 分区的基础上，再按 `HASH` 或 `KEY` 划分。总分区数 = 外层分区数 × 子分区数。
 
