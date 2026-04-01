@@ -956,11 +956,29 @@ CREATE TABLE employees (
     department_id INT
 )
 PARTITION BY RANGE(id) (
-    PARTITION p0 VALUES LESS THAN (5),
-    PARTITION p1 VALUES LESS THAN (10),
-    PARTITION p2 VALUES LESS THAN (15),
-    PARTITION p3 VALUES LESS THAN MAXVALUE
+    PARTITION p0 VALUES LESS THAN (5),     -- id 1-4
+    PARTITION p1 VALUES LESS THAN (10),   -- id 5-9
+    PARTITION p2 VALUES LESS THAN (15),  -- id 10-14
+    PARTITION p3 VALUES LESS THAN MAXVALUE -- id 15+
 );
+
+INSERT INTO employees (fname, lname, store_id, department_id) VALUES
+('Bob',    'Taylor',   3, 2),
+('Frank',  'Williams', 1, 2),
+('Ellen',  'Johnson',  3, 4),
+('Jim',    'Smith',    2, 4),
+('Mary',   'Jones',    1, 1),
+('Linda',  'Black',    2, 3),
+('Ed',     'Jones',    2, 1),
+('June',   'Wilson',   3, 1),
+('Andy',   'Smith',    1, 3),
+('Lou',    'Waters',   2, 4),
+('Jill',   'Stone',    1, 4),
+('Roger',  'White',    3, 2),
+('Howard', 'Andrews',  1, 2),
+('Fred',   'Goldberg', 3, 3),
+('Barbara','Brown',    2, 3),
+('Alice',  'Rogers',   2, 2);
 ```
 
 查询分区 `p1` 中的所有行：
@@ -969,6 +987,14 @@ PARTITION BY RANGE(id) (
 SELECT * FROM employees PARTITION (p1);
 ```
 
+| id | fname | lname | store_id | department_id |
+|----|-------|-------|---------|--------------|
+| 5  | Mary  | Jones | 1       | 1            |
+| 6  | Linda | Black | 2       | 3            |
+| 7  | Ed    | Jones | 2       | 1            |
+| 8  | June  | Wilson| 3       | 1            |
+| 9  | Andy  | Smith | 1       | 3            |
+
 查询多个分区的交集（排除其他分区）：
 
 ```sql
@@ -976,63 +1002,200 @@ SELECT * FROM employees PARTITION (p0, p2)
 WHERE lname LIKE 'S%';
 ```
 
+| id | fname | lname | store_id | department_id |
+|----|-------|-------|---------|--------------|
+| 4  | Jim   | Smith | 2       | 4            |
+| 11 | Jill  | Stone | 1       | 4            |
+
 结合排序和聚合：
 
 ```sql
 SELECT id, CONCAT(fname, ' ', lname) AS name
 FROM employees PARTITION (p0) ORDER BY lname;
+```
 
+| id | name              |
+|----|-------------------|
+| 3  | Ellen Johnson     |
+| 4  | Jim Smith         |
+| 1  | Bob Taylor        |
+| 2  | Frank Williams    |
+
+```sql
 SELECT store_id, COUNT(department_id) AS c
 FROM employees PARTITION (p1, p2, p3)
 GROUP BY store_id HAVING c > 4;
 ```
 
+| store_id | c |
+|----------|---|
+| 1        | 4 |
+| 2        | 5 |
+| 3        | 3 |
+
 ### 6.3 DML 语句中的分区选择
 
 分区选择支持 `SELECT`、`DELETE`、`INSERT`、`REPLACE`、`UPDATE`、`LOAD DATA`、`LOAD XML` 等多种语句。
 
-**在 INSERT 中指定目标分区**：
+**在 INSERT 中指定源分区**：
 
 ```sql
+DROP TABLE IF EXISTS employees_copy;
+CREATE TABLE employees_copy LIKE employees;
+ALTER TABLE employees_copy REMOVE PARTITIONING;
+INSERT INTO employees_copy SELECT * FROM employees WHERE id <= 4;  -- 模拟已存有其他分区数据
+
+SELECT '复制前:' AS stage;
+SELECT * FROM employees_copy;
+
 INSERT INTO employees_copy
 SELECT * FROM employees PARTITION (p2);
+
+SELECT 'INSERT ... PARTITION (p2) 后:' AS stage;
+SELECT * FROM employees_copy WHERE id BETWEEN 10 AND 14;
 ```
+
+| id | fname | lname | store_id | department_id |
+|----|-------|-------|---------|--------------|
+| 10 | Lou    | Waters | 2       | 4            |
+| 11 | Jill   | Stone  | 1       | 4            |
+| 12 | Roger  | White  | 3       | 2            |
+| 13 | Howard | Andrews| 1       | 2            |
+| 14 | Fred   | Goldberg| 3      | 3            |
 
 **在 DELETE 中指定分区**：
 
 ```sql
-DELETE FROM employees PARTITION (p0, p1)
-WHERE fname LIKE 'j%';
--- 只删除 p0 和 p1 中符合条件的行，其他分区不受影响
+DELETE FROM employees PARTITION (p0) WHERE lname = 'Smith';
+
+SELECT 'DELETE PARTITION (p0) WHERE lname="Smith" 后 p0:' AS stage;
+SELECT * FROM employees PARTITION (p0);
 ```
+
+| id | fname | lname | store_id | department_id |
+|----|-------|-------|---------|--------------|
+| 1  | Bob   | Taylor| 3       | 2            |
+| 2  | Frank | Williams| 1      | 2            |
+| 3  | Ellen | Johnson| 3       | 4            |
+
+`id=4 (Jim Smith)` 被删除，其他分区不受影响。
 
 **在 UPDATE 中指定分区**：
 
 ```sql
-UPDATE employees PARTITION (p2)
-SET department_id = 5
-WHERE store_id = 3;
+UPDATE employees PARTITION (p2) SET store_id = 99 WHERE id = 10;
+
+SELECT 'UPDATE PARTITION (p2) SET store_id=99 WHERE id=10:' AS stage;
+SELECT id, fname, store_id FROM employees WHERE id = 10;
 ```
+
+| id | fname | store_id |
+|----|-------|---------|
+| 10 | Lou   | 99      |
 
 ### 6.4 子分区选择
 
-显式命名的子分区可以直接选择：
+```sql
+CREATE TABLE employees_sub (
+    id INT NOT NULL,
+    fname VARCHAR(25),
+    lname VARCHAR(25),
+    store_id INT
+)
+PARTITION BY RANGE(id)
+SUBPARTITION BY KEY(id)
+SUBPARTITIONS 2 (
+    PARTITION p0 VALUES LESS THAN (5),
+    PARTITION p1 VALUES LESS THAN (10),
+    PARTITION p2 VALUES LESS THAN MAXVALUE
+);
+
+INSERT INTO employees_sub VALUES
+(1,'Bob','Taylor',3),(2,'Frank','Williams',1),(3,'Ellen','Johnson',3),
+(4,'Jim','Smith',2),(5,'Mary','Jones',1),(6,'Linda','Black',2),
+(7,'Ed','Jones',2),(8,'June','Wilson',3),
+(10,'Alice','Rogers',2),(11,'Tom','Harris',3),(12,'Kate','Lee',1),(13,'Sam','Clark',2);
+```
+
+查询各子分区的数据分布：
 
 ```sql
-SELECT id, CONCAT(fname, ' ', lname) AS name
-FROM employees_sub PARTITION (p2sp1);
+SELECT PARTITION_NAME, SUBPARTITION_NAME, TABLE_ROWS
+FROM INFORMATION_SCHEMA.PARTITIONS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees_sub'
+ORDER BY PARTITION_NAME, SUBPARTITION_NAME;
 ```
+
+| PARTITION_NAME | SUBPARTITION_NAME | TABLE_ROWS |
+|---------------|------------------|------------|
+| p0            | p0sp0            | 2          |
+| p0            | p0sp1            | 2          |
+| p1            | p1sp0            | 2          |
+| p1            | p1sp1            | 2          |
+| p2            | p2sp0            | 2          |
+| p2            | p2sp1            | 2          |
+
+显式选择子分区：
+
+```sql
+SELECT * FROM employees_sub PARTITION (p2sp0);
+```
+
+| id | fname | lname | store_id |
+|----|-------|-------|---------|
+| 11 | Tom   | Harris| 3        |
+| 13 | Sam   | Clark | 2        |
+
+```sql
+SELECT * FROM employees_sub PARTITION (p2sp1);
+```
+
+| id | fname | lname | store_id |
+|----|-------|-------|---------|
+| 10 | Alice | Rogers| 2        |
+| 12 | Kate  | Lee   | 1        |
 
 ### 6.5 JOIN 中的分区选择
 
-在 JOIN 中，每个表都可以单独指定分区：
+在 JOIN 中，每个表都可以单独指定分区，`PARTITION` 选项位于表名之后、别名之前：
 
 ```sql
+CREATE TABLE stores (
+    id INT,
+    city VARCHAR(50)
+)
+PARTITION BY RANGE(id) (
+    PARTITION p0 VALUES LESS THAN (2),    -- id 1
+    PARTITION p1 VALUES LESS THAN (4),  -- id 2-3
+    PARTITION p2 VALUES LESS THAN MAXVALUE
+);
+
+INSERT INTO stores VALUES
+(1,'New York'),(2,'Los Angeles'),(3,'Chicago'),(4,'Houston');
+
+CREATE TABLE departments (
+    id INT,
+    name VARCHAR(50)
+)
+PARTITION BY RANGE(id) (
+    PARTITION p0 VALUES LESS THAN (2),    -- id 1
+    PARTITION p1 VALUES LESS THAN (4),  -- id 2-3
+    PARTITION p2 VALUES LESS THAN MAXVALUE
+);
+
+INSERT INTO departments VALUES
+(1,'Sales'),(2,'Marketing'),(3,'Engineering'),(4,'Support');
+
 SELECT e.id, e.fname, s.city, d.name
-FROM employees AS e
-JOIN stores PARTITION (p1) AS s ON e.store_id = s.id
-JOIN departments PARTITION (p0) AS d ON e.department_id = d.id;
+FROM employees e
+JOIN stores PARTITION (p1) s ON e.store_id = s.id
+JOIN departments PARTITION (p0) d ON e.department_id = d.id;
 ```
 
-每个 `PARTITION` 选项位于表名之后、别名之前。
+查询结果（`employees` 中 `store_id` 在 `p1`（2-3）、`department_id` 在 `p0`（1）的行）：
+
+| id | fname | store_id | city        | department_id | name  |
+|----|-------|----------|-------------|--------------|-------|
+| 7  | Ed    | 2        | Los Angeles | 1            | Sales |
+| 8  | June  | 3        | Chicago     | 1            | Sales |
 
