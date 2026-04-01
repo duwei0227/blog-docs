@@ -752,12 +752,12 @@ WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tr_split';
 
 | PARTITION_NAME | TABLE_ROWS |
 |----------------|-----------|
-| n0             | 1          |
-| n1             | 1          |
+| n0             | 0          |
+| n1             | 2          |
 | p1             | 1          |
 | p2             | 0          |
 
-拆分后数据分布说明：`id=1` (`purchased=1985`) 落入 `n0`（`< 1970`），`id=2` (`purchased=1988`) 落入 `n1`（`1970 ≤ < 1990`），`id=3` 不变仍在 `p1`。
+拆分后数据分布说明：`id=1` (`purchased=1985`) 落入 `n1`（`1970 ≤ 1985 < 1990`），`id=2` (`purchased=1988`) 也落入 `n1`（`1970 ≤ 1988 < 1990`），`id=3` 不变仍在 `p1`。
 
 > **注意**：`INFORMATION_SCHEMA.PARTITIONS` 中的 `TABLE_ROWS` 是 MySQL 缓存的统计信息，`REORGANIZE PARTITION` 执行后不会立即更新。如果查询结果与实际数据不符，先执行 `ANALYZE TABLE table_name` 刷新统计，再重新查询。
 
