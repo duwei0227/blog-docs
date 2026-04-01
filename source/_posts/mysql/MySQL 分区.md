@@ -682,8 +682,17 @@ ALTER TABLE tr DROP PARTITION p1;
 **添加分区**（`ADD PARTITION`）只能添加到 RANGE 分区的末端，或 LIST 分区的末尾：
 
 ```sql
+CREATE TABLE tr_add (
+    id INT, name VARCHAR(50), purchased DATE
+)
+PARTITION BY RANGE(YEAR(purchased)) (
+    PARTITION p0 VALUES LESS THAN (1990),
+    PARTITION p1 VALUES LESS THAN (2000),
+    PARTITION p2 VALUES LESS THAN (2005)
+);
+
 -- RANGE 分区：只能添加在高端
-ALTER TABLE members ADD PARTITION (
+ALTER TABLE tr_add ADD PARTITION (
     PARTITION p3 VALUES LESS THAN (2010)
 );
 ```
@@ -691,27 +700,81 @@ ALTER TABLE members ADD PARTITION (
 尝试在中间添加分区会报错：
 
 ```sql
-ALTER TABLE members ADD PARTITION (
-    PARTITION n VALUES LESS THAN (1970)
+ALTER TABLE tr_add ADD PARTITION (
+    PARTITION p4 VALUES LESS THAN (1970)
 );
--- ERROR 1463 (HY000): VALUES LESS THAN value must be strictly increasing
+-- ERROR 1493 (HY000): VALUES LESS THAN value must be strictly increasing for each partition
 ```
 
 需要在中间插入分区时，使用 `REORGANIZE PARTITION` 重新组织现有分区：
 
 ```sql
--- 将 p0 拆分为两个分区
-ALTER TABLE members REORGANIZE PARTITION p0 INTO (
+CREATE TABLE tr_split (
+    id INT, name VARCHAR(50), purchased DATE
+)
+PARTITION BY RANGE(YEAR(purchased)) (
+    PARTITION p0 VALUES LESS THAN (1990),
+    PARTITION p1 VALUES LESS THAN (2000),
+    PARTITION p2 VALUES LESS THAN (2010)
+);
+
+INSERT INTO tr_split VALUES (1, 'item1', '1985-06-15');
+INSERT INTO tr_split VALUES (2, 'item2', '1988-12-20');
+INSERT INTO tr_split VALUES (3, 'item3', '1995-03-10');
+
+SELECT PARTITION_NAME, TABLE_ROWS FROM INFORMATION_SCHEMA.PARTITIONS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tr_split';
+```
+
+| PARTITION_NAME | TABLE_ROWS |
+|----------------|-----------|
+| p0             | 2          |
+| p1             | 1          |
+| p2             | 0          |
+
+将 `p0` 拆分为两个分区：
+
+```sql
+ALTER TABLE tr_split REORGANIZE PARTITION p0 INTO (
     PARTITION n0 VALUES LESS THAN (1970),
-    PARTITION n1 VALUES LESS THAN (1980)
+    PARTITION n1 VALUES LESS THAN (1990)
 );
 ```
+
+拆分后验证：
+
+```sql
+SELECT PARTITION_NAME, TABLE_ROWS FROM INFORMATION_SCHEMA.PARTITIONS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tr_split';
+```
+
+| PARTITION_NAME | TABLE_ROWS |
+|----------------|-----------|
+| n0             | 1          |
+| n1             | 1          |
+| p1             | 1          |
+| p2             | 0          |
+
+拆分后数据分布说明：`id=1` (`purchased=1985`) 落入 `n0`（`< 1970`），`id=2` (`purchased=1988`) 落入 `n1`（`1970 ≤ < 1990`），`id=3` 不变仍在 `p1`。
 
 **合并相邻分区**：
 
 ```sql
-ALTER TABLE members REORGANIZE PARTITION s0, s1 INTO (
-    PARTITION p0 VALUES LESS THAN (1970)
+CREATE TABLE tr_merge (
+    id INT, name VARCHAR(50), purchased DATE
+)
+PARTITION BY RANGE(YEAR(purchased)) (
+    PARTITION p0 VALUES LESS THAN (1970),
+    PARTITION p1 VALUES LESS THAN (1980),
+    PARTITION p2 VALUES LESS THAN (2010)
+);
+
+INSERT INTO tr_merge VALUES (1, 'old', '1965-01-01');
+INSERT INTO tr_merge VALUES (2, 'mid1', '1975-06-15');
+INSERT INTO tr_merge VALUES (3, 'mid2', '1978-12-20');
+
+ALTER TABLE tr_merge REORGANIZE PARTITION p0, p1 INTO (
+    PARTITION p_merged VALUES LESS THAN (1980)
 );
 ```
 
