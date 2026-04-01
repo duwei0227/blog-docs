@@ -92,6 +92,28 @@ PARTITION BY RANGE (store_id) (
 );
 ```
 
+插入数据，验证各行是否落入预期分区：
+
+```sql
+INSERT INTO employees VALUES
+(1, 'Alice', 'Smith', '1998-03-15', '2005-06-01', 100, 3),   -- store_id=3 → p0
+(2, 'Bob', 'Jones', '2000-07-20', '2010-12-31', 200, 8),    -- store_id=8 → p1
+(3, 'Carol', 'White', '2005-01-10', '2015-03-15', 150, 12), -- store_id=12 → p2
+(4, 'Dave', 'Brown', '2010-09-01', '2020-05-20', 300, 18); -- store_id=18 → p3
+
+SELECT PARTITION_NAME, TABLE_ROWS
+FROM INFORMATION_SCHEMA.PARTITIONS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees';
+```
+
+| PARTITION_NAME | TABLE_ROWS |
+|----------------|-----------|
+| p0             | 1         |
+| p1             | 1         |
+| p2             | 0         |
+| p3             | 1         |
+| p4–p9          | 0         |
+
 添加带 `MAXVALUE` 的兜底分区，避免插入超出范围的 `store_id` 时报错：
 
 ```sql
@@ -198,7 +220,10 @@ PARTITION BY RANGE COLUMNS(a, b) (
 );
 
 INSERT INTO rc1 VALUES (5,10), (5,11), (5,12);
-```
+
+SELECT PARTITION_NAME, TABLE_ROWS
+FROM INFORMATION_SCHEMA.PARTITIONS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'rc1';
 
 | PARTITION_NAME | TABLE_ROWS |
 |----------------|-----------|
@@ -227,6 +252,27 @@ PARTITION BY RANGE COLUMNS (lname) (
 );
 ```
 
+插入数据验证（按姓氏划分）：
+
+```sql
+INSERT INTO employees_by_lname VALUES
+(1, 'Alice', 'Brown', '1990-01-01', '2010-01-01', 100, 1),  -- lname='Brown'  < 'g' → p0
+(2, 'Bob', 'Green', '1992-03-15', '2012-03-15', 200, 2),     -- lname='Green'  < 'm' → p1
+(3, 'Carol', 'Orange', '1994-06-20', '2014-06-20', 300, 3); -- lname='Orange' < 't' → p2
+
+SELECT PARTITION_NAME, TABLE_ROWS
+FROM INFORMATION_SCHEMA.PARTITIONS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees_by_lname';
+
+| PARTITION_NAME | TABLE_ROWS |
+|----------------|-----------|
+| p0             | 1         |
+| p1             | 1         |
+| p2             | 1         |
+| p3             | 0         |
+
+实际排序依赖列的字符集和排序规则。此处使用默认的 `utf8mb4_0900_ai_ci`（大小写不敏感），字母 G 排在 F 之后、M 之前。
+
 使用 `DATE` 列进行 `LIST COLUMNS` 分区：
 
 ```sql
@@ -243,9 +289,26 @@ PARTITION BY LIST COLUMNS(renewal) (
 );
 ```
 
+插入数据验证（按续费日期划分）：
+
+```sql
+INSERT INTO customers VALUES
+('Alice', 'Anderson', '2010-02-03'), -- renewal='2010-02-03' → pWeek_1
+('Bob', 'Miller', '2010-02-10'),    -- renewal='2010-02-10' → pWeek_2
+('Carol', 'Taylor', '2010-02-07');  -- renewal='2010-02-07' → pWeek_1
+
+SELECT PARTITION_NAME, TABLE_ROWS
+FROM INFORMATION_SCHEMA.PARTITIONS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'customers';
+
+| PARTITION_NAME | TABLE_ROWS |
+|----------------|-----------|
+| pWeek_1        | 2         |
+| pWeek_2        | 1         |
+
 ### 2.4 HASH 分区
 
-`HASH` 分区根据分区键表达式的**模运算结果**决定分区。MySQL 计算 `MOD(expr, num)`，其中 `num` 为分区数。
+`HASH` 分区根据分区键表达式的**模运算结果**决定分区。MySQL 计算 `MOD(expr, num)`，其中 `num` 为分区数。MySQL 计算 `MOD(expr, num)`，其中 `num` 为分区数。
 
 ```sql
 CREATE TABLE employees (
@@ -259,6 +322,29 @@ CREATE TABLE employees (
 )
 PARTITION BY HASH(store_id)
 PARTITIONS 4;
+```
+
+插入数据，验证按 `store_id` 的模运算结果分配分区：
+
+```sql
+INSERT INTO employees VALUES
+(1, 'Alice', 'Smith', '1998-03-15', '2005-06-01', 100, 3),  -- MOD(3,4)=3 → p3
+(2, 'Bob', 'Jones', '2000-07-20', '2010-12-31', 200, 7),   -- MOD(7,4)=3 → p3
+(3, 'Carol', 'White', '2005-01-10', '2015-03-15', 150, 12), -- MOD(12,4)=0 → p0
+(4, 'Dave', 'Brown', '2010-09-01', '2020-05-20', 300, 18); -- MOD(18,4)=2 → p2
+
+SELECT PARTITION_NAME, TABLE_ROWS
+FROM INFORMATION_SCHEMA.PARTITIONS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'employees';
+
+| PARTITION_NAME | TABLE_ROWS |
+|----------------|-----------|
+| p0             | 1         |
+| p1             | 0         |
+| p2             | 1         |
+| p3             | 2         |
+
+验证：store_id=3 → MOD(3,4)=3 → p3；store_id=7 → MOD(7,4)=3 → p3；store_id=12 → MOD(12,4)=0 → p0；store_id=18 → MOD(18,4)=2 → p2。
 ```
 
 分区号计算示例——插入 `col3 = '2005-09-15'` 的行：
@@ -288,12 +374,42 @@ PARTITION BY LINEAR HASH(YEAR(col3))
 PARTITIONS 6;
 ```
 
-插入 `col3 = '2003-04-14'` 时：
+插入数据，验证线性哈希算法的分区分配：
+
+```sql
+INSERT INTO t1 VALUES
+(1, 'A', '2003-04-14'), -- YEAR=2003, 2003&7=3 → p3
+(2, 'B', '1998-10-19'); -- YEAR=1998, 1998&7=6, 6>=6→再迭代: 6&3=2 → p2
+
+SELECT PARTITION_NAME, TABLE_ROWS
+FROM INFORMATION_SCHEMA.PARTITIONS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 't1';
+
+| PARTITION_NAME | TABLE_ROWS |
+|----------------|-----------|
+| p0             | 0         |
+| p1             | 0         |
+| p2             | 1         |
+| p3             | 1         |
+| p4             | 0         |
+| p5             | 0         |
+```
+
+手动验证 `'2003-04-14'` 的分区计算过程：
 
 ```
 V = POWER(2, CEILING(LOG2(6))) = 8
 N = 2003 & (8 - 1) = 2003 & 7 = 3
 3 >= 6 为假 → 存储到分区 3
+```
+
+`'1998-10-19'` 的分区计算过程：
+
+```
+V = 8
+N = 1998 & (8 - 1) = 1998 & 7 = 6
+6 >= 6 为真 → 迭代: V = 8/2 = 4, N = 6 & (4-1) = 6 & 3 = 2
+2 >= 6 为假 → 存储到分区 2
 ```
 
 `LINEAR HASH` 的优势在于分区分裂、合并操作更快，适合 TB 级数据表。劣势是数据分布可能不如标准 `HASH` 均匀。
@@ -311,6 +427,18 @@ CREATE TABLE k1 (
 PARTITION BY KEY()
 PARTITIONS 2;
 
+INSERT INTO k1 VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Carol');
+
+SELECT PARTITION_NAME, TABLE_ROWS
+FROM INFORMATION_SCHEMA.PARTITIONS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'k1';
+```
+
+| PARTITION_NAME | TABLE_ROWS |
+|----------------|-----------|
+| p0             | 2         |
+| p1             | 1         |
+
 -- 无主键但有唯一键，唯一键作为分区键
 CREATE TABLE k2 (
     id INT NOT NULL,
@@ -319,6 +447,17 @@ CREATE TABLE k2 (
 )
 PARTITION BY KEY()
 PARTITIONS 2;
+
+INSERT INTO k2 VALUES (1, 'Apple'), (4, 'Google'), (7, 'Meta');
+
+SELECT PARTITION_NAME, TABLE_ROWS
+FROM INFORMATION_SCHEMA.PARTITIONS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'k2';
+
+| PARTITION_NAME | TABLE_ROWS |
+|----------------|-----------|
+| p0             | 2         |
+| p1             | 1         |
 ```
 
 `KEY` 分区的一个独特优势：分区键可以是**非整数类型**（`TEXT` 和 `BLOB` 除外），因为 MySQL 内部哈希函数会处理各种数据类型：
@@ -329,6 +468,20 @@ CREATE TABLE tm1 (
 )
 PARTITION BY KEY(s1)
 PARTITIONS 10;
+
+INSERT INTO tm1 VALUES ('Alice'), ('Bob'), ('Carol');
+
+SELECT PARTITION_NAME, TABLE_ROWS
+FROM INFORMATION_SCHEMA.PARTITIONS
+WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'tm1';
+
+| PARTITION_NAME | TABLE_ROWS |
+|----------------|-----------|
+| p0             | 1         |
+| p1             | 1         |
+| p2             | 0         |
+| p3             | 1         |
+| p4–p9          | 0         |
 ```
 
 ### 2.7 子分区
