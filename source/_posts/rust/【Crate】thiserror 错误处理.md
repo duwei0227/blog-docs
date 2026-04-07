@@ -364,7 +364,11 @@ unit variant: done
 
 ## 六、透明错误
 
-`#[error(transparent)]` 将 `Display` 和 `source` 方法直接转发到底层错误类型，不添加额外消息。适用于封装"其他未知错误"的场景：
+`#[error(transparent)]` 将 `Display` 和 `source` 方法直接转发到底层错误类型，不添加额外消息。以下是两个典型用法。
+
+### 用法一：enum 的兜底变体
+
+当 enum 中存在"其他未知错误"变体时，用 `transparent` 包装 `anyhow::Error` 或其他通用错误类型：
 
 ```rust
 use thiserror::Error;
@@ -405,7 +409,57 @@ specific error: just this
 underlying error details
 ```
 
-`transparent` 的典型用途包括：包装 `anyhow::Error` 作为 `enum` 的兜底变体；将内部错误表示的具体实现隐藏在 opaque public type 之后，使内部表示可以在不破坏公开 API 的前提下自由演进。
+### 用法二：opaque public type（内部实现可演进）
+
+将内部错误表示的具体实现隐藏在公开的 opaque 错误类型之后，使内部表示可以在不破坏公开 API 的前提下自由演进。`PublicError` 对外公开但内部结构不可见，`ErrorRepr` 则是私有实现细节：
+
+```rust
+use thiserror::Error;
+
+// 对外公开但内部结构不可见，opaque public type
+#[derive(Error, Debug)]
+#[error(transparent)]
+pub struct PublicError(#[from] ErrorRepr);
+
+// 私有实现，可自由演进，不影响公开 API
+#[derive(Error, Debug)]
+enum ErrorRepr {
+    #[error("file not found: {0}")]
+    FileNotFound(String),
+
+    #[error("permission denied")]
+    PermissionDenied,
+}
+
+impl PublicError {
+    // 公开访问器，只暴露必要信息
+    pub fn is_file_not_found(&self) -> bool {
+        matches!(self.0, ErrorRepr::FileNotFound(_))
+    }
+}
+
+fn main() {
+    let err = PublicError::from(ErrorRepr::FileNotFound("/etc/passwd".to_string()));
+    println!("{}", err);
+    println!("is file not found: {}", err.is_file_not_found());
+}
+```
+
+运行结果：
+
+```
+file not found: /etc/passwd
+is file not found: true
+```
+
+### `transparent` vs 普通变体对比
+
+| 特性 | 普通变体 `#[error("...")]` | `#[error(transparent)]` |
+|------|--------------------------|------------------------|
+| 消息内容 | 使用模板字符串自定义 | 直接透传底层错误消息 |
+| `Display` 转发 | 不转发 | 转发到底层错误类型 |
+| `Error::source()` 转发 | 不转发 | 转发到底层错误类型 |
+| 典型用途 | 已知具体错误类型 | 兜底变体或 opaque type |
 
 ## 七、Backtrace 支持
 
