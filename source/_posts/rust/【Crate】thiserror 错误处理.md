@@ -560,32 +560,122 @@ is file not found: true
 
 ## 七、Backtrace 支持
 
-`thiserror` 支持通过 `Backtrace` 字段自动捕获栈回溯。使用 `Backtrace` 需要 `Rust` 1.73+ 并启用 nightly：
+`thiserror` 支持通过 `Backtrace` 字段自动捕获栈回溯，并在 `Error::provide()` 方法中暴露。
+
+### nightly 开启方式
+
+`thiserror` 2.x derive 宏依赖 `error_generic_member_access` 特性，因此**必须在 nightly 编译器下使用**。在 `src/main.rs`（或 lib.rs）顶部添加：
+
+```rust
+#![feature(error_generic_member_access)]
+```
+
+然后使用 nightly 编译：
+
+```bash
+rustup run nightly cargo build
+```
+
+> 如果项目必须使用稳定版 Rust，应选择 `thiserror` 1.x 版本。2.x 和 1.x 的主要区别在于是否支持 struct/enum 中的泛型错误类型关联访问。
+
+### 为什么需要 nightly
+
+`std::error::Error` trait 在 Rust 1.65+ 稳定了 `Backtrace::capture()`，但 `thiserror` 2.0 的 derive 宏依赖 `error_generic_member_access` 特性（`Error` trait 的泛型成员访问），该特性尚未稳定，因此**`thiserror` 2.x 整体要求 nightly 编译器**。
+
+`#[backtrace]` 属性的作用是：将 `Backtrace` 的捕获时机从"调用时"提前到"错误创建时（From impl）"，避免在错误传播路径上丢失上下文。
+
+### 用法一：struct 中自动检测
+
+当 `Backtrace` 字段命名为 `backtrace` 时，`thiserror` 自动将其识别为 backtrace 来源，无需额外标记：
 
 ```rust
 use std::backtrace::Backtrace;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
+#[error("my error: {msg}")]
 pub struct MyError {
     msg: String,
-    backtrace: Backtrace, // 自动检测并提供 Backtrace
+    backtrace: Backtrace,
+}
+
+fn main() {
+    let e = MyError {
+        msg: "something went wrong".to_string(),
+        backtrace: Backtrace::capture(),
+    };
+    println!("{}", e);
 }
 ```
 
-当字段同时标记 `#[backtrace]` 和 `#[source]`（或 `#[from]`）时，`Error::provide()` 方法会转发到底层错误的 `provide`，使两层错误共享同一个 `Backtrace`：
+运行结果：
+
+```
+my error: something went wrong
+```
+
+### 用法二：与 `#[from]` 结合，自动捕获 backtrace
+
+当字段同时标记 `#[backtrace]` 和 `#[from]` 时，`Backtrace` 在 `From` impl 执行时自动捕获，无需在调用处手动创建：
 
 ```rust
+use std::backtrace::Backtrace;
+use thiserror::Error;
+
 #[derive(Error, Debug)]
-pub enum MyError {
+pub enum AppError {
+    #[error("IO error: {source}")]
     Io {
         #[backtrace]
-        source: io::Error,
+        #[from]
+        source: std::io::Error,
     },
+}
+
+fn main() {
+    fn read_file(path: &str) -> Result<String, AppError> {
+        let s = std::fs::read_to_string(path)?; // #[from] 自动 From + #[backtrace] 自动捕获
+        Ok(s)
+    }
+
+    if let Err(e) = read_file("/nonexistent/file") {
+        println!("{}", e);
+    }
 }
 ```
 
-如果变体同时包含 `#[from]` 和 `Backtrace` 字段，`Backtrace` 会在 `From` impl 中自动捕获。
+运行结果：
+
+```
+IO error: No such file or directory (os error 2)
+```
+
+### 实际工程中是否需要开启
+
+**一般不需要**。Backtrace 捕获的成本较高，且在正式环境中通常通过日志系统（如 `tracing`、`log`）按需生成，而不是随错误类型一起存储。
+
+典型做法是：在错误类型中**不存储** `Backtrace`，而是在日志记录层调用 `Backtrace::capture()` 按需生成：
+
+```rust
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum AppError {
+    #[error("IO error: {source}")]
+    Io {
+        #[from]
+        source: std::io::Error,
+    },
+}
+
+impl AppError {
+    pub fn log(&self) {
+        eprintln!("error: {} (backtrace: {:?})", self, Backtrace::capture());
+    }
+}
+```
+
+如果确实需要在错误传播中携带完整调用栈上下文（例如调试阶段、测试环境、或作为库对外暴露 backtrace），才使用 `#[backtrace]`。
 
 ## 八、thiserror 与 anyhow 的选择
 
