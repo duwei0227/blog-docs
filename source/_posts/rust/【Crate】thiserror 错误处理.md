@@ -79,6 +79,8 @@ data store disconnected
 以下示例同时展示四种语法：
 
 ```rust
+use thiserror::Error;
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("rebidden: {reason}")]
@@ -121,6 +123,8 @@ position 42 out of range
 除字段插值外，`#[error]` 还支持在模板后添加额外的格式化参数，参数值可以是任意表达式。具名字段用 `.field` 引用，元组字段用 `.0` 引用：
 
 ```rust
+use thiserror::Error;
+
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("first letter must be lowercase but was {:?}", first_char(.0))]
@@ -236,6 +240,62 @@ IO error occurred
 ```
 
 `#[from]` 隐含 `#[source]` 语义，无需同时标记两个属性。使用 `#[from]` 的字段只能是错误源（可能有 `Backtrace`），不能包含其他普通字段。
+
+### 变体同时需要 `#[from]` 和额外上下文
+
+`#[from]` 的约束是：使用 `#[from]` 的变体，其字段**只能是 source 字段**（和可选 backtrace），不能混合存储额外上下文。因此，如果希望变体既能通过 `?` 自动转换、又携带额外结构化信息，必须**放弃 `#[from]`，改用 `#[source]` 配合手动 `From` impl**：
+
+```rust
+use std::io;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum MyError {
+    #[error("IO error while {operation}: {source}")]
+    Io {
+        operation: String,      // 额外上下文
+        #[source]
+        source: io::Error,      // source 字段，但不用 #[from]
+    },
+
+    #[error("parse error in {field}: {source}")]
+    Parse {
+        field: String,
+        source: std::num::ParseIntError,
+    },
+}
+
+impl From<io::Error> for MyError {
+    fn from(e: io::Error) -> Self {
+        MyError::Io { operation: "reading".to_string(), source: e }
+    }
+}
+
+impl From<std::num::ParseIntError> for MyError {
+    fn from(e: std::num::ParseIntError) -> Self {
+        MyError::Parse { field: "user_id".to_string(), source: e }
+    }
+}
+
+fn main() {
+    fn read_config() -> Result<String, MyError> {
+        let _ = std::fs::read("/nonexistent/file")?;
+        Ok("ok".to_string())
+    }
+
+    if let Err(e) = read_config() {
+        println!("{}", e);
+    }
+}
+```
+
+运行结果：
+
+```
+IO error while reading: No such file or directory (os error 2)
+```
+
+变体内使用 `#[source]` 标记错误源字段（而非 `#[from]`），由开发者手动实现 `From` impl，在转换时注入额外上下文。这样既保留了 `?` 的自动转换能力，又能让错误携带结构化的附加信息。
 
 ## 四、手动指定错误源
 
