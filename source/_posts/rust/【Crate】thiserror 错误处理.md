@@ -17,7 +17,7 @@ categories: Rust
 thiserror = "2"
 ```
 
-`thiserror` 为 Rust 标准库 `std::error::Error` trait 提供 derive 宏支持。通过 `#[derive(Error)]` 可以自动生成 `Error`、`Display`、`Debug` trait 的实现，开发者只需关注错误类型的设计和错误消息的定义。
+`thiserror` 为 `Rust` 标准库 `std::error::Error` trait 提供 `derive` 宏支持。通过 `#[derive(Error)]` 可以自动生成 `Error`、`Display`、`Debug` trait 的实现，开发者只需关注错误类型的设计和错误消息的定义。
 
 ## 二、基础用法
 
@@ -76,7 +76,7 @@ pub enum Error {
     InvalidLookahead(u32),
 
     // extra_args 中引用字段需加前缀：具名字段加 `.`，元组字段用 `.0`
-    #[error("first letter must be lowercase but was {:?}", first_char(.0))]
+    #[error("first letter must be lowercase but was {:?}", `first_char(.0)`)]
     WrongCase(String),
 
     #[error("invalid index {idx}, expected at least {} and at most {}", .limits.0, .limits.1)]
@@ -150,12 +150,12 @@ source: Some(Custom { kind: NotFound, error: "file not found" })
 
 ## 五、结构体风格的错误类型
 
-错误类型可以是枚举、具名字段结构体、元组结构体或单元结构体：
+错误类型可以是 `enum`、具名字段 `struct`、元组 `struct` 或单元 `struct`：
 
 ```rust
 use thiserror::Error;
 
-// 具名字段结构体
+// 具名字段 struct
 #[derive(Error, Debug)]
 #[error("validation failed: {field} is invalid ({reason})")]
 pub struct ValidationError {
@@ -163,17 +163,17 @@ pub struct ValidationError {
     pub reason: String,
 }
 
-// 元组结构体
+// 元组 struct
 #[derive(Error, Debug)]
 #[error("parse error at position {0}: {1}")]
 pub struct ParseError(usize, String);
 
-// 单元结构体
+// 单元 struct
 #[derive(Error, Debug)]
 #[error("service unavailable")]
 pub struct ServiceUnavailableError;
 
-// 枚举中混合使用
+// enum 中混合使用
 #[derive(Error, Debug)]
 pub enum ComplexError {
     #[error("named field variant: x={x}, y={y}")]
@@ -232,11 +232,11 @@ pub enum MyError {
 underlying error details
 ```
 
-`transparent` 的典型用途包括：包装 `anyhow::Error` 作为枚举的兜底变体；将内部错误表示的具体实现隐藏在 opaque public type 之后，使内部表示可以在不破坏公开 API 的前提下自由演进。
+`transparent` 的典型用途包括：包装 `anyhow::Error` 作为 enum 的兜底变体；将内部错误表示的具体实现隐藏在 opaque public type 之后，使内部表示可以在不破坏公开 API 的前提下自由演进。
 
 ## 七、Backtrace 支持
 
-`thiserror` 支持通过 `Backtrace` 字段自动捕获栈回溯。使用 `Backtrace` 需要 Rust 1.73+ 并启用 nightly：
+`thiserror` 支持通过 `Backtrace` 字段自动捕获栈回溯。使用 `Backtrace` 需要 `Rust` 1.73+ 并启用 nightly：
 
 ```rust
 use std::backtrace::Backtrace;
@@ -265,7 +265,7 @@ pub enum MyError {
 
 ## 八、thiserror 与 anyhow 的选择
 
-`thiserror` 和 `anyhow` 均来自 dtolnay之手，适用于不同场景：
+`thiserror` 和 `anyhow` 均来自 dtolnay 之手，适用于不同场景：
 
 | 维度 | thiserror | anyhow |
 |------|-----------|--------|
@@ -278,7 +278,7 @@ pub enum MyError {
 
 ## 九、错误描述国际化
 
-### 9.1 `thiserror` 不支持国际化
+### 9.1 thiserror 不支持国际化
 
 `thiserror` 的 `#[error("...")]` 属性接受的是编译期字符串字面量，`Display` trait 的实现由 derive 宏在编译时生成。这意味着错误消息的内容在编译阶段就固定了，无法在运行时根据语言环境动态切换。
 
@@ -296,7 +296,7 @@ pub enum Error {
 
 ### 9.2 原因分析
 
-`thiserror` 的设计哲学是提供与手写 `Error` trait 实现完全等价的能力——生成的代码与手工编写无异。而 `std::error::Error` 的 `Display` trait 本身设计为接收一个 `&self` 和 `&mut Formatter`，参数中不包含 locale 或语言上下文。Rust 标准库的错误处理体系中根本没有国际化的基础设施。
+`thiserror` 的设计哲学是提供与手写 `Error` trait 实现完全等价的能力——生成的代码与手工编写无异。而 `std::error::Error` 的 `Display` trait 本身设计为接收一个 `&self` 和 `&mut Formatter`，参数中不包含 locale 或语言上下文。`Rust` 标准库的错误处理体系中根本没有国际化的基础设施。
 
 因此，即使 `thiserror` 想支持国际化，也面临两个根本障碍：`Display` trait 签名中不存在 locale 参数；`thiserror` 生成的代码是静态的，没有运行时查找机制。
 
@@ -328,9 +328,9 @@ impl Error {
 
 调用方根据 `error_code()` 查表返回对应语言的消息。
 
-**方案二：使用 `fluent-rs` 替代字符串字面量**
+**方案二：使用 fluent-rs 替代字符串字面量**
 
-`fluent-rs` 是 Mozilla 维护的国际化系统，通过 FTL（Fluent）文件定义翻译资源。可以将错误码作为 message ID，通过 `fluent-rs` 查找翻译：
+fluent-rs 是 Mozilla 维护的国际化系统，通过 FTL（Fluent）文件定义翻译资源。可以将错误码作为 message ID，通过 fluent-rs 查找翻译：
 
 ```rust
 use fluent::{FluentBundle, FluentResource, FluentArgs};
@@ -347,7 +347,7 @@ fn get_localized_message(bundle: &FluentBundle<FluentResource>, error_code: &str
 
 但需要注意，`thiserror` 的 `#[error("...")]` 仍然只能接受字面量，因此这种方案实际上放弃了使用 `thiserror` 的消息模板功能，改由调用方在 `Display` 之外单独处理国际化。
 
-**方案三：手动实现 `Display`**
+**方案三：手动实现 Display**
 
 完全不使用 `thiserror` 的 `#[error]` 属性，手动实现 `Display` trait 并在实现中调用翻译函数：
 
@@ -409,3 +409,40 @@ impl DataStoreError {
 ```
 
 应用层根据 `code()` 查 `fluent` 或其他 i18n 系统得到本地化消息，同时保留 `Display` 在日志和控制台输出中提供可读但不依赖特定语言的默认信息。
+
+## 各语言必须包裹的术语索引
+
+> content.md 各章节的等效术语映射，写作对应语言文章时必须覆盖。
+
+### Rust 语言术语
+
+| 类别 | 示例 |
+|------|------|
+| Rust 关键字 | `trait`、`struct`、`enum`、`fn`、`impl`、`let`、`mut`、`pub`、`mod`、`use`、`crate` |
+| derive 相关 | `derive`、`#[derive]`、`#[derive(Error)]` |
+| 属性宏 | `#[error]`、`#[error("...")]`、`#[source]`、`#[from]`、`#[backtrace]` |
+| 核心 Trait 名 | `Error`、`Display`、`Debug`、`From`、`Result` |
+| 标准库类型/模块 | `std::error::Error`、`std::fmt::Display`、`Backtrace`、`Rust` |
+| 外部 Crate 名 | `thiserror`、`anyhow`、`fluent-rs` |
+| 格式化语法 | `{0}`、`{var}`、`{var:?}`、`transparent`、`i32::MAX` |
+| 方法引用（作为术语时） | `Error::source()`、`Error::provide()`、`first_char()`、`parse()` |
+| 数据类型名 | `f64`、`f32`、`usize`、`u32`、`i64`、`String`、`&str` |
+
+### Python 语言术语
+
+| 类别 | 示例 |
+|------|------|
+| 内置函数 | `len()`、`str()`、`int()`、`print()`、`open()` |
+| 内置类型 | `str`、`int`、`float`、`list`、`dict`、`tuple`、`set`、`bool` |
+| 保留字/关键字 | `if`、`else`、`for`、`while`、`def`、`class`、`import`、`from`、`return`、`yield` |
+| 魔术方法 | `__init__`、`__str__`、`__repr__`、`__len__` |
+| 标准库模块 | `datetime`、`collections`、`os`、`sys`、`pathlib` |
+
+### Java 语言术语
+
+| 类别 | 示例 |
+|------|------|
+| 关键字 | `public`、`private`、`protected`、`class`、`interface`、`extends`、`implements`、`static`、`void`、`return` |
+| 注解 | `@Override`、`@Deprecated`、`@FunctionalInterface` |
+| 核心类/接口 | `String`、`Object`、`Class`、`Exception`、`Runnable` |
+| 方法引用（作为术语时） | `toString()`、`hashCode()`、`equals()` |
