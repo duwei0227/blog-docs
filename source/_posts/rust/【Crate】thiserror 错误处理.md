@@ -158,7 +158,9 @@ invalid lookahead 42 (max = 2147483647)
 
 ## 三、自动 `From` 转换
 
-`#[from]` 属性为包含错误源字段的变体自动生成 `From` trait 实现，使错误可以在 `?` 运算符中自动转换：
+`#[from]` 属性为包含错误源字段的变体自动生成 `From` trait 实现，使错误可以在 `?` 运算符中自动转换。
+
+### 用于 enum 变体
 
 ```rust
 use std::io;
@@ -174,12 +176,12 @@ pub enum MyError {
 }
 
 fn parse_int(s: &str) -> Result<i32, MyError> {
-    let n: i32 = s.parse()?; // 自动 From<ParseIntError> → MyError
+    let n: i32 = s.parse()?;
     Ok(n)
 }
 
 fn read_file() -> Result<Vec<u8>, MyError> {
-    let _ = std::fs::read("nonexistent.txt")?; // 自动 From<io::Error> → MyError
+    let _ = std::fs::read("nonexistent.txt")?;
     Ok(vec![])
 }
 
@@ -200,7 +202,40 @@ parse error: invalid digit found in string
 IO error occurred
 ```
 
-`#[from]` 隐含 `#[source]` 语义，无需同时标记两个属性。使用 `#[from]` 的变体，其字段只能是错误源（可能有 `Backtrace`），不能包含其他字段。
+### 用于 struct 字段
+
+`#[from]` 也可以用在 struct 的具名字段上，但此时 struct **不能包含其他普通字段**（只能有 source 字段和可选的 backtrace 字段）。如果需要额外上下文，建议通过 `From` impl 或构造函数注入：
+
+```rust
+use std::io;
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+#[error("IO error occurred")]
+pub struct IoError {
+    #[from]
+    source: io::Error,
+}
+
+fn read_file(path: &str) -> Result<String, IoError> {
+    let s = std::fs::read_to_string(path)?; // io::Error 自动转换为 IoError
+    Ok(s)
+}
+
+fn main() {
+    if let Err(e) = read_file("/nonexistent/file") {
+        println!("{}", e);
+    }
+}
+```
+
+运行结果：
+
+```
+IO error occurred
+```
+
+`#[from]` 隐含 `#[source]` 语义，无需同时标记两个属性。使用 `#[from]` 的字段只能是错误源（可能有 `Backtrace`），不能包含其他普通字段。
 
 ## 四、手动指定错误源
 
@@ -292,9 +327,11 @@ source: Some(Custom { kind: NotFound, error: "file not found" })
 |------|-------------|-----------|
 | 指定 `Error::source()` | ✅ | ✅（隐含） |
 | 生成 `From` impl | ❌ | ✅ |
-| 支持 enum 变体 | ✅（但通常用 `#[from]`） | ✅ |
-| 支持 struct 字段 | ✅ | ❌ |
-| 字段名非 `source` 时可用 | ✅ | ❌ |
+| 用于 enum 变体 | ✅ | ✅ |
+| 用于 struct 字段 | ✅ | ✅（但所有字段必须均为 source/backtrace） |
+| 字段名非 `source` 时可用 | ✅ | ❌（字段名需与底层错误类型一致） |
+
+`#[from]` 用于 struct 字段时，struct 中不能包含其他普通字段（只能是 source/backtrace 字段）。如果需要额外上下文，建议通过 `From` impl 或构造函数方式注入，而非作为 struct 字段。
 
 ## 五、结构体风格的错误类型
 
