@@ -558,126 +558,7 @@ is file not found: true
 | `Error::source()` 转发 | 不转发 | 转发到底层错误类型 |
 | 典型用途 | 已知具体错误类型 | 兜底变体或 opaque type |
 
-## 七、Backtrace 支持
-
-`thiserror` 支持通过 `Backtrace` 字段自动捕获栈回溯，并在 `Error::provide()` 方法中暴露。
-
-### nightly 开启方式
-
-`thiserror` 2.x derive 宏依赖 `error_generic_member_access` 特性，因此**必须在 nightly 编译器下使用**。在 `src/main.rs`（或 lib.rs）顶部添加：
-
-```rust
-#![feature(error_generic_member_access)]
-```
-
-然后使用 nightly 编译：
-
-```bash
-rustup run nightly cargo build
-```
-
-> 如果项目必须使用稳定版 Rust，应选择 `thiserror` 1.x 版本。2.x 和 1.x 的主要区别在于是否支持 struct/enum 中的泛型错误类型关联访问。
-
-### 为什么需要 nightly
-
-`std::error::Error` trait 在 Rust 1.65+ 稳定了 `Backtrace::capture()`，但 `thiserror` 2.0 的 derive 宏依赖 `error_generic_member_access` 特性（`Error` trait 的泛型成员访问），该特性尚未稳定，因此**`thiserror` 2.x 整体要求 nightly 编译器**。
-
-`#[backtrace]` 属性的作用是：将 `Backtrace` 的捕获时机从"调用时"提前到"错误创建时（From impl）"，避免在错误传播路径上丢失上下文。
-
-### 用法一：struct 中自动检测
-
-当 `Backtrace` 字段命名为 `backtrace` 时，`thiserror` 自动将其识别为 backtrace 来源，无需额外标记：
-
-```rust
-use std::backtrace::Backtrace;
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-#[error("my error: {msg}")]
-pub struct MyError {
-    msg: String,
-    backtrace: Backtrace,
-}
-
-fn main() {
-    let e = MyError {
-        msg: "something went wrong".to_string(),
-        backtrace: Backtrace::capture(),
-    };
-    println!("{}", e);
-}
-```
-
-运行结果：
-
-```
-my error: something went wrong
-```
-
-### 用法二：与 `#[from]` 结合，自动捕获 backtrace
-
-当字段同时标记 `#[backtrace]` 和 `#[from]` 时，`Backtrace` 在 `From` impl 执行时自动捕获，无需在调用处手动创建：
-
-```rust
-use std::backtrace::Backtrace;
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum AppError {
-    #[error("IO error: {source}")]
-    Io {
-        #[backtrace]
-        #[from]
-        source: std::io::Error,
-    },
-}
-
-fn main() {
-    fn read_file(path: &str) -> Result<String, AppError> {
-        let s = std::fs::read_to_string(path)?; // #[from] 自动 From + #[backtrace] 自动捕获
-        Ok(s)
-    }
-
-    if let Err(e) = read_file("/nonexistent/file") {
-        println!("{}", e);
-    }
-}
-```
-
-运行结果：
-
-```
-IO error: No such file or directory (os error 2)
-```
-
-### 实际工程中是否需要开启
-
-**一般不需要**。Backtrace 捕获的成本较高，且在正式环境中通常通过日志系统（如 `tracing`、`log`）按需生成，而不是随错误类型一起存储。
-
-典型做法是：在错误类型中**不存储** `Backtrace`，而是在日志记录层调用 `Backtrace::capture()` 按需生成：
-
-```rust
-use thiserror::Error;
-
-#[derive(Error, Debug)]
-pub enum AppError {
-    #[error("IO error: {source}")]
-    Io {
-        #[from]
-        source: std::io::Error,
-    },
-}
-
-impl AppError {
-    pub fn log(&self) {
-        eprintln!("error: {} (backtrace: {:?})", self, Backtrace::capture());
-    }
-}
-```
-
-如果确实需要在错误传播中携带完整调用栈上下文（例如调试阶段、测试环境、或作为库对外暴露 backtrace），才使用 `#[backtrace]`。
-
-## 八、thiserror 与 anyhow 的选择
+## 七、thiserror 与 anyhow 的选择
 
 `thiserror` 和 `anyhow` 均来自 `dtolnay` 之手，适用于不同场景：
 
@@ -690,9 +571,9 @@ impl AppError {
 
 简言之：编写库代码时使用 `thiserror` 定义清晰的错误类型；编写应用代码时使用 `anyhow` 简化错误传播。
 
-## 九、错误描述国际化
+## 八、错误描述国际化
 
-### 9.1 thiserror 不支持国际化
+### 8.1 thiserror 不支持国际化
 
 `thiserror` 的 `#[error("...")]` 属性接受的是编译期字符串字面量，`Display` trait 的实现由 `derive` 宏在编译时生成。这意味着错误消息的内容在编译阶段就固定了，无法在运行时根据语言环境动态切换。
 
@@ -719,13 +600,13 @@ fn main() {
 
 编译器将 `"数据文件断开连接"` 直接嵌入生成的 `Display` 实现中，运行时不存在任何查表的逻辑。
 
-### 9.2 原因分析
+### 8.2 原因分析
 
 `thiserror` 的设计哲学是提供与手写 `Error` trait 实现完全等价的能力——生成的代码与手工编写无异。而 `std::error::Error` 的 `Display` trait 本身设计为接收一个 `&self` 和 `&mut Formatter`，参数中不包含 locale 或语言上下文。`Rust` 标准库的错误处理体系中根本没有国际化的基础设施。
 
 因此，即使 `thiserror` 想支持国际化，也面临两个根本障碍：`Display` trait 签名中不存在 locale 参数；`thiserror` 生成的代码是静态的，没有运行时查找机制。
 
-### 9.3 替代方案
+### 8.3 替代方案
 
 如果项目确实需要错误消息国际化，有以下几种思路：
 
@@ -848,7 +729,7 @@ fn main() {
 
 此方案失去了 `derive` 宏的便利性，但获得了完整的国际化能力。
 
-### 9.4 推荐做法
+### 8.4 推荐做法
 
 实际项目中，`thiserror` 的典型使用者是库作者，库不应该假设最终用户的语言环境。因此 **错误码 + 错误描述** 的分离设计是最佳实践：
 
