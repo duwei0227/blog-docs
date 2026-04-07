@@ -807,11 +807,11 @@ ALTER TABLE clients ADD PARTITION PARTITIONS 6;
 
 
 
-## 五、分区裁剪
+## 四、分区裁剪
 
 分区裁剪（Partition Pruning）是 MySQL 分区最重要的查询优化手段。**裁剪的原理**：查询时只扫描可能包含匹配行的分区，排除不相关分区。执行效果可能使查询快一个数量级。
 
-### 5.1 适用条件
+### 4.1 适用条件
 
 建表并插入测试数据：
 
@@ -875,7 +875,7 @@ SELECT * FROM t1 WHERE region_code > 4 AND region_code < 8;
 
 > **重要限制**：范围包含的值数量必须小于分区数，否则无法裁剪。如果范围覆盖 9 个值而表只有 8 个分区，优化器不会进行裁剪。
 
-### 5.2 日期分区与裁剪
+### 4.2 日期分区与裁剪
 
 使用 `YEAR()` 或 `TO_DAYS()` 进行日期分区时，MySQL 也能利用裁剪：
 
@@ -913,7 +913,7 @@ DELETE FROM t2 WHERE dob >= '1984-06-21' AND dob <= '1999-06-21';
 
 范围查询的裁剪过程：找到低端值所在分区（`d3`）和高端值所在分区（`d5`），然后扫描这两个分区及其之间的所有分区（`d3`, `d4`, `d5`），其余分区直接跳过。
 
-### 5.3 各分区类型的裁剪差异
+### 4.3 各分区类型的裁剪差异
 
 | 分区类型 | 裁剪条件                          | 限制                          |
 |---------|----------------------------------|------------------------------|
@@ -923,7 +923,7 @@ DELETE FROM t2 WHERE dob >= '1984-06-21' AND dob <= '1999-06-21';
 
 > ⚠️ `HASH`/`KEY` 分区中，如果分区键是 `DATE` 类型（如 `WHERE dob >= '2001-04-14'`），**无法裁剪**。因为 MySQL 无法将日期比较转化为模运算。如果用整数列存储年份，则 `WHERE year_col >= 2001 AND year_col <= 2005` 可以裁剪。
 
-### 5.4 验证裁剪效果
+### 4.4 验证裁剪效果
 
 使用 `EXPLAIN` 查看查询是否使用了分区裁剪：
 
@@ -933,11 +933,11 @@ EXPLAIN SELECT * FROM t2 WHERE YEAR(dob) = 1982;
 
 输出中可以看到只扫描了相关分区，而不是所有分区。
 
-## 六、分区选择
+## 五、分区选择
 
 分区选择（Partition Selection）允许在 SQL 语句中**显式指定**要操作的分区或子分区，与分区裁剪不同，裁剪是优化器自动决定，选择是用户主动指定。
 
-### 6.1 基本语法
+### 5.1 基本语法
 
 ```sql
 SELECT * FROM table_name PARTITION (partition_name[, ...])
@@ -945,7 +945,7 @@ SELECT * FROM table_name PARTITION (partition_name[, ...])
 
 `PARTITION` 选项紧跟在表名之后，可指定多个分区名（以逗号分隔），分区顺序无关紧要，可以重叠。
 
-### 6.2 查询中的分区选择
+### 5.2 查询中的分区选择
 
 ```sql
 CREATE TABLE employees (
@@ -1027,13 +1027,11 @@ FROM employees PARTITION (p1, p2, p3)
 GROUP BY store_id HAVING c > 4;
 ```
 
-| store_id | c |
-|----------|---|
-| 1        | 4 |
-| 2        | 5 |
-| 3        | 3 |
+| store_id | c    |
+| -------- | ---- |
+| 2        | 5    |
 
-### 6.3 DML 语句中的分区选择
+### 5.3 DML 语句中的分区选择
 
 分区选择支持 `SELECT`、`DELETE`、`INSERT`、`REPLACE`、`UPDATE`、`LOAD DATA`、`LOAD XML` 等多种语句。
 
@@ -1068,7 +1066,6 @@ SELECT * FROM employees_copy WHERE id BETWEEN 10 AND 14;
 ```sql
 DELETE FROM employees PARTITION (p0) WHERE lname = 'Smith';
 
-SELECT 'DELETE PARTITION (p0) WHERE lname="Smith" 后 p0:' AS stage;
 SELECT * FROM employees PARTITION (p0);
 ```
 
@@ -1093,7 +1090,7 @@ SELECT id, fname, store_id FROM employees WHERE id = 10;
 |----|-------|---------|
 | 10 | Lou   | 99      |
 
-### 6.4 子分区选择
+### 5.4 子分区选择
 
 ```sql
 CREATE TABLE employees_sub (
@@ -1154,48 +1151,4 @@ SELECT * FROM employees_sub PARTITION (p2sp1);
 |----|-------|-------|---------|
 | 10 | Alice | Rogers| 2        |
 | 12 | Kate  | Lee   | 1        |
-
-### 6.5 JOIN 中的分区选择
-
-在 JOIN 中，每个表都可以单独指定分区，`PARTITION` 选项位于表名之后、别名之前：
-
-```sql
-CREATE TABLE stores (
-    id INT,
-    city VARCHAR(50)
-)
-PARTITION BY RANGE(id) (
-    PARTITION p0 VALUES LESS THAN (2),    -- id 1
-    PARTITION p1 VALUES LESS THAN (4),  -- id 2-3
-    PARTITION p2 VALUES LESS THAN MAXVALUE
-);
-
-INSERT INTO stores VALUES
-(1,'New York'),(2,'Los Angeles'),(3,'Chicago'),(4,'Houston');
-
-CREATE TABLE departments (
-    id INT,
-    name VARCHAR(50)
-)
-PARTITION BY RANGE(id) (
-    PARTITION p0 VALUES LESS THAN (2),    -- id 1
-    PARTITION p1 VALUES LESS THAN (4),  -- id 2-3
-    PARTITION p2 VALUES LESS THAN MAXVALUE
-);
-
-INSERT INTO departments VALUES
-(1,'Sales'),(2,'Marketing'),(3,'Engineering'),(4,'Support');
-
-SELECT e.id, e.fname, s.city, d.name
-FROM employees e
-JOIN stores PARTITION (p1) s ON e.store_id = s.id
-JOIN departments PARTITION (p0) d ON e.department_id = d.id;
-```
-
-查询结果（`employees` 中 `store_id` 在 `p1`（2-3）、`department_id` 在 `p0`（1）的行）：
-
-| id | fname | store_id | city        | department_id | name  |
-|----|-------|----------|-------------|--------------|-------|
-| 7  | Ed    | 2        | Los Angeles | 1            | Sales |
-| 8  | June  | 3        | Chicago     | 1            | Sales |
 

@@ -1,5 +1,5 @@
 ---
-title: thiserror 错误类型定义
+title: thiserror 实用指南
 date: 2026-04-07 08:39:00
 tags:
   - thiserror
