@@ -23,7 +23,7 @@ thiserror = "2"
 
 ### 2.1 错误枚举
 
-`thiserror` 最常见的用法是定义错误 `enum`。以下示例展示一个数据存储的错误类型：
+`thiserror` 最常见的用法是定义错误 `enum`。以下示例展示一个数据存储的错误类型，所有错误消息均为静态字符串：
 
 ```rust
 use thiserror::Error;
@@ -33,11 +33,11 @@ pub enum DataStoreError {
     #[error("data store disconnected")]
     Disconnect,
 
-    #[error("the data for key `{0}` is not available")]
-    Redaction(String),
+    #[error("entry has been redacted")]
+    Redacted,
 
-    #[error("invalid header (expected {expected:?}, found {found:?})")]
-    InvalidHeader { expected: String, found: String },
+    #[error("invalid header")]
+    InvalidHeader,
 
     #[error("unknown data store error")]
     Unknown,
@@ -48,14 +48,14 @@ pub enum DataStoreError {
 
 ```
 data store disconnected
-the data for key `foo` is not available
-invalid header (expected "UTF-8", found "ASCII")
+entry has been redacted
+invalid header
 unknown data store error
 ```
 
 ### 2.2 字段插值语法
 
-`#[error("...")]` 消息模板支持字段插值的简写形式：
+`#[error("...")]` 消息模板支持从错误字段中读取值并嵌入消息。具名字段和元组字段各有简写形式：
 
 | 语法 | 等价展开 |
 |------|---------|
@@ -64,23 +64,49 @@ unknown data store error
 | `#[error("{var:?}")]` | `write!("{:?}", self.var)` |
 | `#[error("{0:?}")]` | `write!("{:?}", self.0)` |
 
-### 2.3 额外格式化参数
-
-除字段插值外，`#[error]` 还支持额外的格式化参数，参数可以是任意表达式。格式为 `#[error("模板", 参数名 = 表达式)]`：
+以下示例同时展示四种语法：
 
 ```rust
 #[derive(Error, Debug)]
 pub enum Error {
-    // extra_args 中引用字段需加前缀：具名字段加 `.`，元组字段用 `.0`
-    #[error("first letter must be lowercase but was {:?}", `first_char(.0)`)]
+    #[error("rebidden: {reason}")]
+    Invalid { reason: String },
+
+    #[error("data for key `{0}` not found")]
+    Missing(String),
+
+    #[error("invalid value: {0:?}")]
+    BadValue(Vec<u8>),
+
+    #[error("position {pos} out of range")]
+    OutOfRange { pos: usize },
+}
+```
+
+运行结果：
+
+```
+rebidden: foo
+data for key `foo` not found
+invalid value: [1, 2, 3]
+position 42 out of range
+```
+
+### 2.3 额外格式化参数
+
+除字段插值外，`#[error]` 还支持在模板后添加额外的格式化参数，参数值可以是任意表达式。具名字段用 `.field` 引用，元组字段用 `.0` 引用：
+
+```rust
+#[derive(Error, Debug)]
+pub enum Error {
+    #[error("first letter must be lowercase but was {:?}", first_char(.0))]
     WrongCase(String),
 
     #[error("invalid index {idx}, expected at least {} and at most {}", .limits.0, .limits.1)]
     OutOfBounds { idx: usize, limits: (usize, usize) },
 
-    // 额外参数 max 为固定常量
-    #[error("invalid rdo_lookahead_frames {0} (expected < {max})", max = i32::MAX)]
-    InvalidLookahead(u32),
+    #[error("invalid lookahead {0} (max = {max})", max = i32::MAX)]
+    BadLookahead(u32),
 }
 ```
 
@@ -89,7 +115,7 @@ pub enum Error {
 ```
 first letter must be lowercase but was 'H'
 invalid index 100, expected at least 0 and at most 50
-invalid rdo_lookahead_frames 42 (expected < 2147483647)
+invalid lookahead 42 (max = 2147483647)
 ```
 
 ## 三、自动 `From` 转换
