@@ -1,5 +1,5 @@
 ---
-title: thiserror 实用指南
+title: thiserror 错误处理
 date: 2026-04-07 08:39:00
 tags:
   - thiserror
