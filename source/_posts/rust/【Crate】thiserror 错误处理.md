@@ -42,16 +42,26 @@ pub enum DataStoreError {
     #[error("unknown data store error")]
     Unknown,
 }
+
+fn main() {
+    let err = DataStoreError::Disconnect;
+    println!("{}", err);
+}
 ```
 
 运行结果：
 
 ```
 data store disconnected
-entry has been redacted
-invalid header
-unknown data store error
 ```
+
+其余变体的输出以此类推：
+
+| 构造方式 | 运行结果 |
+|---------|---------|
+| `DataStoreError::Redacted` | `entry has been redacted` |
+| `DataStoreError::InvalidHeader` | `invalid header` |
+| `DataStoreError::Unknown` | `unknown data store error` |
 
 ### 2.2 字段插值语法
 
@@ -81,13 +91,25 @@ pub enum Error {
     #[error("position {pos} out of range")]
     OutOfRange { pos: usize },
 }
+
+fn main() {
+    let e1 = Error::Invalid { reason: "foo".to_string() };
+    let e2 = Error::Missing("mykey".to_string());
+    let e3 = Error::BadValue(vec![1, 2, 3]);
+    let e4 = Error::OutOfRange { pos: 42 };
+
+    println!("{}", e1);
+    println!("{}", e2);
+    println!("{}", e3);
+    println!("{}", e4);
+}
 ```
 
 运行结果：
 
 ```
 rebidden: foo
-data for key `foo` not found
+data for key `mykey` not found
 invalid value: [1, 2, 3]
 position 42 out of range
 ```
@@ -107,6 +129,20 @@ pub enum Error {
 
     #[error("invalid lookahead {0} (max = {max})", max = i32::MAX)]
     BadLookahead(u32),
+}
+
+fn first_char(s: &str) -> char {
+    s.chars().next().unwrap_or('\0')
+}
+
+fn main() {
+    let e1 = Error::WrongCase("Hello".to_string());
+    let e2 = Error::OutOfBounds { idx: 100, limits: (0, 50) };
+    let e3 = Error::BadLookahead(42);
+
+    println!("{}", e1);
+    println!("{}", e2);
+    println!("{}", e3);
 }
 ```
 
