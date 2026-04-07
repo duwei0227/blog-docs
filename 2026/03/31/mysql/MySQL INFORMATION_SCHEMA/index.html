@@ -1,0 +1,1123 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="一、概述MySQL 的 INFORMATION_SCHEMA 是一个特殊的数据库，充当 MySQL 服务器的元数据（metadata）仓库。它存储了数据库中所有其他数据库的描述信息，包括数据库名、表名、列的数据类型、访问权限等。业界通常也用”数据字典”（data dictionary）或”系统目录”（system catalog）来指代这类信息。 INFORMATION_SCHEMA 的设计遵循">
+  
+  
+  
+  <title>MySQL INFORMATION_SCHEMA - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="MySQL INFORMATION_SCHEMA"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-31 08:56" pubdate>
+          2026年3月31日 早上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.1k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          43 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">MySQL INFORMATION_SCHEMA</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="一、概述"><a href="#一、概述" class="headerlink" title="一、概述"></a>一、概述</h1><p>MySQL 的 <code>INFORMATION_SCHEMA</code> 是一个特殊的数据库，充当 MySQL 服务器的元数据（metadata）仓库。它存储了数据库中所有其他数据库的描述信息，包括数据库名、表名、列的数据类型、访问权限等。业界通常也用”数据字典”（data dictionary）或”系统目录”（system catalog）来指代这类信息。</p>
+<p><code>INFORMATION_SCHEMA</code> 的设计遵循 ANSI&#x2F;ISO SQL:2003 标准 Part 11 Schemata（基础信息模式），意图符合 SQL:2003 核心特性 F021 的要求。与其他 DBMS（如 Oracle、SQL Server）使用 <code>syscat</code>、<code>system</code> 等名称不同，MySQL 采用了标准名称 <code>INFORMATION_SCHEMA</code>。</p>
+<p><code>INFORMATION_SCHEMA</code> 中的表实际上是视图（view），而非基础表（base table）。这带来几个重要特性：</p>
+<ul>
+<li>没有对应的物理文件存储</li>
+<li>无法在其上创建触发器（trigger）</li>
+<li>不存在名为 <code>INFORMATION_SCHEMA</code> 的数据库目录</li>
+<li>所有操作都是只读的，不支持 <code>INSERT</code>、<code>UPDATE</code>、<code>DELETE</code></li>
+</ul>
+<p>以下示例展示了一条典型的元数据查询——列出 <code>mysql</code> 系统数据库中的所有表及其存储引擎：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> TABLE_NAME, TABLE_TYPE, ENGINE<br><span class="hljs-keyword">FROM</span> information_schema.TABLES<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;mysql&#x27;</span><br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> TABLE_NAME<br>LIMIT <span class="hljs-number">10</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs output">+------------+------------+--------+<br>| TABLE_NAME | TABLE_TYPE | ENGINE |<br>+------------+------------+--------+<br>| columns_priv    | BASE TABLE | InnoDB |<br>| component       | BASE TABLE | InnoDB |<br>| db              | BASE TABLE | InnoDB |<br>| default_roles   | BASE TABLE | InnoDB |<br>| engine_cost     | BASE TABLE | InnoDB |<br>| func            | BASE TABLE | MyISAM |<br>| general_log     | BASE TABLE | CSV    |<br>| help_relation   | BASE TABLE | MyISAM |<br>| help_topic      | BASE TABLE | MyISAM |<br>| innodb_index_stats | BASE TABLE | InnoDB |<br>+------------+------------+--------+<br></code></pre></td></tr></table></figure>
+
+<h2 id="1-1-与-SHOW-语句的对比"><a href="#1-1-与-SHOW-语句的对比" class="headerlink" title="1.1 与 SHOW 语句的对比"></a>1.1 与 SHOW 语句的对比</h2><p><code>SELECT ... FROM INFORMATION_SCHEMA</code> 是获取元数据的标准化方式，相比传统的 <code>SHOW</code> 语句有以下优势：</p>
+<ul>
+<li><strong>符合 Codd 规则</strong>：所有访问都在表上进行，符合关系数据库理论</li>
+<li><strong>语法一致</strong>：可使用熟悉的 <code>SELECT</code> 语法，只需学习表和列名</li>
+<li><strong>可编程性</strong>：可自由过滤、排序、拼接、转换结果，适用于构建管理工具</li>
+<li><strong>跨系统兼容</strong>：熟悉 Oracle 数据字典的用户可以平滑迁移</li>
+</ul>
+<p>尽管如此，<code>SHOW</code> 语句因其简洁直观而被广泛使用，实际上两者在底层使用相同的权限检查机制，对某个对象没有适当权限的用户，无论通过哪种方式都无法看到相关信息。</p>
+<h2 id="1-2-字符集注意事项"><a href="#1-2-字符集注意事项" class="headerlink" title="1.2 字符集注意事项"></a>1.2 字符集注意事项</h2><p><code>INFORMATION_SCHEMA</code> 中字符类型列的定义通常是 <code>VARCHAR(N) CHARACTER SET utf8mb3</code>，其中 <code>N</code> 至少为 64。MySQL 使用该字符集的默认排序规则（<code>utf8mb3_general_ci</code>）执行所有搜索、排序、比较和其他字符串操作。</p>
+<p>由于某些 MySQL 对象以文件形式表示，<code>INFORMATION_SCHEMA</code> 字符串列上的搜索可能受到文件系统大小写敏感性的影响。具体行为取决于 <code>lower_case_table_names</code> 系统变量的设置。</p>
+<h2 id="1-3-权限与安全"><a href="#1-3-权限与安全" class="headerlink" title="1.3 权限与安全"></a>1.3 权限与安全</h2><p>大多数 <code>INFORMATION_SCHEMA</code> 表的访问规则是：每个 MySQL 用户都有权访问这些表，但只能看到与该用户拥有适当访问权限的对象对应的行。在某些情况下（例如 <code>ROUTINES</code> 表中的 <code>ROUTINE_DEFINITION</code> 列），权限不足的用户会看到 <code>NULL</code> 值。</p>
+<p>需要特别注意的是，InnoDB 相关的 <code>INFORMATION_SCHEMA</code> 表（名称以 <code>INNODB_</code> 开头的表）要求 <code>PROCESS</code> 权限才能查询。</p>
+<h2 id="1-4-性能考量"><a href="#1-4-性能考量" class="headerlink" title="1.4 性能考量"></a>1.4 性能考量</h2><p>跨多个数据库的 <code>INFORMATION_SCHEMA</code> 查询可能耗时较长并影响性能。建议使用 <code>EXPLAIN</code> 检查查询效率。MySQL 8.4 提供 <code>information_schema_stats_expiry</code> 系统变量控制缓存统计信息的过期时间（默认 86400 秒，即 24 小时）。若将此值设为 0，则始终直接从存储引擎获取最新统计信息。</p>
+<h1 id="二、INFORMATION-SCHEMA-表索引总览"><a href="#二、INFORMATION-SCHEMA-表索引总览" class="headerlink" title="二、INFORMATION_SCHEMA 表索引总览"></a>二、INFORMATION_SCHEMA 表索引总览</h1><p>MySQL 8.4 的 <code>INFORMATION_SCHEMA</code> 共包含约 78 个表（视图），主要分为以下两大类：</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>通用表（General Tables）</td>
+<td>不与特定存储引擎、组件或插件关联的表，约 49 个</td>
+</tr>
+<tr>
+<td>InnoDB 表</td>
+<td>InnoDB 存储引擎专用的元数据表，共 29 个</td>
+</tr>
+</tbody></table>
+<p>实际环境中 <code>INFORMATION_SCHEMA</code> 表数量如下：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-built_in">COUNT</span>(<span class="hljs-operator">*</span>) <span class="hljs-keyword">AS</span> total_tables<br><span class="hljs-keyword">FROM</span> information_schema.TABLES<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;information_schema&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs output">+-------------+<br>| total_tables |<br>+-------------+<br>| 78          |<br>+-------------+<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>⚠️ 注意：<code>INFORMATION_SCHEMA</code> 中的表类型为 <code>SYSTEM VIEW</code>，而非 <code>BASE TABLE</code>。这一区别反映了其作为虚拟视图而非物理基础表的本质。</p>
+</blockquote>
+<h1 id="三、通用表详解"><a href="#三、通用表详解" class="headerlink" title="三、通用表详解"></a>三、通用表详解</h1><p>通用表是 <code>INFORMATION_SCHEMA</code> 的核心组成部分，覆盖了数据库元数据的方方面面。以下按功能模块逐一说明。</p>
+<h3 id="3-1-数据库与模式-SCHEMATA-表"><a href="#3-1-数据库与模式-SCHEMATA-表" class="headerlink" title="3.1 数据库与模式 SCHEMATA 表"></a>3.1 数据库与模式 SCHEMATA 表</h3><p><code>SCHEMATA</code> 表即数据库本身，记录了 MySQL 实例中所有数据库的信息。每个数据库对应一行。</p>
+<p>核心列说明：</p>
+<ul>
+<li><code>CATALOG_NAME</code>：所属目录名，恒为 <code>def</code></li>
+<li><code>SCHEMA_NAME</code>：数据库名</li>
+<li><code>DEFAULT_CHARACTER_SET_NAME</code>：默认字符集</li>
+<li><code>DEFAULT_COLLATION_NAME</code>：默认排序规则</li>
+<li><code>DEFAULT_ENCRYPTION</code>：默认加密设置（MySQL 8.0 新增）</li>
+</ul>
+<p>以下示例查询所有可访问的数据库及其默认排序规则：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> SCHEMA_NAME, DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME<br><span class="hljs-keyword">FROM</span> information_schema.SCHEMATA<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> SCHEMA_NAME;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs output">+--------------------+------------------------+----------------------+<br>| SCHEMA_NAME        | DEFAULT_CHARACTER_SET_ | DEFAULT_COLLATION_   |<br>+--------------------+------------------------+----------------------+<br>| information_schema | utf8mb3                | utf8mb3_general_ci   |<br>| mysql              | utf8mb4                | utf8mb4_0900_ai_ci   |<br>| performance_schema | utf8mb3                | utf8mb3_general_ci   |<br>| sys                | utf8mb4                | utf8mb4_0900_ai_ci   |<br>+--------------------+------------------------+----------------------+<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-1-数据库与模式-SCHEMATA-EXTENSIONS-表"><a href="#3-1-数据库与模式-SCHEMATA-EXTENSIONS-表" class="headerlink" title="3.1 数据库与模式 SCHEMATA_EXTENSIONS 表"></a>3.1 数据库与模式 SCHEMATA_EXTENSIONS 表</h3><p><code>SCHEMATA_EXTENSIONS</code> 表对 <code>SCHEMATA</code> 进行了扩展，添加了 <code>OPTIONS</code> 列，用于指示数据库是否为只读状态。当数据库设置了 <code>READ ONLY = 1</code> 时，<code>OPTIONS</code> 列值为 <code>READ ONLY=1</code>。</p>
+<h3 id="3-2-表结构信息-TABLES-表"><a href="#3-2-表结构信息-TABLES-表" class="headerlink" title="3.2 表结构信息 TABLES 表"></a>3.2 表结构信息 TABLES 表</h3><p><code>TABLES</code> 表是最常用的元数据表之一，记录了所有表和视图的信息。其 <code>ENGINE</code> 列是 MySQL 对标准 SQL 的扩展，标准中并不存在此列。</p>
+<p>核心列说明：</p>
+<ul>
+<li><code>TABLE_SCHEMA</code>：所属数据库名</li>
+<li><code>TABLE_NAME</code>：表名</li>
+<li><code>TABLE_TYPE</code>：<code>BASE TABLE</code>（基础表）或 <code>VIEW</code>（视图）</li>
+<li><code>ENGINE</code>：存储引擎（MySQL 扩展）</li>
+<li><code>TABLE_ROWS</code>：估算的行数（对于 InnoDB 为近似值）</li>
+<li><code>DATA_LENGTH</code>：数据长度（字节）</li>
+<li><code>INDEX_LENGTH</code>：索引长度（字节）</li>
+<li><code>AUTO_INCREMENT</code>：下一个自增值</li>
+</ul>
+<p>以下示例展示如何查询某数据库中所有 InnoDB 表及其占用空间：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> TABLE_NAME, TABLE_ROWS,<br>       FORMAT(DATA_LENGTH <span class="hljs-operator">/</span> <span class="hljs-number">1024</span>, <span class="hljs-number">2</span>) <span class="hljs-keyword">AS</span> data_kb,<br>       FORMAT(INDEX_LENGTH <span class="hljs-operator">/</span> <span class="hljs-number">1024</span>, <span class="hljs-number">2</span>) <span class="hljs-keyword">AS</span> index_kb<br><span class="hljs-keyword">FROM</span> information_schema.TABLES<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;mysql&#x27;</span><br>  <span class="hljs-keyword">AND</span> ENGINE <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;InnoDB&#x27;</span><br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> DATA_LENGTH <span class="hljs-keyword">DESC</span><br>LIMIT <span class="hljs-number">5</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs output">+------------+------------+---------+---------+<br>| TABLE_NAME | TABLE_ROWS | data_kb | index_kb |<br>+------------+------------+---------+---------+<br>| server_cost  | 6      | 16.00   | 0.00    |<br>| engine_cost  | 2      | 16.00   | 0.00    |<br>| servers     | 0      | 16.00   | 0.00    |<br>| default_roles | 0    | 16.00   | 16.00   |<br>| role_edges  | 0      | 16.00   | 16.00   |<br>+------------+------------+---------+---------+<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-2-表结构信息-TABLE-CONSTRAINTS-表"><a href="#3-2-表结构信息-TABLE-CONSTRAINTS-表" class="headerlink" title="3.2 表结构信息 TABLE_CONSTRAINTS 表"></a>3.2 表结构信息 TABLE_CONSTRAINTS 表</h3><p><code>TABLE_CONSTRAINTS</code> 表记录了所有表的约束信息，包括主键（<code>PRIMARY KEY</code>）、唯一键（<code>UNIQUE</code>）、外键（<code>FOREIGN KEY</code>）和检查约束（<code>CHECK</code>）。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> CONSTRAINT_SCHEMA, TABLE_NAME, CONSTRAINT_NAME, CONSTRAINT_TYPE<br><span class="hljs-keyword">FROM</span> information_schema.TABLE_CONSTRAINTS<br><span class="hljs-keyword">WHERE</span> CONSTRAINT_SCHEMA <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;mysql&#x27;</span><br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> TABLE_NAME<br>LIMIT <span class="hljs-number">5</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs output">+---------------+------------+------------------+------------------+<br>| CONSTRAINT_SCH | TABLE_NAME  | CONSTRAINT_NAME  | CONSTRAINT_TYPE |<br>+---------------+------------+------------------+------------------+<br>| mysql         | columns_priv | PRIMARY          | PRIMARY KEY     |<br>| mysql         | component    | PRIMARY          | PRIMARY KEY     |<br>| mysql         | db           | PRIMARY          | PRIMARY KEY     |<br>| mysql         | default_roles | PRIMARY         | PRIMARY KEY     |<br>| mysql         | engine_cost   | PRIMARY          | PRIMARY KEY     |<br>+---------------+------------+------------------+------------------+<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-3-列信息-COLUMNS-表"><a href="#3-3-列信息-COLUMNS-表" class="headerlink" title="3.3 列信息 COLUMNS 表"></a>3.3 列信息 COLUMNS 表</h3><p><code>COLUMNS</code> 表记录了所有表的列定义信息，是另一个使用频率极高的元数据表。</p>
+<p>核心列说明：</p>
+<ul>
+<li><code>ORDINAL_POSITION</code>：列在表中的位置（从 1 开始）</li>
+<li><code>DATA_TYPE</code>：数据类型（纯类型名）</li>
+<li><code>COLUMN_TYPE</code>：完整列类型（含精度、长度等信息）</li>
+<li><code>COLUMN_KEY</code>：<code>PRI</code>（主键）、<code>UNI</code>（唯一键）、<code>MUL</code>（普通索引）</li>
+<li><code>EXTRA</code>：额外属性（<code>auto_increment</code>、<code>STORED GENERATED</code>、<code>VIRTUAL GENERATED</code> 等）</li>
+<li><code>GENERATION_EXPRESSION</code>：生成列的表达式</li>
+</ul>
+<p>以下示例展示如何查询某表的所有列及其类型：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> COLUMN_NAME, DATA_TYPE, COLUMN_TYPE,<br>       IS_NULLABLE, COLUMN_KEY, EXTRA<br><span class="hljs-keyword">FROM</span> information_schema.COLUMNS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;mysql&#x27;</span> <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;user&#x27;</span><br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> ORDINAL_POSITION<br>LIMIT <span class="hljs-number">10</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs output">+------------------------+-------------+------------------+-------------+------------+-------+<br>| COLUMN_NAME            | DATA_TYPE   | COLUMN_TYPE      | IS_NULLABLE | COLUMN_KEY | EXTRA |<br>+------------------------+-------------+------------------+-------------+------------+-------+<br>| Host                   | char        | char(255)        | NO          | PRI        |       |<br>| User                   | char        | char(32)         | NO          | PRI        |       |<br>| Select_priv            | enum        | enum(&#x27;N&#x27;,&#x27;Y&#x27;)    | NO          |            |       |<br>| Insert_priv            | enum        | enum(&#x27;N&#x27;,&#x27;Y&#x27;)    | NO          |            |       |<br>| Update_priv            | enum        | enum(&#x27;N&#x27;,&#x27;Y&#x27;)    | NO          |            |       |<br>| Delete_priv            | enum        | enum(&#x27;N&#x27;,&#x27;Y&#x27;)    | NO          |            |       |<br>| Index_priv             | enum        | enum(&#x27;N&#x27;,&#x27;Y&#x27;)    | NO          |            |       |<br>| Create_priv            | enum        | enum(&#x27;N&#x27;,&#x27;Y&#x27;)    | NO          |            |       |<br>| Drop_priv              | enum        | enum(&#x27;N&#x27;,&#x27;Y&#x27;)    | NO          |            |       |<br>| Reload_priv            | enum        | enum(&#x27;N&#x27;,&#x27;Y&#x27;)    | NO          |            |       |<br>+------------------------+-------------+------------------+-------------+------------+-------+<br></code></pre></td></tr></table></figure>
+
+<p><code>COLUMN_KEY</code> 列的取值含义常引起混淆，以下是详细说明：</p>
+<ul>
+<li><strong>空值</strong>：列未建立索引，或仅作为多列非唯一索引的次要列</li>
+<li><code>PRI</code>：列是 <code>PRIMARY KEY</code> 的一部分，或为多列 <code>PRIMARY KEY</code> 中的某一列</li>
+<li><code>UNI</code>：列是 <code>UNIQUE</code> 索引的第一列（注意：可含多个 <code>NULL</code> 值）</li>
+<li><code>MUL</code>：列是普通索引的第一列，该索引允许重复值</li>
+</ul>
+<h3 id="3-4-索引与统计-STATISTICS-表"><a href="#3-4-索引与统计-STATISTICS-表" class="headerlink" title="3.4 索引与统计 STATISTICS 表"></a>3.4 索引与统计 STATISTICS 表</h3><p><code>STATISTICS</code> 表记录了所有表的索引信息。统计信息默认缓存 24 小时，可通过 <code>information_schema_stats_expiry</code> 控制。</p>
+<p>核心列说明：</p>
+<ul>
+<li><code>NON_UNIQUE</code>：索引是否可含重复值（1&#x3D;可以，0&#x3D;不可以）</li>
+<li><code>INDEX_NAME</code>：索引名（主键索引始终为 <code>PRIMARY</code>）</li>
+<li><code>SEQ_IN_INDEX</code>：索引中列的顺序号</li>
+<li><code>COLUMN_NAME</code>：被索引的列名</li>
+<li><code>CARDINALITY</code>：基数估计值（唯一值数量）</li>
+<li><code>INDEX_TYPE</code>：索引类型（<code>BTREE</code>、<code>HASH</code>、<code>FULLTEXT</code>、<code>RTREE</code>）</li>
+<li><code>IS_VISIBLE</code>：索引是否对优化器可见</li>
+</ul>
+<p>以下示例展示如何查看某表的索引详情：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> INDEX_NAME, COLUMN_NAME, SEQ_IN_INDEX,<br>       NON_UNIQUE, <span class="hljs-keyword">COLLATION</span>, INDEX_TYPE, IS_VISIBLE<br><span class="hljs-keyword">FROM</span> information_schema.STATISTICS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;mysql&#x27;</span> <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;db&#x27;</span><br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> INDEX_NAME, SEQ_IN_INDEX;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs output">+-------------+-------------+---------------+-------------+-----------+------------+-------------+<br>| INDEX_NAME  | COLUMN_NAME | SEQ_IN_INDEX  | NON_UNIQUE  | COLLATION | INDEX_TYPE | IS_VISIBLE  |<br>+-------------+-------------+---------------+-------------+------------+------------+-------------+<br>| PRIMARY     | Host        | 1             | 0           | A         | BTREE      | YES         |<br>| PRIMARY     | Db          | 2             | 0           | A         | BTREE      | YES         |<br>| PRIMARY     | User        | 3             | 0           | A         | BTREE      | YES         |<br>| idx_db      | Db          | 1             | 1           | A         | BTREE      | YES         |<br>+-------------+-------------+---------------+-------------+------------+------------+-------------+<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-5-约束键使用-KEY-COLUMN-USAGE-表"><a href="#3-5-约束键使用-KEY-COLUMN-USAGE-表" class="headerlink" title="3.5 约束键使用 KEY_COLUMN_USAGE 表"></a>3.5 约束键使用 KEY_COLUMN_USAGE 表</h3><p><code>KEY_COLUMN_USAGE</code> 表描述了哪些列具有键约束。它提供了比 <code>SHOW INDEX</code> 更丰富的约束上下文信息，包括外键引用的目标表和列。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>CONSTRAINT_NAME</code>：约束名（主键约束名为 <code>PRIMARY</code>）</li>
+<li><code>TABLE_NAME</code>：拥有约束的表</li>
+<li><code>COLUMN_NAME</code>：受约束的列</li>
+<li><code>REFERENCED_TABLE_NAME</code>：被引用的表（仅外键）</li>
+<li><code>REFERENCED_COLUMN_NAME</code>：被引用的列（仅外键）</li>
+</ul>
+<p>以下示例展示如何查询所有主键约束的列信息：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-keyword">DISTINCT</span> kcu.TABLE_SCHEMA, kcu.TABLE_NAME, kcu.COLUMN_NAME,<br>       kcu.CONSTRAINT_NAME, kcu.ORDINAL_POSITION<br><span class="hljs-keyword">FROM</span> information_schema.KEY_COLUMN_USAGE kcu<br><span class="hljs-keyword">JOIN</span> information_schema.TABLE_CONSTRAINTS tc<br>  <span class="hljs-keyword">ON</span> kcu.CONSTRAINT_NAME <span class="hljs-operator">=</span> tc.CONSTRAINT_NAME<br><span class="hljs-keyword">WHERE</span> tc.CONSTRAINT_TYPE <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;PRIMARY KEY&#x27;</span><br>  <span class="hljs-keyword">AND</span> kcu.TABLE_SCHEMA <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;mysql&#x27;</span><br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> kcu.TABLE_NAME, kcu.ORDINAL_POSITION<br>LIMIT <span class="hljs-number">5</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs output">+-------------+--------------+-------------+------------------+-----------------+<br>| TABLE_SCHEMA | TABLE_NAME   | COLUMN_NAME | CONSTRAINT_NAME   | ORDINAL_POSITION |<br>+-------------+--------------+-------------+------------------+-----------------+<br>| mysql        | columns_priv | Host        | PRIMARY           |               1 |<br>| mysql        | columns_priv | User        | PRIMARY           |               2 |<br>| mysql        | columns_priv | Db          | PRIMARY           |               3 |<br>| mysql        | columns_priv | Table_name | PRIMARY           |               4 |<br>| mysql        | columns_priv | Column_name | PRIMARY           |               5 |<br>+-------------+--------------+-------------+------------------+-----------------+<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-5-约束键使用-REFERENTIAL-CONSTRAINTS-表"><a href="#3-5-约束键使用-REFERENTIAL-CONSTRAINTS-表" class="headerlink" title="3.5 约束键使用 REFERENTIAL_CONSTRAINTS 表"></a>3.5 约束键使用 REFERENTIAL_CONSTRAINTS 表</h3><p><code>REFERENTIAL_CONSTRAINTS</code> 表提供外键约束的详细信息，包括级联更新&#x2F;删除行为。以下示例查询某数据库中的所有外键约束及其级联策略：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> CONSTRAINT_NAME, TABLE_NAME, REFERENCED_TABLE_NAME,<br>       UPDATE_RULE, DELETE_RULE<br><span class="hljs-keyword">FROM</span> information_schema.REFERENTIAL_CONSTRAINTS<br><span class="hljs-keyword">WHERE</span> CONSTRAINT_SCHEMA <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;test_charsets&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>💡 当前 <code>mysql</code> 系统数据库中没有用户自定义外键，因此该查询在系统表上返回空结果。在实际业务数据库中，可将 <code>CONSTRAINT_SCHEMA</code> 替换为实际数据库名进行查询。</p>
+</blockquote>
+<h3 id="3-6-分区信息-PARTITIONS-表"><a href="#3-6-分区信息-PARTITIONS-表" class="headerlink" title="3.6 分区信息 PARTITIONS 表"></a>3.6 分区信息 PARTITIONS 表</h3><p><code>PARTITIONS</code> 表记录了分区表的分区和子分区信息。对于非分区表，该表仍然包含一行，但大部分分区相关列为 <code>NULL</code>。</p>
+<p>核心列说明：</p>
+<ul>
+<li><code>PARTITION_NAME</code> &#x2F; <code>SUBPARTITION_NAME</code>：分区&#x2F;子分区名</li>
+<li><code>PARTITION_METHOD</code>：<code>RANGE</code>、<code>LIST</code>、<code>HASH</code>、<code>LINEAR HASH</code>、<code>KEY</code>、<code>LINEAR KEY</code></li>
+<li><code>PARTITION_EXPRESSION</code>：分区表达式</li>
+<li><code>TABLE_ROWS</code>：分区中的行数（InnoDB 分区表为估算值）</li>
+<li><code>DATA_FREE</code>：已分配但未使用的空间</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> PARTITION_NAME, PARTITION_METHOD, PARTITION_EXPRESSION,<br>       TABLE_ROWS, DATA_FREE<br><span class="hljs-keyword">FROM</span> information_schema.PARTITIONS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;mysql&#x27;</span><br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> PARTITION_ORDINAL_POSITION;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs output">+-----------------+------------------+----------------------+------------+----------+<br>| PARTITION_NAME  | PARTITION_METHOD | PARTITION_EXPRESSION | TABLE_ROWS | DATA_FREE |<br>+-----------------+------------------+----------------------+------------+----------+<br>| p_galera_2      | KEY              | node_id              |          0 |   327680 |<br>| p_galera_1      | KEY              | node_id              |          0 |   327680 |<br>| p_galera_0      | KEY              | node_id              |          0 |   327680 |<br>+-----------------+------------------+----------------------+------------+----------+<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-7-存储过程与函数-ROUTINES-表"><a href="#3-7-存储过程与函数-ROUTINES-表" class="headerlink" title="3.7 存储过程与函数 ROUTINES 表"></a>3.7 存储过程与函数 ROUTINES 表</h3><p><code>ROUTINES</code> 表记录了所有存储过程和存储函数的信息。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>ROUTINE_NAME</code>：例程名称</li>
+<li><code>ROUTINE_TYPE</code>：<code>PROCEDURE</code>（存储过程）或 <code>FUNCTION</code>（存储函数）</li>
+<li><code>ROUTINE_DEFINITION</code>：SQL 定义体</li>
+<li><code>IS_DETERMINISTIC</code>：<code>YES</code> 或 <code>NO</code>，指示是否为确定性函数</li>
+<li><code>SQL_DATA_ACCESS</code>：<code>CONTAINS SQL</code>、<code>NO SQL</code>、<code>READS SQL DATA</code>、<code>MODIFIES SQL DATA</code></li>
+<li><code>SECURITY_TYPE</code>：<code>DEFINER</code> 或 <code>INVOKER</code></li>
+</ul>
+<h3 id="3-8-事件调度器-EVENTS-表"><a href="#3-8-事件调度器-EVENTS-表" class="headerlink" title="3.8 事件调度器 EVENTS 表"></a>3.8 事件调度器 EVENTS 表</h3><p><code>EVENTS</code> 表记录了事件调度器（Event Scheduler）中所有事件的信息。事件是按计划在给定时间执行的任务。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>EVENT_NAME</code>：事件名</li>
+<li><code>EVENT_TYPE</code>：<code>ONE TIME</code>（一次性）或 <code>RECURRING</code>（重复）</li>
+<li><code>STATUS</code>：<code>ENABLED</code>、<code>DISABLED</code> 或 <code>REPLICA_SIDE_DISABLED</code></li>
+<li><code>EXECUTE_AT</code>：一次性事件的执行时间</li>
+<li><code>INTERVAL_VALUE</code> &#x2F; <code>INTERVAL_FIELD</code>：重复事件的间隔</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> EVENT_SCHEMA, EVENT_NAME, EVENT_TYPE, STATUS, DEFINER<br><span class="hljs-keyword">FROM</span> information_schema.EVENTS<br><span class="hljs-keyword">WHERE</span> EVENT_SCHEMA <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;mysql&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>💡 当前实例中系统事件调度器（Event Scheduler）默认关闭，因此 <code>mysql</code> 数据库中没有预设事件。以上查询返回空结果。</p>
+</blockquote>
+<h3 id="3-9-视图-VIEWS-表"><a href="#3-9-视图-VIEWS-表" class="headerlink" title="3.9 视图 VIEWS 表"></a>3.9 视图 VIEWS 表</h3><p><code>VIEWS</code> 表记录了所有视图的定义信息，包括视图体、是否可更新、检查选项等。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>TABLE_CATALOG</code>：所属目录名，恒为 <code>def</code></li>
+<li><code>TABLE_SCHEMA</code>：视图所属数据库名</li>
+<li><code>TABLE_NAME</code>：视图名</li>
+<li><code>VIEW_DEFINITION</code>：视图定义（<code>SELECT</code> 语句）</li>
+<li><code>CHECK_OPTION</code>：<code>NONE</code>、<code>CASCADED</code> 或 <code>LOCAL</code>，表示检查选项</li>
+<li><code>IS_UPDATABLE</code>：<code>YES</code> 或 <code>NO</code>，视图是否可更新</li>
+<li><code>DEFINER</code>：定义者（<code>&#39;user_name&#39;@&#39;host_name&#39;</code> 格式）</li>
+<li><code>SECURITY_TYPE</code>：<code>DEFINER</code> 或 <code>INVOKER</code></li>
+<li><code>CHARACTER_SET_CLIENT</code>：定义视图时的字符集</li>
+<li><code>COLLATION_CONNECTION</code>：定义视图时的排序规则</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> TABLE_SCHEMA, TABLE_NAME, CHECK_OPTION,<br>       IS_UPDATABLE, DEFINER, SECURITY_TYPE<br><span class="hljs-keyword">FROM</span> information_schema.VIEWS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;sys&#x27;</span><br>LIMIT <span class="hljs-number">3</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs output">+-------------+-----------------------------+---------------+---------------+-------------------------+---------------+<br>| TABLE_SCHEMA | TABLE_NAME                  | CHECK_OPTION | IS_UPDATABLE | DEFINER                 | SECURITY_TYPE |<br>+-------------+-----------------------------+---------------+---------------+-------------------------+---------------+<br>| sys         | host_summary                | NONE         | NO           | mysql.sys@localhost     | INVOKER       |<br>| sys         | host_summary_by_file_io     | NONE         | NO           | mysql.sys@localhost     | INVOKER       |<br>| sys         | host_summary_by_file_io_type | NONE         | YES          | mysql.sys@localhost     | INVOKER       |<br>+-------------+-----------------------------+---------------+---------------+-------------------------+---------------+<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-10-字符集与排序规则-CHARACTER-SETS-表"><a href="#3-10-字符集与排序规则-CHARACTER-SETS-表" class="headerlink" title="3.10 字符集与排序规则 CHARACTER_SETS 表"></a>3.10 字符集与排序规则 CHARACTER_SETS 表</h3><p><code>CHARACTER_SETS</code> 表列出了 MySQL 支持的所有字符集，包括字符集名、默认排序规则、描述和最大长度。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>CHARACTER_SET_NAME</code>：字符集名</li>
+<li><code>DEFAULT_COLLATE_NAME</code>：默认排序规则名</li>
+<li><code>DESCRIPTION</code>：描述</li>
+<li><code>MAXLEN</code>：最大字节长度</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> CHARACTER_SET_NAME, DEFAULT_COLLATE_NAME, DESCRIPTION, MAXLEN<br><span class="hljs-keyword">FROM</span> information_schema.CHARACTER_SETS<br><span class="hljs-keyword">WHERE</span> CHARACTER_SET_NAME <span class="hljs-keyword">IN</span> (<span class="hljs-string">&#x27;utf8mb4&#x27;</span>, <span class="hljs-string">&#x27;latin1&#x27;</span>, <span class="hljs-string">&#x27;gbk&#x27;</span>, <span class="hljs-string">&#x27;utf8mb3&#x27;</span>)<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> CHARACTER_SET_NAME;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs output">+--------------------+------------------------+--------------------------------+--------+<br>| CHARACTER_SET_NAME | DEFAULT_COLLATE_NAME   | DESCRIPTION                    | MAXLEN |<br>+--------------------+------------------------+--------------------------------+--------+<br>| gbk                | gbk_chinese_ci         | GBK Simplified Chinese         |      2 |<br>| latin1             | latin1_swedish_ci      | cp1252 West European           |      1 |<br>| utf8mb3            | utf8mb3_general_ci     | UTF-8 Unicode                  |      3 |<br>| utf8mb4            | utf8mb4_0900_ai_ci     | UTF-8 Unicode                  |      4 |<br>+--------------------+------------------------+--------------------------------+--------+<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-11-字符集与排序规则-COLLATIONS-表"><a href="#3-11-字符集与排序规则-COLLATIONS-表" class="headerlink" title="3.11 字符集与排序规则 COLLATIONS 表"></a>3.11 字符集与排序规则 COLLATIONS 表</h3><p><code>COLLATIONS</code> 表列出了所有排序规则及其属性，包括是否为默认排序规则、是否编译进服务器、排序长度和填充属性。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>COLLATION_NAME</code>：排序规则名</li>
+<li><code>CHARACTER_SET_NAME</code>：所属字符集</li>
+<li><code>ID</code>：排序规则 ID</li>
+<li><code>IS_DEFAULT</code>：是否为该字符集默认排序规则</li>
+<li><code>IS_COMPILED</code>：是否编译进服务器</li>
+<li><code>SORTLEN</code>：排序长度</li>
+<li><code>PAD_ATTRIBUTE</code>：<code>PAD SPACE</code> 或 <code>NO PAD</code></li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> COLLATION_NAME, CHARACTER_SET_NAME,<br>       ID, IS_DEFAULT, IS_COMPILED, SORTLEN, PAD_ATTRIBUTE<br><span class="hljs-keyword">FROM</span> information_schema.COLLATIONS<br><span class="hljs-keyword">WHERE</span> CHARACTER_SET_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;utf8mb4&#x27;</span><br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> COLLATION_NAME<br>LIMIT <span class="hljs-number">5</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs output">+----------------------+--------------------+------+------------+-------------+---------+--------------+<br>| COLLATION_NAME       | CHARACTER_SET_NAME | ID   | IS_DEFAULT | IS_COMPILED | SORTLEN | PAD_ATTRIBUTE |<br>+----------------------+--------------------+------+------------+-------------+---------+--------------+<br>| utf8mb4_0900_ai_ci   | utf8mb4            |  255 | Yes        | Yes         |       0 | NO PAD        |<br>| utf8mb4_0900_as_ci   | utf8mb4            |  305 |            | Yes         |       0 | NO PAD        |<br>| utf8mb4_0900_as_cs   | utf8mb4            |  278 |            | Yes         |       0 | NO PAD        |<br>| utf8mb4_0900_bin    | utf8mb4            |  309 |            | Yes         |       1 | NO PAD        |<br>| utf8mb4_bg_0900_ai_ci| utf8mb4            |  318 |            | Yes         |       0 | NO PAD        |<br>+----------------------+--------------------+------+------------+-------------+---------+--------------+<br></code></pre></td></tr></table></figure>
+
+<p>这里需要注意 <code>PAD_ATTRIBUTE</code> 列的两个取值：<code>PAD SPACE</code> 表示排序比较时考虑尾部空格（<code>utf8mb4_general_ci</code> 等旧排序规则），而 <code>NO PAD</code> 表示尾部空格在比较中被忽略（<code>utf8mb4_0900_ai_ci</code> 等 MySQL 8.0 新排序规则）。</p>
+<h3 id="3-12-插件-PLUGINS-表"><a href="#3-12-插件-PLUGINS-表" class="headerlink" title="3.12 插件 PLUGINS 表"></a>3.12 插件 PLUGINS 表</h3><p><code>PLUGINS</code> 表记录了服务器已安装的所有插件信息，包括插件名、类型、状态、加载方式等。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>PLUGIN_NAME</code>：插件名</li>
+<li><code>PLUGIN_VERSION</code>：插件版本</li>
+<li><code>PLUGIN_STATUS</code>：状态（<code>ACTIVE</code>、<code>INACTIVE</code> 等）</li>
+<li><code>PLUGIN_TYPE</code>：类型（<code>STORAGE ENGINE</code>、<code>AUTHENTICATION</code> 等）</li>
+<li><code>PLUGIN_LIBRARY</code>：共享库文件名（可为 <code>NULL</code> 表示内置）</li>
+<li><code>PLUGIN_AUTHOR</code>：作者</li>
+<li><code>PLUGIN_DESCRIPTION</code>：描述</li>
+<li><code>PLUGIN_LICENSE</code>：许可证</li>
+<li><code>LOAD_OPTION</code>：<code>ON</code>、<code>OFF</code> 或 <code>FORCE</code></li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> PLUGIN_NAME, PLUGIN_TYPE, PLUGIN_VERSION,<br>       PLUGIN_STATUS, PLUGIN_AUTHOR, LOAD_OPTION<br><span class="hljs-keyword">FROM</span> information_schema.PLUGINS<br><span class="hljs-keyword">WHERE</span> PLUGIN_TYPE <span class="hljs-keyword">IN</span> (<span class="hljs-string">&#x27;STORAGE ENGINE&#x27;</span>, <span class="hljs-string">&#x27;AUTHENTICATION&#x27;</span>)<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> PLUGIN_TYPE, PLUGIN_NAME;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs output">+-------------------------+------------------+----------------+---------------+------------------+------------+<br>| PLUGIN_NAME             | PLUGIN_TYPE      | PLUGIN_VERSION | PLUGIN_STATUS | PLUGIN_AUTHOR    | LOAD_OPTION |<br>+-------------------------+------------------+----------------+---------------+------------------+------------+<br>| caching_sha2_password   | AUTHENTICATION   | 1.0            | ACTIVE        | Oracle Corporation | FORCE     |<br>| mysql_native_password   | AUTHENTICATION   | 1.1            | DISABLED      | Oracle Corporation | OFF       |<br>| sha256_password         | AUTHENTICATION   | 1.1            | ACTIVE        | Oracle Corporation | FORCE     |<br>| ARCHIVE                 | STORAGE ENGINE  | 3.0            | ACTIVE        | Oracle Corporation | ON        |<br>| binlog                  | STORAGE ENGINE  | 1.0            | ACTIVE        | Oracle Corporation | FORCE     |<br>| BLACKHOLE               | STORAGE ENGINE  | 1.0            | ACTIVE        | Oracle Corporation | ON        |<br>| CSV                     | STORAGE ENGINE  | 1.0            | ACTIVE        | Oracle Corporation | FORCE     |<br>| FEDERATED               | STORAGE ENGINE  | 1.0            | DISABLED      | Oracle Corporation | OFF       |<br>| InnoDB                  | STORAGE ENGINE  | 8.4            | ACTIVE        | Oracle Corporation | FORCE     |<br>| MEMORY                  | STORAGE ENGINE  | 1.0            | ACTIVE        | Oracle Corporation | ON        |<br>| MRG_MYISAM              | STORAGE ENGINE  | 1.0            | ACTIVE        | Oracle Corporation | ON        |<br>| MyISAM                  | STORAGE ENGINE  | 1.0            | ACTIVE        | Oracle Corporation | ON        |<br>| ndbcluster              | STORAGE ENGINE  | 1.0            | DISABLED      | Oracle Corporation | OFF       |<br>| ndbinfo                 | STORAGE ENGINE  | 0.1            | DISABLED      | Oracle Corporation | OFF       |<br>| PERFORMANCE_SCHEMA      | STORAGE ENGINE  | 0.1            | ACTIVE        | Oracle Corporation | FORCE     |<br>| TempTable               | STORAGE ENGINE  | 1.0            | ACTIVE        | Oracle Corporation | FORCE     |<br>+-------------------------+------------------+----------------+---------------+------------------+------------+<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-13-存储引擎-ENGINES-表"><a href="#3-13-存储引擎-ENGINES-表" class="headerlink" title="3.13 存储引擎 ENGINES 表"></a>3.13 存储引擎 ENGINES 表</h3><p><code>ENGINES</code> 表列出 MySQL 支持的所有存储引擎及其属性。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>ENGINE</code>：存储引擎的名称，如 <code>InnoDB</code>、<code>MyISAM</code>、<code>MEMORY</code>、<code>CSV</code></li>
+<li><code>SUPPORT</code>：服务器对该引擎的支持级别，可能值为 <code>YES</code>（支持且已启用）、<code>DEFAULT</code>（支持且为默认引擎）、<code>NO</code>（不支持）、<code>DISABLED</code>（支持但已禁用）</li>
+<li><code>COMMENT</code>：引擎的简短描述</li>
+<li><code>TRANSACTIONS</code>：是否支持事务，可能值为 <code>YES</code>、<code>NO</code>、<code>NULL</code>（未知）</li>
+<li><code>XA</code>：是否支持 XA 两阶段提交，可能值为 <code>YES</code>、<code>NO</code>、<code>NULL</code>（未知）</li>
+<li><code>SAVEPOINTS</code>：是否支持 <code>SAVEPOINT</code>，可能值为 <code>YES</code>、<code>NO</code>、<code>NULL</code>（未知）</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> ENGINE, SUPPORT, COMMENT, TRANSACTIONS, XA, SAVEPOINTS<br><span class="hljs-keyword">FROM</span> information_schema.ENGINES<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> SUPPORT <span class="hljs-keyword">DESC</span>, ENGINE;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs output">+---------+---------+-------------------------------------------+---------------+----+-------------+<br>| ENGINE  | SUPPORT | COMMENT                                   | TRANSACTIONS | XA | SAVEPOINTS  |<br>+---------+---------+-------------------------------------------+---------------+----+-------------+<br>| InnoDB  | DEFAULT | Transactional tables with ACID commit...  | YES           | YES| YES         |<br>| MyISAM  | YES     | Non-transactional table...                | NO            | NO | NO          |<br>| MEMORY  | YES     | Hash based, stored in memory...           | NO            | NO | NO          |<br>| CSV     | YES     | CSV storage engine                        | NO            | NO | NO          |<br>| InnoDB  | YES     | Transactional tables with ACID commit...  | YES           | YES| YES         |<br>+---------+---------+-------------------------------------------+---------------+----+-------------+<br></code></pre></td></tr></table></figure>
+
+<h2 id="3-14-权限管理"><a href="#3-14-权限管理" class="headerlink" title="3.14 权限管理"></a>3.14 权限管理</h2><p><code>INFORMATION_SCHEMA</code> 提供了多个与权限相关的表，覆盖了从全局到列级别的完整权限体系：</p>
+<table>
+<thead>
+<tr>
+<th>表名</th>
+<th>级别</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>USER_PRIVILEGES</code></td>
+<td>全局</td>
+<td><code>mysql.user</code></td>
+</tr>
+<tr>
+<td><code>SCHEMA_PRIVILEGES</code></td>
+<td>数据库</td>
+<td><code>mysql.db</code></td>
+</tr>
+<tr>
+<td><code>TABLE_PRIVILEGES</code></td>
+<td>表</td>
+<td><code>mysql.tables_priv</code></td>
+</tr>
+<tr>
+<td><code>COLUMN_PRIVILEGES</code></td>
+<td>列</td>
+<td><code>mysql.columns_priv</code></td>
+</tr>
+</tbody></table>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> GRANTEE, TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME,<br>       PRIVILEGE_TYPE, IS_GRANTABLE<br><span class="hljs-keyword">FROM</span> information_schema.COLUMN_PRIVILEGES<br>LIMIT <span class="hljs-number">5</span>;<br></code></pre></td></tr></table></figure>
+
+<h2 id="3-15-角色与角色授权"><a href="#3-15-角色与角色授权" class="headerlink" title="3.15 角色与角色授权"></a>3.15 角色与角色授权</h2><p>MySQL 8.0 引入的角色功能通过以下 <code>INFORMATION_SCHEMA</code> 表进行管理：</p>
+<table>
+<thead>
+<tr>
+<th>表名</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>APPLICABLE_ROLES</code></td>
+<td>当前用户可用的所有角色</td>
+</tr>
+<tr>
+<td><code>ENABLED_ROLES</code></td>
+<td>当前会话中已启用的角色</td>
+</tr>
+<tr>
+<td><code>ADMINISTRABLE_ROLE_AUTHORIZATIONS</code></td>
+<td>当前用户可授权给他人的角色</td>
+</tr>
+<tr>
+<td><code>ROLE_COLUMN_GRANTS</code></td>
+<td>当前启用角色的列级权限</td>
+</tr>
+<tr>
+<td><code>ROLE_ROUTINE_GRANTS</code></td>
+<td>当前启用角色的例程级权限</td>
+</tr>
+<tr>
+<td><code>ROLE_TABLE_GRANTS</code></td>
+<td>当前启用角色的表级权限</td>
+</tr>
+</tbody></table>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> ROLE_NAME, IS_DEFAULT, IS_MANDATORY<br><span class="hljs-keyword">FROM</span> information_schema.ENABLED_ROLES;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-14-资源组-RESOURCE-GROUPS-表"><a href="#3-14-资源组-RESOURCE-GROUPS-表" class="headerlink" title="3.14 资源组 RESOURCE_GROUPS 表"></a>3.14 资源组 RESOURCE_GROUPS 表</h3><p>MySQL 8.0 引入的资源组功能允许将线程绑定到特定 CPU 或设置优先级。该表记录了所有资源组的信息。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>RESOURCE_GROUP_NAME</code>：资源组名</li>
+<li><code>RESOURCE_GROUP_TYPE</code>：<code>SYSTEM</code> 或 <code>USER</code></li>
+<li><code>RESOURCE_GROUP_ENABLED</code>：<code>0</code>（禁用）或 <code>1</code>（启用）</li>
+<li><code>VCPU_IDS</code>：分配的 CPU ID 列表</li>
+<li><code>THREAD_PRIORITY</code>：线程优先级（系统资源组为负数，用户资源组为正数）</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> RESOURCE_GROUP_NAME, RESOURCE_GROUP_TYPE,<br>       RESOURCE_GROUP_ENABLED, VCPU_IDS, THREAD_PRIORITY<br><span class="hljs-keyword">FROM</span> information_schema.RESOURCE_GROUPS;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs output">+----------------------+----------------------+----------------------+-----------+----------------+<br>| RESOURCE_GROUP_NAME | RESOURCE_GROUP_TYPE  | RESOURCE_GROUP_ENABLD | VCPU_IDS  | THREAD_PRIORITY |<br>+----------------------+----------------------+----------------------+-----------+----------------+<br>| SYS_default         | SYSTEM               |                    1 | 0-7       |               0 |<br>| USR_default         | USER                 |                    1 | 0-7       |               0 |<br>+----------------------+----------------------+----------------------+-----------+----------------+<br></code></pre></td></tr></table></figure>
+
+<p><code>THREAD_PRIORITY</code> 的取值范围中，负数表示高优先级（系统资源组从 -20 到 0），正数表示低优先级（用户资源组从 0 到 19）。</p>
+<h3 id="3-15-文件与表空间-FILES-表"><a href="#3-15-文件与表空间-FILES-表" class="headerlink" title="3.15 文件与表空间 FILES 表"></a>3.15 文件与表空间 FILES 表</h3><p><code>FILES</code> 表记录了 MySQL 表空间数据存储所在的文件信息，包括 InnoDB 数据文件、NDB Cluster 磁盘数据文件等。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>FILE_ID</code>：表空间 ID（InnoDB）</li>
+<li><code>FILE_NAME</code>：数据文件名（含路径）</li>
+<li><code>FILE_TYPE</code>：<code>TABLESPACE</code>（表空间文件）、<code>TEMPORARY</code>（临时表空间）、<code>UNDO LOG</code>（回滚段表空间）</li>
+<li><code>TABLESPACE_NAME</code>：所属表空间名</li>
+<li><code>FREE_EXTENTS</code> &#x2F; <code>TOTAL_EXTENTS</code>：空闲&#x2F;总 extent 数量</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> FILE_ID, FILE_NAME, FILE_TYPE, TABLESPACE_NAME,<br>       FREE_EXTENTS, TOTAL_EXTENTS, DATA_FREE<br><span class="hljs-keyword">FROM</span> information_schema.FILES<br><span class="hljs-keyword">WHERE</span> ENGINE <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;InnoDB&#x27;</span><br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> FILE_ID;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs output">+--------+---------------------------+-------------+------------------+-------------+----------------+----------+<br>| FILE_ID | FILE_NAME                 | FILE_TYPE   | TABLESPACE_NAME  | FREE_EXTENTS | TOTAL_EXTENTS | DATA_FREE |<br>+--------+---------------------------+-------------+------------------+-------------+----------------+----------+<br>|      0 | innodb_system             | TABLESPACE  | innodb_system    |             |               |    65536 |<br>|      1 | ./mysql.ibd               | TABLESPACE  | mysql             |        4096 |           4096 |  67108864 |<br>...<br>+--------+---------------------------+-------------+------------------+-------------+----------------+----------+<br></code></pre></td></tr></table></figure>
+<h1 id="四、InnoDB-专用表详解"><a href="#四、InnoDB-专用表详解" class="headerlink" title="四、InnoDB 专用表详解"></a>四、InnoDB 专用表详解</h1><p>InnoDB <code>INFORMATION_SCHEMA</code> 表（共 29 个）提供了 InnoDB 存储引擎内部的元数据和运行时状态信息。这些表对于理解 InnoDB 内部结构、诊断性能和锁问题至关重要。</p>
+<blockquote>
+<p>⚠️ 注意：查询所有 InnoDB 相关的 <code>INFORMATION_SCHEMA</code> 表需要 <code>PROCESS</code> 权限。</p>
+</blockquote>
+<h2 id="4-1-表结构元数据"><a href="#4-1-表结构元数据" class="headerlink" title="4.1 表结构元数据"></a>4.1 表结构元数据</h2><h3 id="4-1-1-INNODB-TABLES-表"><a href="#4-1-1-INNODB-TABLES-表" class="headerlink" title="4.1.1 INNODB_TABLES 表"></a>4.1.1 INNODB_TABLES 表</h3><p><code>INNODB_TABLES</code> 表记录了 InnoDB 表的元数据，存储了表级别的内部信息。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>TABLE_ID</code>：表 ID，在实例内唯一</li>
+<li><code>NAME</code>：表名，格式为 <code>schema_name/table_name</code></li>
+<li><code>FLAG</code>：表格式和存储特性的位级信息</li>
+<li><code>N_COLS</code>：列数（含 3 个隐藏列：<code>DB_ROW_ID</code>、<code>DB_TRX_ID</code>、<code>DB_ROLL_PTR</code>）</li>
+<li><code>SPACE</code>：表所在表空间 ID</li>
+<li><code>ROW_FORMAT</code>：行格式（<code>Dynamic</code>、<code>Compressed</code>、<code>Compact</code>、<code>Redundant</code>）</li>
+<li><code>SPACE_TYPE</code>：<code>System</code>（系统表空间）、<code>General</code>（通用表空间）、<code>Single</code>（独立表空间）</li>
+<li><code>TOTAL_ROW_VERSIONS</code>：ALGORITHM&#x3D;INSTANT 操作后的行版本计数</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> TABLE_ID, NAME, FLAG, N_COLS, SPACE,<br>       ROW_FORMAT, SPACE_TYPE, TOTAL_ROW_VERSIONS<br><span class="hljs-keyword">FROM</span> information_schema.INNODB_TABLES<br><span class="hljs-keyword">WHERE</span> NAME <span class="hljs-keyword">LIKE</span> <span class="hljs-string">&#x27;mysql/%&#x27;</span><br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> TABLE_ID<br>LIMIT <span class="hljs-number">5</span>;<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-1-2-INNODB-COLUMNS-表"><a href="#4-1-2-INNODB-COLUMNS-表" class="headerlink" title="4.1.2 INNODB_COLUMNS 表"></a>4.1.2 INNODB_COLUMNS 表</h3><p><code>INNODB_COLUMNS</code> 表记录了 InnoDB 表列的内部元数据。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>TABLE_ID</code>：所属表的 ID</li>
+<li><code>NAME</code>：列名</li>
+<li><code>POS</code>：列在表中的位置（从 0 开始）</li>
+<li><code>MTYPE</code>：主类型，数值含义见下方表格</li>
+<li><code>PRTYPE</code>：<code>MySQL</code> 精确类型，以二进制位表示含义：<ul>
+<li>低 1 位：可空性（0&#x3D;非 NULL，1&#x3D;NULL）</li>
+<li>中间 8 位：<code>MySQL</code> 数据类型代码</li>
+<li>高位：字符集代码</li>
+</ul>
+</li>
+<li><code>LEN</code>：列长度（字节）</li>
+</ul>
+<p>MTYPE 值含义：</p>
+<table>
+<thead>
+<tr>
+<th>值</th>
+<th>类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>VARCHAR</td>
+</tr>
+<tr>
+<td>2</td>
+<td>CHAR</td>
+</tr>
+<tr>
+<td>6</td>
+<td>INT（包括 TINYINT、SMALLINT、MEDIUMINT、INT、BIGINT）</td>
+</tr>
+<tr>
+<td>9</td>
+<td>FLOAT</td>
+</tr>
+<tr>
+<td>10</td>
+<td>DOUBLE</td>
+</tr>
+<tr>
+<td>11</td>
+<td>DECIMAL</td>
+</tr>
+</tbody></table>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> TABLE_ID, NAME, POS, MTYPE, PRTYPE, LEN<br><span class="hljs-keyword">FROM</span> information_schema.INNODB_COLUMNS<br><span class="hljs-keyword">WHERE</span> TABLE_ID <span class="hljs-operator">=</span> (<br>    <span class="hljs-keyword">SELECT</span> TABLE_ID <span class="hljs-keyword">FROM</span> information_schema.INNODB_TABLES<br>    <span class="hljs-keyword">WHERE</span> NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;mysql/user&#x27;</span><br>)<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> POS;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs output">+---------+--------+-----+-------+---------+-----+<br>| TABLE_ID | NAME   | POS | MTYPE | PRTYPE  | LEN |<br>+---------+--------+-----+-------+---------+-----+<br>|    1026 | Host   |   0 |    13 |  721406 | 255 |<br>|    1026 | User   |   1 |    13 | 5439998 |  96 |<br>|    1026 | Select_priv | 2 |  6 |  1022 |   1 |<br>|    1026 | Insert_priv | 3 |  6 |  1022 |   1 |<br>|    1026 | Update_priv | 4 |  6 |  1022 |   1 |<br>+---------+--------+-----+-------+---------+-----+<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-1-3-INNODB-INDEXES-表"><a href="#4-1-3-INNODB-INDEXES-表" class="headerlink" title="4.1.3 INNODB_INDEXES 表"></a>4.1.3 INNODB_INDEXES 表</h3><p><code>INNODB_INDEXES</code> 表记录了 InnoDB 索引的元数据。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>INDEX_ID</code>：索引 ID</li>
+<li><code>NAME</code>：索引名（主键索引为 <code>GEN_CLUST_INDEX</code>）</li>
+<li><code>TABLE_ID</code>：所属表的 ID</li>
+<li><code>TYPE</code>：索引类型（0&#x3D;二级索引, 1&#x3D;唯一索引, 2&#x3D;主键索引等）</li>
+<li><code>N_FIELDS</code>：索引中列的数量</li>
+<li><code>PAGE_NO</code>：B-tree 页编号</li>
+<li><code>SPACE</code>：表空间 ID</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> INDEX_ID, NAME, TABLE_ID, TYPE, N_FIELDS, SPACE<br><span class="hljs-keyword">FROM</span> information_schema.INNODB_INDEXES<br><span class="hljs-keyword">WHERE</span> TABLE_ID <span class="hljs-operator">=</span> (<br>    <span class="hljs-keyword">SELECT</span> TABLE_ID <span class="hljs-keyword">FROM</span> information_schema.INNODB_TABLES<br>    <span class="hljs-keyword">WHERE</span> NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;learn/employees&#x27;</span><br>)<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> INDEX_ID;<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-1-4-INNODB-FIELDS-表"><a href="#4-1-4-INNODB-FIELDS-表" class="headerlink" title="4.1.4 INNODB_FIELDS 表"></a>4.1.4 INNODB_FIELDS 表</h3><p><code>INNODB_FIELDS</code> 表记录了 InnoDB 索引键列的元数据，与 <code>INNODB_INDEXES</code> 表配合使用可以完整还原索引定义。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>INDEX_ID</code>：所属索引 ID</li>
+<li><code>NAME</code>：列名</li>
+<li><code>POS</code>：列在索引中的位置</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> i.NAME <span class="hljs-keyword">AS</span> index_name, f.NAME <span class="hljs-keyword">AS</span> column_name, f.POS <span class="hljs-keyword">AS</span> position<br><span class="hljs-keyword">FROM</span> information_schema.INNODB_FIELDS f<br><span class="hljs-keyword">JOIN</span> information_schema.INNODB_INDEXES i <span class="hljs-keyword">ON</span> f.INDEX_ID <span class="hljs-operator">=</span> i.INDEX_ID<br><span class="hljs-keyword">WHERE</span> i.TABLE_ID <span class="hljs-operator">=</span> (<br>    <span class="hljs-keyword">SELECT</span> TABLE_ID <span class="hljs-keyword">FROM</span> information_schema.INNODB_TABLES<br>    <span class="hljs-keyword">WHERE</span> NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;learn/employees&#x27;</span><br>)<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> f.POS;<br></code></pre></td></tr></table></figure>
+
+<h2 id="4-2-外键元数据"><a href="#4-2-外键元数据" class="headerlink" title="4.2 外键元数据"></a>4.2 外键元数据</h2><h3 id="4-2-1-INNODB-FOREIGN-表"><a href="#4-2-1-INNODB-FOREIGN-表" class="headerlink" title="4.2.1 INNODB_FOREIGN 表"></a>4.2.1 INNODB_FOREIGN 表</h3><p><code>INNODB_FOREIGN</code> 表记录了 InnoDB 外键的元数据。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>ID</code>：外键名（含数据库名前缀）</li>
+<li><code>FOR_NAME</code>：子表名</li>
+<li><code>REF_NAME</code>：父表名</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> ID, FOR_NAME, REF_NAME<br><span class="hljs-keyword">FROM</span> information_schema.INNODB_FOREIGN<br><span class="hljs-keyword">WHERE</span> FOR_NAME <span class="hljs-keyword">LIKE</span> <span class="hljs-string">&#x27;mysql/%&#x27;</span><br>LIMIT <span class="hljs-number">5</span>;<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-2-2-INNODB-FOREIGN-COLS-表"><a href="#4-2-2-INNODB-FOREIGN-COLS-表" class="headerlink" title="4.2.2 INNODB_FOREIGN_COLS 表"></a>4.2.2 INNODB_FOREIGN_COLS 表</h3><p><code>INNODB_FOREIGN_COLS</code> 表记录了外键列的状态信息，补充了 <code>INNODB_FOREIGN</code> 表。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>ID</code>：外键 ID</li>
+<li><code>FOR_COL_NAME</code>：子表列名</li>
+<li><code>REF_COL_NAME</code>：父表列名</li>
+<li><code>POS</code>：列在外键中的位置</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> f.ID <span class="hljs-keyword">AS</span> foreign_key_name,<br>       fc.FOR_COL_NAME <span class="hljs-keyword">AS</span> from_column,<br>       fc.REF_COL_NAME <span class="hljs-keyword">AS</span> referenced_column<br><span class="hljs-keyword">FROM</span> information_schema.INNODB_FOREIGN f<br><span class="hljs-keyword">JOIN</span> information_schema.INNODB_FOREIGN_COLS fc <span class="hljs-keyword">ON</span> f.ID <span class="hljs-operator">=</span> fc.ID<br><span class="hljs-keyword">WHERE</span> f.FOR_NAME <span class="hljs-keyword">LIKE</span> <span class="hljs-string">&#x27;mysql/%&#x27;</span><br>LIMIT <span class="hljs-number">5</span>;<br></code></pre></td></tr></table></figure>
+
+<h2 id="4-3-表空间元数据"><a href="#4-3-表空间元数据" class="headerlink" title="4.3 表空间元数据"></a>4.3 表空间元数据</h2><h3 id="4-3-1-INNODB-TABLESPACES-表"><a href="#4-3-1-INNODB-TABLESPACES-表" class="headerlink" title="4.3.1 INNODB_TABLESPACES 表"></a>4.3.1 INNODB_TABLESPACES 表</h3><p><code>INNODB_TABLESPACES</code> 表记录了 InnoDB 表空间的详细元数据，覆盖文件表空间、通用表空间和回滚表空间。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>SPACE</code>：表空间 ID</li>
+<li><code>NAME</code>：表空间名</li>
+<li><code>FLAG</code>：表空间格式的位级信息</li>
+<li><code>ROW_FORMAT</code>：行格式</li>
+<li><code>PAGE_SIZE</code>：页大小</li>
+<li><code>SPACE_TYPE</code>：<code>System</code>、<code>General</code>、<code>Single</code>、<code>Undo</code></li>
+<li><code>FS_BLOCK_SIZE</code>：文件系统块大小（用于透明页压缩的空洞打孔）</li>
+<li><code>FILE_SIZE</code>：表空间表观大小</li>
+<li><code>ALLOCATED_SIZE</code>：实际分配大小</li>
+<li><code>ENCRYPTION</code>：是否加密</li>
+<li><code>STATE</code>：表空间状态（<code>normal</code>、<code>discarded</code>、<code>corrupted</code>）</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> SPACE, NAME, SPACE_TYPE, ROW_FORMAT,<br>       FILE_SIZE, ALLOCATED_SIZE, ENCRYPTION, STATE<br><span class="hljs-keyword">FROM</span> information_schema.INNODB_TABLESPACES<br><span class="hljs-keyword">WHERE</span> SPACE_TYPE <span class="hljs-keyword">IN</span> (<span class="hljs-string">&#x27;Single&#x27;</span>, <span class="hljs-string">&#x27;General&#x27;</span>)<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> SPACE<br>LIMIT <span class="hljs-number">10</span>;<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-3-2-INNODB-TABLESPACES-BRIEF-表"><a href="#4-3-2-INNODB-TABLESPACES-BRIEF-表" class="headerlink" title="4.3.2 INNODB_TABLESPACES_BRIEF 表"></a>4.3.2 INNODB_TABLESPACES_BRIEF 表</h3><p><code>INNODB_TABLESPACES_BRIEF</code> 表提供了表空间元数据的精简版本，加载速度更快。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>SPACE</code>：表空间 ID</li>
+<li><code>NAME</code>：表空间名</li>
+<li><code>PATH</code>：数据文件路径</li>
+<li><code>FLAG</code>：表空间格式标志</li>
+<li><code>SPACE_TYPE</code>：<code>System</code>、<code>General</code>、<code>Single</code> 等</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> SPACE, NAME, PATH<br><span class="hljs-keyword">FROM</span> information_schema.INNODB_TABLESPACES_BRIEF<br>LIMIT <span class="hljs-number">5</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs output">+-------+------------------+--------------------------+<br>| SPACE | NAME             | PATH                     |<br>+-------+------------------+--------------------------+<br>|    45 | learn/accounts   | ./learn/accounts.ibd     |<br>|    12 | learn/auto_demo  | ./learn/auto_demo.ibd    |<br>|    16 | learn/binary_demo| ./learn/binary_demo.ibd  |<br>|     7 | learn/bit_demo   | ./learn/bit_demo.ibd     |<br>|    17 | learn/blob_demo  | ./learn/blob_demo.ibd    |<br>+-------+------------------+--------------------------+<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-3-3-INNODB-DATAFILES-表"><a href="#4-3-3-INNODB-DATAFILES-表" class="headerlink" title="4.3.3 INNODB_DATAFILES 表"></a>4.3.3 INNODB_DATAFILES 表</h3><p><code>INNODB_DATAFILES</code> 表记录了表空间数据文件的路径信息。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>SPACE</code>：表空间 ID</li>
+<li><code>PATH</code>：数据文件路径</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> SPACE, PATH<br><span class="hljs-keyword">FROM</span> information_schema.INNODB_DATAFILES<br><span class="hljs-keyword">WHERE</span> SPACE <span class="hljs-keyword">IN</span> (<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>)<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> SPACE;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs output">+-------+-----------------------------+<br>| SPACE | PATH                        |<br>+-------+-----------------------------+<br>|     1 | ./sys/sys_config.ibd       |<br>|     2 | ./learn/int_examples.ibd   |<br>|     3 | ./learn/serial_demo.ibd    |<br>+-------+-----------------------------+<br></code></pre></td></tr></table></figure>
+
+<h2 id="4-5-事务与锁"><a href="#4-5-事务与锁" class="headerlink" title="4.5 事务与锁"></a>4.5 事务与锁</h2><h3 id="4-5-1-INNODB-TRX-表"><a href="#4-5-1-INNODB-TRX-表" class="headerlink" title="4.5.1 INNODB_TRX 表"></a>4.5.1 INNODB_TRX 表</h3><p><code>INNODB_TRX</code> 表是最重要的 InnoDB 诊断表之一，提供了当前在 InnoDB 中执行的所有事务的详细信息。</p>
+<p>关键列说明：</p>
+<ul>
+<li><code>TRX_ID</code>：事务 ID（只读非锁定事务不生成）</li>
+<li><code>TRX_STATE</code>：事务状态（<code>RUNNING</code>、<code>LOCK WAIT</code>、<code>ROLLING BACK</code>、<code>COMMITTING</code>）</li>
+<li><code>TRX_STARTED</code>：事务开始时间</li>
+<li><code>TRX_MYSQL_THREAD_ID</code>：MySQL 线程 ID</li>
+<li><code>TRX_QUERY</code>：正在执行的 SQL 语句</li>
+<li><code>TRX_OPERATION_STATE</code>：当前操作状态</li>
+<li><code>TRX_ROWS_LOCKED</code>：锁定行数（含删除标记行）</li>
+<li><code>TRX_ROWS_MODIFIED</code>：修改行数</li>
+</ul>
+<p>以下示例查询当前所有运行中的事务及其执行的语句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> TRX_ID, TRX_STATE, TRX_STARTED,<br>       TRX_MYSQL_THREAD_ID <span class="hljs-keyword">AS</span> thread_id,<br>       <span class="hljs-keyword">LEFT</span>(TRX_QUERY, <span class="hljs-number">50</span>) <span class="hljs-keyword">AS</span> query<br><span class="hljs-keyword">FROM</span> information_schema.INNODB_TRX<br><span class="hljs-keyword">WHERE</span> TRX_STATE <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;RUNNING&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>💡 诊断技巧：<code>INNODB_TRX</code> 与 Performance Schema 的 <code>data_locks</code> 表可以通过 <code>TRX_REQUESTED_LOCK_ID</code> 和 <code>ENGINE_LOCK_ID</code> 进行关联，获取完整的锁等待信息。</p>
+</blockquote>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/MySQL/" class="category-chain-item">MySQL</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/INFORMATION-SCHEMA/" class="print-no-link">#INFORMATION_SCHEMA</a>
+      
+        <a href="/tags/%E5%85%83%E6%95%B0%E6%8D%AE/" class="print-no-link">#元数据</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E5%AD%97%E5%85%B8/" class="print-no-link">#数据字典</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/04/01/mysql/MySQL%20%E5%88%86%E5%8C%BA/" title="MySQL 分区">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">MySQL 分区</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/03/30/mysql/MySQL%20%E6%97%A5%E5%BF%97%E7%B1%BB%E5%9E%8B%E4%B8%8E%E9%85%8D%E7%BD%AE/" title="MySQL 日志类型与配置">
+                        <span class="hidden-mobile">MySQL 日志类型与配置</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

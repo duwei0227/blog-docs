@@ -1,0 +1,898 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="一、字符集与排序规则概述字符集（Character Set）定义了 MySQL 可以存储的字符集合，排序规则（Collation）则定义了字符之间的比较和排序规则。每个字符集对应一个或多个排序规则。 MySQL 8.4 默认字符集为 utf8mb4，默认排序规则为 utf8mb4_0900_ai_ci。查看所有可用字符集： 1SHOW CHARACTER SET;  12345678+------">
+  
+  
+  
+  <title>MySQL 字符集与排序规则 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="MySQL 字符集与排序规则"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-30 08:30" pubdate>
+          2026年3月30日 早上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.3k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          19 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">MySQL 字符集与排序规则</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="一、字符集与排序规则概述"><a href="#一、字符集与排序规则概述" class="headerlink" title="一、字符集与排序规则概述"></a>一、字符集与排序规则概述</h2><p>字符集（<code>Character Set</code>）定义了 MySQL 可以存储的字符集合，排序规则（<code>Collation</code>）则定义了字符之间的比较和排序规则。每个字符集对应一个或多个排序规则。</p>
+<p>MySQL 8.4 默认字符集为 <code>utf8mb4</code>，默认排序规则为 <code>utf8mb4_0900_ai_ci</code>。查看所有可用字符集：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SHOW</span> <span class="hljs-keyword">CHARACTER SET</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs gherkin">+----------+---------------------------------+---------------------+--------+<br>|<span class="hljs-string"> Charset  </span>|<span class="hljs-string"> Description                     </span>|<span class="hljs-string"> Default collation   </span>|<span class="hljs-string"> Maxlen </span>|<br>+----------+---------------------------------+---------------------+--------+<br>|<span class="hljs-string"> utf8mb4  </span>|<span class="hljs-string"> UTF-8 Unicode                  </span>|<span class="hljs-string"> utf8mb4_0900_ai_ci </span>|<span class="hljs-string">      4 </span>|<br>|<span class="hljs-string"> utf8mb3  </span>|<span class="hljs-string"> UTF-8 Unicode (deprecated)     </span>|<span class="hljs-string"> utf8mb3_general_ci </span>|<span class="hljs-string">      3 </span>|<br>|<span class="hljs-string"> latin1   </span>|<span class="hljs-string"> cp1252 West European           </span>|<span class="hljs-string"> latin1_swedish_ci  </span>|<span class="hljs-string">      1 </span>|<br>|<span class="hljs-string"> ...      </span>|<span class="hljs-string"> ...                            </span>|<span class="hljs-string"> ...                 </span>|<span class="hljs-string"> ...    </span>|<br>+----------+---------------------------------+---------------------+--------+<br></code></pre></td></tr></table></figure>
+
+<p><strong>验证：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> @<span class="hljs-variable">@character_set_server</span>, @<span class="hljs-variable">@collation_server</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+---------------------------+</span>----------------------------+<br><span class="hljs-section">| @@character_set_server    | @@collation_server         |</span><br><span class="hljs-section">+---------------------------+----------------------------+</span><br><span class="hljs-section">| utf8mb4                   | utf8mb4_0900_ai_ci        |</span><br><span class="hljs-section">+---------------------------+----------------------------+</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="核心概念：字符集与排序规则的关系"><a href="#核心概念：字符集与排序规则的关系" class="headerlink" title="核心概念：字符集与排序规则的关系"></a>核心概念：字符集与排序规则的关系</h3><p>每个排序规则只属于一个字符集。尝试混用会导致错误：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> _latin1 <span class="hljs-string">&#x27;x&#x27;</span> <span class="hljs-keyword">COLLATE</span> latin2_bin;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs subunit"><span class="hljs-keyword">ERROR </span>1253 (42000): COLLATION &#x27;latin2_bin&#x27; is not valid<br>for CHARACTER SET &#x27;latin1&#x27;<br></code></pre></td></tr></table></figure>
+
+<p><strong>验证：</strong> 执行上述语句返回 <code>ERROR 1253</code>，确认字符集与排序规则必须匹配。</p>
+<h2 id="二、MySQL-中的-Unicode-支持"><a href="#二、MySQL-中的-Unicode-支持" class="headerlink" title="二、MySQL 中的 Unicode 支持"></a>二、MySQL 中的 <code>Unicode</code> 支持</h2><p><code>Unicode</code> 字符集支持 <code>BMP</code>（<code>Basic Multilingual Plane</code>，即 <code>U+0000</code> 至 <code>U+FFFF</code>）字符和补充字符（<code>U+10000</code> 及以上）。MySQL 8.4 支持的 <code>Unicode</code> 字符集如下：</p>
+<table>
+<thead>
+<tr>
+<th>字符集</th>
+<th>支持范围</th>
+<th>每字符存储空间</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>utf8mb4</code></td>
+<td>BMP + 补充字符</td>
+<td>1-4 字节</td>
+<td>推荐使用</td>
+</tr>
+<tr>
+<td><code>utf8mb3</code></td>
+<td>仅 BMP</td>
+<td>1-3 字节</td>
+<td>已弃用</td>
+</tr>
+<tr>
+<td><code>utf8</code></td>
+<td>仅 BMP</td>
+<td>1-3 字节</td>
+<td><code>utf8mb3</code> 的别名，已弃用</td>
+</tr>
+<tr>
+<td><code>ucs2</code></td>
+<td>仅 BMP</td>
+<td>2 字节固定</td>
+<td>已弃用</td>
+</tr>
+<tr>
+<td><code>utf16</code></td>
+<td>BMP + 补充字符</td>
+<td>2 或 4 字节</td>
+<td>已弃用</td>
+</tr>
+<tr>
+<td><code>utf16le</code></td>
+<td>BMP + 补充字符</td>
+<td>2 或 4 字节</td>
+<td>已弃用</td>
+</tr>
+<tr>
+<td><code>utf32</code></td>
+<td>BMP + 补充字符</td>
+<td>4 字节固定</td>
+<td>已弃用</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ <code>utf8mb3</code>（以及别名 <code>utf8</code>）已弃用，未来版本中 <code>utf8</code> 将变为 <code>utf8mb4</code> 的别名。新应用应直接使用 <code>utf8mb4</code>。</p>
+</blockquote>
+<p><strong>验证 —— emoji 字符存储：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> LENGTH(<span class="hljs-string">&#x27;😀&#x27;</span>) <span class="hljs-keyword">AS</span> byte_length,<br>       <span class="hljs-keyword">CHAR_LENGTH</span>(<span class="hljs-string">&#x27;😀&#x27;</span>) <span class="hljs-keyword">AS</span> char_count,<br>       HEX(<span class="hljs-string">&#x27;😀&#x27;</span>) <span class="hljs-keyword">AS</span> hex_value;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-------------+</span>------------<span class="hljs-code">+----------+</span><br><span class="hljs-section">| byte_length | char_count | hex_value |</span><br><span class="hljs-section">+-------------+------------+----------+</span><br><span class="hljs-section">|           4 |          1 | F09F9880 |</span><br><span class="hljs-section">+-------------+------------+----------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>😀</code>（<code>U+1F600</code>）为补充字符，在 <code>utf8mb4</code> 中占用 4 字节。<code>utf8mb3</code> 无法存储此类字符。</p>
+</blockquote>
+<p>元数据默认使用 <code>utf8mb3</code> 存储：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SHOW</span> VARIABLES <span class="hljs-keyword">LIKE</span> <span class="hljs-string">&#x27;character_set_system&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----------------------+</span>---------+<br><span class="hljs-section">| Variable_name        | Value   |</span><br><span class="hljs-section">+----------------------+---------+</span><br><span class="hljs-section">| character_set_system | utf8mb3 |</span><br><span class="hljs-section">+----------------------+---------+</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="三、字符集与排序规则的四个级别"><a href="#三、字符集与排序规则的四个级别" class="headerlink" title="三、字符集与排序规则的四个级别"></a>三、字符集与排序规则的四个级别</h2><p>MySQL 在四个层级上设置字符集和排序规则：<code>server</code>（服务器）、<code>database</code>（数据库）、<code>table</code>（表）、<code>column</code>（列）。</p>
+<h3 id="3-1-服务器级别"><a href="#3-1-服务器级别" class="headerlink" title="3.1 服务器级别"></a>3.1 服务器级别</h3><p>服务器启动时通过参数指定，未指定时默认 <code>utf8mb4</code> 和 <code>utf8mb4_0900_ai_ci</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">mysqld --character-set-server=utf8mb4 \<br>       --collation-server=utf8mb4_0900_ai_ci<br></code></pre></td></tr></table></figure>
+
+<p>运行时可通过系统变量查看和修改：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> character_set_server <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;utf8mb4&#x27;</span>;<br><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> collation_server <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;utf8mb4_unicode_ci&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-2-数据库级别"><a href="#3-2-数据库级别" class="headerlink" title="3.2 数据库级别"></a>3.2 数据库级别</h3><p><code>CREATE DATABASE</code> 和 <code>ALTER DATABASE</code> 支持 <code>CHARACTER SET</code> 和 <code>COLLATE</code> 子句：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE</span> DATABASE db_name<br>    <span class="hljs-keyword">CHARACTER SET</span> latin1 <span class="hljs-keyword">COLLATE</span> latin1_swedish_ci;<br></code></pre></td></tr></table></figure>
+
+<p>若未指定，则继承服务器级别设置。查看当前数据库的字符集和排序规则：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> @<span class="hljs-variable">@character_set_database</span>, @<span class="hljs-variable">@collation_database</span>;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-3-表级别"><a href="#3-3-表级别" class="headerlink" title="3.3 表级别"></a>3.3 表级别</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> tbl_name ( ... )<br>    <span class="hljs-keyword">CHARACTER SET</span> latin1 <span class="hljs-keyword">COLLATE</span> latin1_danish_ci;<br></code></pre></td></tr></table></figure>
+
+<p>若未指定，则继承数据库级别设置。</p>
+<h3 id="3-4-列级别"><a href="#3-4-列级别" class="headerlink" title="3.4 列级别"></a>3.4 列级别</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> t1 (<br>    col1 <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">10</span>) <span class="hljs-keyword">CHARACTER SET</span> latin1 <span class="hljs-keyword">COLLATE</span> latin1_german1_ci<br>);<br><br><span class="hljs-keyword">ALTER TABLE</span> t1<br>    MODIFY col1 <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">10</span>) <span class="hljs-keyword">CHARACTER SET</span> latin1 <span class="hljs-keyword">COLLATE</span> latin1_swedish_ci;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-5-级别继承规则"><a href="#3-5-级别继承规则" class="headerlink" title="3.5 级别继承规则"></a>3.5 级别继承规则</h3><p>优先级从高到低：列级别 &gt; 表级别 &gt; 数据库级别 &gt; 服务器级别。</p>
+<p><strong>验证 —— 级别继承示例：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> t1 (<br>    c1 <span class="hljs-type">CHAR</span>(<span class="hljs-number">10</span>) <span class="hljs-keyword">CHARACTER SET</span> latin1 <span class="hljs-keyword">COLLATE</span> latin1_german1_ci<br>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">CHARACTER SET</span> latin2 <span class="hljs-keyword">COLLATE</span> latin2_bin;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>列 <code>c1</code> 的字符集为 <code>latin1</code>，排序规则为 <code>latin1_german1_ci</code>（显式指定）。</p>
+</blockquote>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> t1 (<br>    c1 <span class="hljs-type">CHAR</span>(<span class="hljs-number">10</span>) <span class="hljs-keyword">CHARACTER SET</span> latin1<br>) <span class="hljs-keyword">DEFAULT</span> <span class="hljs-keyword">CHARACTER SET</span> latin1 <span class="hljs-keyword">COLLATE</span> latin1_danish_ci;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>列 <code>c1</code> 的字符集为 <code>latin1</code>，排序规则为 <code>latin1_swedish_ci</code>（<code>latin1</code> 的默认排序规则），而非 <code>latin1_danish_ci</code>。</p>
+</blockquote>
+<h2 id="四、字符集-Introducer-与-COLLATE-子句"><a href="#四、字符集-Introducer-与-COLLATE-子句" class="headerlink" title="四、字符集 Introducer 与 COLLATE 子句"></a>四、字符集 <code>Introducer</code> 与 <code>COLLATE</code> 子句</h2><p>字符集 introducer（引入器）用于显式指定字面量字符串的字符集，<code>_charset_name</code> 语法：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> _latin1<span class="hljs-string">&#x27;Müller&#x27;</span> <span class="hljs-keyword">COLLATE</span> latin1_german1_ci;<br><span class="hljs-keyword">SELECT</span> _binary<span class="hljs-string">&#x27;abc&#x27;</span>;<br><span class="hljs-keyword">SELECT</span> _utf8mb4<span class="hljs-string">&#x27;abc&#x27;</span> <span class="hljs-keyword">COLLATE</span> utf8mb4_danish_ci;<br></code></pre></td></tr></table></figure>
+
+<p><strong>验证 —— introducer 不改变转义解析：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> NAMES latin1;<br><span class="hljs-keyword">SELECT</span> HEX(<span class="hljs-string">&#x27;à\n&#x27;</span>), HEX(_sjis<span class="hljs-string">&#x27;à\n&#x27;</span>);<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------------+</span>-----------------+<br><span class="hljs-section">| HEX(&#x27;à\n&#x27;) | HEX(_sjis&#x27;à\n&#x27;) |</span><br><span class="hljs-section">+------------+-----------------+</span><br><span class="hljs-section">| E00A       | E00A            |</span><br><span class="hljs-section">+------------+-----------------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>无论是否使用 introducer，转义字符 <code>\n</code> 均按 <code>character_set_connection</code> 解析，不会因 introducer 改变。这是标准 SQL 行为。</p>
+</blockquote>
+<p><code>introducer</code> 不同于 <code>CONVERT()</code>，后者会实际转换字符集而不仅仅是指定。</p>
+<h2 id="五、排序规则命名约定与后缀含义"><a href="#五、排序规则命名约定与后缀含义" class="headerlink" title="五、排序规则命名约定与后缀含义"></a>五、排序规则命名约定与后缀含义</h2><p>MySQL 排序规则命名遵循统一规范，后缀表示排序特性：</p>
+<table>
+<thead>
+<tr>
+<th>后缀</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>_ai</code></td>
+<td>重音不敏感。重音指语言中的变音符号（如德语 <code>ä</code>、<code>ö</code>、<code>ü</code>、<code>ß</code>，法语 <code>é</code>、<code>è</code>，西班牙语 <code>ñ</code>），忽略后 <code>ä</code> 与 <code>a</code> 等价比较</td>
+</tr>
+<tr>
+<td><code>_as</code></td>
+<td>重音敏感。重音指语言中的变音符号，区分后 <code>ä</code> 与 <code>a</code> 不等价</td>
+</tr>
+<tr>
+<td><code>_ci</code></td>
+<td>大小写不敏感</td>
+</tr>
+<tr>
+<td><code>_cs</code></td>
+<td>大小写敏感</td>
+</tr>
+<tr>
+<td><code>_ks</code></td>
+<td>假名敏感。假名是日语的音节文字系统，平假名圆润（にほんご）、片假名方正（ニホンゴ），区分后平假名和片假名视为不同字符；无此后缀时视为相等</td>
+</tr>
+<tr>
+<td><code>_bin</code></td>
+<td>二进制（按码点值比较）</td>
+</tr>
+</tbody></table>
+<p><strong>验证 —— 重音敏感性：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-string">&#x27;Ä&#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;A&#x27;</span> <span class="hljs-keyword">COLLATE</span> utf8mb4_0900_ai_ci <span class="hljs-keyword">AS</span> accent_insensitive;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-string">&#x27;Ä&#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;A&#x27;</span> <span class="hljs-keyword">COLLATE</span> utf8mb4_0900_as_cs <span class="hljs-keyword">AS</span> accent_sensitive;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+--------------------+</span>---------------------+<br><span class="hljs-section">| accent_insensitive | accent_sensitive    |</span><br><span class="hljs-section">+--------------------+---------------------+</span><br><span class="hljs-section">|                  1 |                   0 |</span><br><span class="hljs-section">+--------------------+---------------------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>_ai</code> 中 <code>Ä = A</code>（忽略重音），<code>_as</code> 中 <code>Ä ≠ A</code>（区分重音）。</p>
+</blockquote>
+<p><strong>验证 —— 大小写与重音敏感性：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-string">&#x27;a&#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;A&#x27;</span> <span class="hljs-keyword">COLLATE</span> utf8mb4_0900_ai_ci <span class="hljs-keyword">AS</span> ai_ci;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-string">&#x27;a&#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;A&#x27;</span> <span class="hljs-keyword">COLLATE</span> utf8mb4_0900_as_cs <span class="hljs-keyword">AS</span> as_cs;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-------+</span>-------+<br><span class="hljs-section">| ai_ci | as_cs |</span><br><span class="hljs-section">+-------+-------+</span><br><span class="hljs-section">|     1 |     0 |</span><br><span class="hljs-section">+-------+-------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>_ai_ci</code> 中 <code>a = A</code>（大小写不敏感），<code>_as_cs</code> 中 <code>a ≠ A</code>（大小写敏感）。</p>
+</blockquote>
+<p>若排序规则名称中不含 <code>_ai</code> 或 <code>_as</code>，则由大小写敏感性隐含决定：<code>_ci</code> 隐含 <code>_ai</code>，<code>_cs</code> 隐含 <code>_as</code>。</p>
+<h3 id="5-1-UCA-版本号"><a href="#5-1-UCA-版本号" class="headerlink" title="5.1 UCA 版本号"></a>5.1 UCA 版本号</h3><p><code>UCA</code>（<code>Unicode Collation Algorithm</code>）是 Unicode 联盟制定的统一排序算法，用于定义全球所有语言字符的排序规则和比较逻辑。MySQL 的 <code>Unicode</code> 排序规则基于 <code>UCA</code> 实现，名称中的数字表示所采用的 <code>UCA</code> 版本：</p>
+<ul>
+<li><code>utf8mb4_0900_ai_ci</code> 基于 <code>UCA</code> 9.0.0</li>
+<li><code>utf8mb4_unicode_520_ci</code> 基于 <code>UCA</code> 5.2.0</li>
+<li><code>utf8mb4_unicode_ci</code>（无版本号）基于 <code>UCA</code> 4.0.0</li>
+</ul>
+<h3 id="5-2-语言特定排序规则"><a href="#5-2-语言特定排序规则" class="headerlink" title="5.2 语言特定排序规则"></a>5.2 语言特定排序规则</h3><p>MySQL 支持多种语言特定排序规则，通过语言代码后缀标识：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> COLLATION_NAME<br><span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.COLLATIONS<br><span class="hljs-keyword">WHERE</span> CHARACTER_SET_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;utf8mb4&#x27;</span><br>  <span class="hljs-keyword">AND</span> COLLATION_NAME <span class="hljs-keyword">LIKE</span> <span class="hljs-string">&#x27;%\_0900%&#x27;</span><br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> COLLATION_NAME;<br></code></pre></td></tr></table></figure>
+
+<p>包括 <code>utf8mb4_danish_ci</code>、<code>utf8mb4_german2_ci</code>、<code>utf8mb4_ja_0900_as_cs</code>（日语）、<code>utf8mb4_zh_0900_as_cs</code>（中文）等。</p>
+<h2 id="六、PAD-属性：PAD-SPACE-与-NO-PAD"><a href="#六、PAD-属性：PAD-SPACE-与-NO-PAD" class="headerlink" title="六、PAD 属性：PAD SPACE 与 NO PAD"></a>六、<code>PAD</code> 属性：<code>PAD SPACE</code> 与 <code>NO PAD</code></h2><p>排序规则的 <code>PAD_ATTRIBUTE</code> 决定尾部空格在比较中的行为：</p>
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>PAD SPACE</code></td>
+<td>尾部空格在比较中忽略（默认）</td>
+</tr>
+<tr>
+<td><code>NO PAD</code></td>
+<td>尾部空格在比较中与其他字符等价（<code>UCA</code> 9.0.0+ 排序规则）</td>
+</tr>
+</tbody></table>
+<p><strong>验证 —— 尾部空格比较：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> NAMES utf8mb4 <span class="hljs-keyword">COLLATE</span> utf8mb4_bin;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-string">&#x27;a &#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;a&#x27;</span> <span class="hljs-keyword">AS</span> <span class="hljs-keyword">result</span>;  <span class="hljs-comment">-- utf8mb4_bin: PAD SPACE</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+--------+</span><br><span class="hljs-section">| result |</span><br><span class="hljs-section">+--------+</span><br><span class="hljs-section">|      1 |</span><br><span class="hljs-section">+--------+</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> NAMES utf8mb4 <span class="hljs-keyword">COLLATE</span> utf8mb4_0900_bin;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-string">&#x27;a &#x27;</span> <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;a&#x27;</span> <span class="hljs-keyword">AS</span> <span class="hljs-keyword">result</span>;  <span class="hljs-comment">-- utf8mb4_0900_bin: NO PAD</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+--------+</span><br><span class="hljs-section">| result |</span><br><span class="hljs-section">+--------+</span><br><span class="hljs-section">|      0 |</span><br><span class="hljs-section">+--------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>utf8mb4_bin</code>（<code>PAD SPACE</code>）忽略尾部空格，<code>&#39;a &#39;</code> 与 <code>&#39;a&#39;</code> 相等；<code>utf8mb4_0900_bin</code>（<code>NO PAD</code>）将尾部空格视为有效字符，<code>&#39;a &#39;</code> 与 <code>&#39;a&#39;</code> 不相等。</p>
+</blockquote>
+<p><strong>查看排序规则的 <code>PAD</code> 属性有两种方式：</strong></p>
+<p><strong>方式一：查询指定排序规则</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> COLLATION_NAME, PAD_ATTRIBUTE<br><span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.COLLATIONS<br><span class="hljs-keyword">WHERE</span> COLLATION_NAME <span class="hljs-keyword">IN</span> (<br>    <span class="hljs-string">&#x27;utf8mb4_bin&#x27;</span>,<span class="hljs-string">&#x27;utf8mb4_0900_bin&#x27;</span>,<br>    <span class="hljs-string">&#x27;utf8mb4_general_ci&#x27;</span>,<span class="hljs-string">&#x27;utf8mb4_0900_ai_ci&#x27;</span><br>);<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs gherkin">+----------------------+--------------+<br>|<span class="hljs-string"> COLLATION_NAME       </span>|<span class="hljs-string"> PAD_ATTRIBUTE</span>|<br>+----------------------+--------------+<br>|<span class="hljs-string"> utf8mb4_0900_ai_ci  </span>|<span class="hljs-string"> NO PAD       </span>|<br>|<span class="hljs-string"> utf8mb4_0900_bin    </span>|<span class="hljs-string"> NO PAD       </span>|<br>|<span class="hljs-string"> utf8mb4_bin         </span>|<span class="hljs-string"> PAD SPACE    </span>|<br>|<span class="hljs-string"> utf8mb4_general_ci  </span>|<span class="hljs-string"> PAD SPACE    </span>|<br>+----------------------+--------------+<br></code></pre></td></tr></table></figure>
+
+<p><strong>方式二：查询当前会话使用的排序规则</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> @<span class="hljs-variable">@collation_connection</span> <span class="hljs-keyword">AS</span> current_collation,<br>       PAD_ATTRIBUTE<br><span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.COLLATIONS<br><span class="hljs-keyword">WHERE</span> COLLATION_NAME <span class="hljs-operator">=</span> @<span class="hljs-variable">@collation_connection</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------------------------+</span>--------------+<br><span class="hljs-section">| current_collation      | PAD_ATTRIBUTE|</span><br><span class="hljs-section">+------------------------+--------------+</span><br><span class="hljs-section">| utf8mb4_0900_ai_ci   | NO PAD       |</span><br><span class="hljs-section">+------------------------+--------------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>所有 <code>0900</code> 系列排序规则均为 <code>NO PAD</code>，早期排序规则为 <code>PAD SPACE</code>。</p>
+</blockquote>
+<h2 id="七、Unicode-排序规则详解"><a href="#七、Unicode-排序规则详解" class="headerlink" title="七、Unicode 排序规则详解"></a>七、<code>Unicode</code> 排序规则详解</h2><h3 id="7-1-general-ci-与-unicode-ci-的区别"><a href="#7-1-general-ci-与-unicode-ci-的区别" class="headerlink" title="7.1 _general_ci 与 _unicode_ci 的区别"></a>7.1 <code>_general_ci</code> 与 <code>_unicode_ci</code> 的区别</h3><p><code>utf8mb4_general_ci</code> 性能更好但精度较低，不支持扩展（expansion）和收缩（contraction）；<code>utf8mb4_unicode_ci</code> 支持这些特性。</p>
+<p>**扩展（expansion）**指一个字符在排序时被展开为多个字符参与比较。最典型的例子是德语 <code>ß</code>（eszett）。在 <code>unicode_ci</code> 排序规则中，<code>ß</code> 被展开为 <code>ss</code>（两个字符的权重），因此 <code>ß</code> 与 <code>ss</code> 在比较时等价：<code>WHERE c = &#39;ß&#39;</code> 能匹配到 <code>&#39;ss&#39;</code>。而 <code>general_ci</code> 不支持扩展，<code>ß</code> 与 <code>ss</code> 各有独立权重，互不相等。</p>
+<p>**收缩（contraction）**指多个字符在排序时被收缩为一个单元参与比较。典型场景是西班牙语中的 <code>ch</code> 和 <code>ll</code>。传统西班牙语排序中，<code>ch</code> 被视为独立字母，位于 <code>c</code> 和 <code>d</code> 之间；<code>ll</code> 位于 <code>l</code> 和 <code>m</code> 之间。<code>unicode_ci</code> 支持这种多字符收缩，<code>general_ci</code> 不支持。</p>
+<p><strong>中文和英文场景是否需要考虑：</strong> 扩展和收缩主要影响带变音符号的欧洲语言。中文和英文均不涉及变音符号或字符组合收缩——中文字符按 Unicode 码点或偏旁笔画排序，英文字母各自独立无组合规则。因此在这两个场景下，<code>general_ci</code> 和 <code>unicode_ci</code> 的排序结果完全一致，不需要特别关注扩展和收缩问题。选择 <code>unicode_ci</code> 主要是为了与多语言环境保持一致，以及获得 <code>NO PAD</code> 特性。</p>
+<p><strong>验证 —— 德语 <code>ß</code> 的处理：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> g1 (c <span class="hljs-type">CHAR</span>(<span class="hljs-number">10</span>))<br>    <span class="hljs-keyword">CHARACTER SET</span> utf8mb4 <span class="hljs-keyword">COLLATE</span> utf8mb4_unicode_ci;<br><span class="hljs-keyword">INSERT INTO</span> g1 <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&#x27;ss&#x27;</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> g1 <span class="hljs-keyword">WHERE</span> c <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;ß&#x27;</span>;<br><span class="hljs-keyword">INSERT INTO</span> g1 <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&#x27;ß&#x27;</span>);<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> g1 <span class="hljs-keyword">WHERE</span> c <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;ss&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------+</span><br><span class="hljs-section">| c    |</span><br><span class="hljs-section">+------+</span><br><span class="hljs-section">| ss   |</span><br><span class="hljs-section">+------+</span><br>| ss   |<br><span class="hljs-section">| ß    |</span><br><span class="hljs-section">+------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>utf8mb4_unicode_ci</code> 中 <code>ß</code> 与 <code>ss</code> 在比较时等价。</p>
+</blockquote>
+<p><strong>验证 —— 扩展与不扩展的权重对比：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> HEX(WEIGHT_STRING(<span class="hljs-string">&#x27;ß&#x27;</span> <span class="hljs-keyword">COLLATE</span> utf8mb4_unicode_ci)) <span class="hljs-keyword">AS</span> unicode_ci_weight;<br><span class="hljs-keyword">SELECT</span> HEX(WEIGHT_STRING(<span class="hljs-string">&#x27;ss&#x27;</span> <span class="hljs-keyword">COLLATE</span> utf8mb4_unicode_ci)) <span class="hljs-keyword">AS</span> ss_in_unicode_ci;<br><span class="hljs-keyword">SELECT</span> HEX(WEIGHT_STRING(<span class="hljs-string">&#x27;ß&#x27;</span> <span class="hljs-keyword">COLLATE</span> utf8mb4_general_ci)) <span class="hljs-keyword">AS</span> general_ci_weight;<br><span class="hljs-keyword">SELECT</span> HEX(WEIGHT_STRING(<span class="hljs-string">&#x27;s&#x27;</span> <span class="hljs-keyword">COLLATE</span> utf8mb4_general_ci)) <span class="hljs-keyword">AS</span> s_in_general_ci;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-------------------+</span>------------------<span class="hljs-code">+-------------------+</span>----------------+<br><span class="hljs-section">| unicode_ci_weight | ss_in_unicode_ci | general_ci_weight | s_in_general_ci |</span><br><span class="hljs-section">+-------------------+------------------+-------------------+----------------+</span><br><span class="hljs-section">| 0FEA0FEA         | 0FEA0FEA        | 0053             | 0053           |</span><br><span class="hljs-section">+-------------------+------------------+-------------------+----------------+</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>utf8mb4_unicode_ci</code> 中 <code>ß</code> 与 <code>ss</code> 的权重完全相同（<code>0FEA0FEA</code>），说明 <code>ß</code> 被展开为 <code>ss</code> 两个字符参与排序——这就是扩展。<code>utf8mb4_general_ci</code> 中 <code>ß</code> 的权重仅为 <code>0053</code>（与 <code>s</code> 相同），不发生展开。</p>
+</blockquote>
+<h3 id="7-2-二进制排序规则"><a href="#7-2-二进制排序规则" class="headerlink" title="7.2 二进制排序规则"></a>7.2 二进制排序规则</h3><p><code>utf8mb4</code> 有两个二进制排序规则：</p>
+<ul>
+<li><code>utf8mb4_bin</code>：基于码点值比较，<code>PAD SPACE</code></li>
+<li><code>utf8mb4_0900_bin</code>：基于 UTF-8 编码字节比较，<code>NO PAD</code>，性能更好</li>
+</ul>
+<h2 id="九、连接字符集与排序规则"><a href="#九、连接字符集与排序规则" class="headerlink" title="九、连接字符集与排序规则"></a>九、连接字符集与排序规则</h2><p>客户端与服务器通信时，涉及多个字符集相关的系统变量：</p>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>character_set_client</code></td>
+<td>客户端发送 SQL 语句使用的字符集</td>
+</tr>
+<tr>
+<td><code>character_set_connection</code></td>
+<td>服务器解析字面量字符串时的字符集</td>
+</tr>
+<tr>
+<td><code>character_set_results</code></td>
+<td>服务器返回结果给客户端的字符集</td>
+</tr>
+<tr>
+<td><code>collation_connection</code></td>
+<td>字面量字符串比较时使用的排序规则</td>
+</tr>
+</tbody></table>
+<p><strong>验证 —— 连接变量：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> performance_schema.session_variables<br><span class="hljs-keyword">WHERE</span> VARIABLE_NAME <span class="hljs-keyword">IN</span> (<br>    <span class="hljs-string">&#x27;character_set_client&#x27;</span>,<span class="hljs-string">&#x27;character_set_connection&#x27;</span>,<br>    <span class="hljs-string">&#x27;character_set_results&#x27;</span>,<span class="hljs-string">&#x27;collation_connection&#x27;</span><br>);<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs gherkin">+-------------------------+--------------------+<br>|<span class="hljs-string"> VARIABLE_NAME           </span>|<span class="hljs-string"> VARIABLE_VALUE     </span>|<br>+-------------------------+--------------------+<br>|<span class="hljs-string"> character_set_client    </span>|<span class="hljs-string"> utf8mb4            </span>|<br>|<span class="hljs-string"> character_set_connection</span>|<span class="hljs-string"> utf8mb4            </span>|<br>|<span class="hljs-string"> character_set_results   </span>|<span class="hljs-string"> utf8mb4            </span>|<br>|<span class="hljs-string"> collation_connection    </span>|<span class="hljs-string"> utf8mb4_0900_ai_ci </span>|<br>+-------------------------+--------------------+<br></code></pre></td></tr></table></figure>
+
+<h3 id="9-1-SET-NAMES-与-SET-CHARACTER-SET"><a href="#9-1-SET-NAMES-与-SET-CHARACTER-SET" class="headerlink" title="9.1 SET NAMES 与 SET CHARACTER SET"></a>9.1 <code>SET NAMES</code> 与 <code>SET CHARACTER SET</code></h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> NAMES <span class="hljs-string">&#x27;latin1&#x27;</span>;<br><span class="hljs-comment">-- 等价于：</span><br><span class="hljs-keyword">SET</span> character_set_client <span class="hljs-operator">=</span> latin1;<br><span class="hljs-keyword">SET</span> character_set_results <span class="hljs-operator">=</span> latin1;<br><span class="hljs-keyword">SET</span> character_set_connection <span class="hljs-operator">=</span> latin1;<br><span class="hljs-comment">-- collation_connection 自动设为 latin1 的默认排序规则</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> @<span class="hljs-variable">@character_set_client</span>, @<span class="hljs-variable">@character_set_connection</span>,<br>       @<span class="hljs-variable">@character_set_results</span>, @<span class="hljs-variable">@collation_connection</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------------------------+</span>----------------------------<span class="hljs-code">+-------------------------+</span>----------------------------+<br><span class="hljs-section">| @@character_set_client | @@character_set_connection | @@character_set_results | @@collation_connection     |</span><br><span class="hljs-section">+------------------------+----------------------------+-------------------------+----------------------------+</span><br><span class="hljs-section">| latin1                 | latin1                     | latin1                  | latin1_swedish_ci          |</span><br><span class="hljs-section">+------------------------+----------------------------+-------------------------+----------------------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><code>SET CHARACTER SET charset_name</code> 则使用数据库级别的字符集和排序规则来设置连接。</p>
+<h3 id="9-2-不能用作客户端字符集"><a href="#9-2-不能用作客户端字符集" class="headerlink" title="9.2 不能用作客户端字符集"></a>9.2 不能用作客户端字符集</h3><p>以下字符集不能作为客户端字符集（<code>SET NAMES</code>、命令行 <code>--default-character-set</code> 等均会报错）：</p>
+<ul>
+<li><code>ucs2</code>、<code>utf16</code>、<code>utf16le</code>、<code>utf32</code></li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/MySQL/" class="category-chain-item">MySQL</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%AD%97%E7%AC%A6%E9%9B%86/" class="print-no-link">#字符集</a>
+      
+        <a href="/tags/%E6%8E%92%E5%BA%8F%E8%A7%84%E5%88%99/" class="print-no-link">#排序规则</a>
+      
+        <a href="/tags/Unicode/" class="print-no-link">#Unicode</a>
+      
+        <a href="/tags/utf8mb4/" class="print-no-link">#utf8mb4</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/03/30/mysql/MySQL%20%E6%97%A5%E5%BF%97%E7%B1%BB%E5%9E%8B%E4%B8%8E%E9%85%8D%E7%BD%AE/" title="MySQL 日志类型与配置">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">MySQL 日志类型与配置</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/mysql/mysql-84-sql-statements.html" title="MySQL 8.4 SQL 语句">
+                        <span class="hidden-mobile">MySQL 8.4 SQL 语句</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

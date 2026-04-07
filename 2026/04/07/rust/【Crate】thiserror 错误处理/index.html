@@ -1,0 +1,821 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="一、安装与依赖在 Cargo.toml 中添加依赖： 12[dependencies]thiserror = &amp;quot;2&amp;quot;  thiserror 为 Rust 标准库 std::error::Error trait 提供 derive 宏支持。通过 #[derive(Error)] 可以自动生成 Error、Display、Debug trait 的实现，开发者只需关注错误类型的设计">
+  
+  
+  
+  <title>thiserror 错误处理 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="thiserror 错误处理"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-04-07 08:39" pubdate>
+          2026年4月7日 早上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.8k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          24 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">thiserror 错误处理</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="一、安装与依赖"><a href="#一、安装与依赖" class="headerlink" title="一、安装与依赖"></a>一、安装与依赖</h2><p>在 <code>Cargo.toml</code> 中添加依赖：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">thiserror</span> = <span class="hljs-string">&quot;2&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p><code>thiserror</code> 为 <code>Rust</code> 标准库 <code>std::error::Error</code> trait 提供 <code>derive</code> 宏支持。通过 <code>#[derive(Error)]</code> 可以自动生成 <code>Error</code>、<code>Display</code>、<code>Debug</code> trait 的实现，开发者只需关注错误类型的设计和错误消息的定义。</p>
+<h2 id="二、基础用法"><a href="#二、基础用法" class="headerlink" title="二、基础用法"></a>二、基础用法</h2><h3 id="2-1-错误枚举"><a href="#2-1-错误枚举" class="headerlink" title="2.1 错误枚举"></a>2.1 错误枚举</h3><p><code>thiserror</code> 最常见的用法是定义错误 <code>enum</code>。以下示例展示一个数据存储的错误类型，所有错误消息均为静态字符串：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> thiserror::Error;<br><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">DataStoreError</span> &#123;<br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;data store disconnected&quot;</span>)]</span><br>    Disconnect,<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;entry has been redacted&quot;</span>)]</span><br>    Redacted,<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;invalid header&quot;</span>)]</span><br>    InvalidHeader,<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;unknown data store error&quot;</span>)]</span><br>    Unknown,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">err</span> = DataStoreError::Disconnect;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, err);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight haskell"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs haskell"><span class="hljs-class"><span class="hljs-keyword">data</span> store disconnected</span><br></code></pre></td></tr></table></figure>
+
+<p>其余变体的输出以此类推：</p>
+<table>
+<thead>
+<tr>
+<th>构造方式</th>
+<th>运行结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>DataStoreError::Redacted</code></td>
+<td><code>entry has been redacted</code></td>
+</tr>
+<tr>
+<td><code>DataStoreError::InvalidHeader</code></td>
+<td><code>invalid header</code></td>
+</tr>
+<tr>
+<td><code>DataStoreError::Unknown</code></td>
+<td><code>unknown data store error</code></td>
+</tr>
+</tbody></table>
+<h3 id="2-2-字段插值语法"><a href="#2-2-字段插值语法" class="headerlink" title="2.2 字段插值语法"></a>2.2 字段插值语法</h3><p><code>#[error(&quot;...&quot;)]</code> 消息模板支持从错误字段中读取值并嵌入消息。具名字段和元组字段各有简写形式：</p>
+<table>
+<thead>
+<tr>
+<th>语法</th>
+<th>含义</th>
+<th>等价展开</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>#[error(&quot;{var}&quot;)]</code></td>
+<td>具名字段，<code>Display</code> 格式化</td>
+<td><code>write!(&quot;{}&quot;, self.var)</code></td>
+</tr>
+<tr>
+<td><code>#[error(&quot;{0}&quot;)]</code></td>
+<td>元组字段（索引 0），<code>Display</code> 格式化</td>
+<td><code>write!(&quot;{}&quot;, self.0)</code></td>
+</tr>
+<tr>
+<td><code>#[error(&quot;{var:?}&quot;)]</code></td>
+<td>具名字段，<code>Debug</code> 格式化</td>
+<td><code>write!(&quot;{:?}&quot;, self.var)</code></td>
+</tr>
+<tr>
+<td><code>#[error(&quot;{0:?}&quot;)]</code></td>
+<td>元组字段（索引 0），<code>Debug</code> 格式化</td>
+<td><code>write!(&quot;{:?}&quot;, self.0)</code></td>
+</tr>
+</tbody></table>
+<p>其中 <code>var</code> 为具名字段的字段名，<code>0</code> 为元组字段的位置索引（从 0 起），<code>:?</code> 为 <code>Debug</code> 格式化标记，缺省时默认使用 <code>Display</code> 格式化。</p>
+<p>以下示例同时展示四种语法：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> thiserror::Error;<br><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">Error</span> &#123;<br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;rebidden: &#123;reason&#125;&quot;</span>)]</span><br>    Invalid &#123; reason: <span class="hljs-type">String</span> &#125;,<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;data for key `&#123;0&#125;` not found&quot;</span>)]</span><br>    <span class="hljs-title function_ invoke__">Missing</span>(<span class="hljs-type">String</span>),<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;invalid value: &#123;0:?&#125;&quot;</span>)]</span><br>    <span class="hljs-title function_ invoke__">BadValue</span>(<span class="hljs-type">Vec</span>&lt;<span class="hljs-type">u8</span>&gt;),<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;position &#123;pos&#125; out of range&quot;</span>)]</span><br>    OutOfRange &#123; pos: <span class="hljs-type">usize</span> &#125;,<br>&#125;	<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e1</span> = Error::Invalid &#123; reason: <span class="hljs-string">&quot;foo&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>() &#125;;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e2</span> = Error::<span class="hljs-title function_ invoke__">Missing</span>(<span class="hljs-string">&quot;mykey&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>());<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e3</span> = Error::<span class="hljs-title function_ invoke__">BadValue</span>(<span class="hljs-built_in">vec!</span>[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e4</span> = Error::OutOfRange &#123; pos: <span class="hljs-number">42</span> &#125;;<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e1);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e2);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e3);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e4);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight fortran"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs fortran">rebidden: foo<br><span class="hljs-keyword">data</span> for key `mykey` not found<br>invalid <span class="hljs-keyword">value</span>: [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]<br><span class="hljs-keyword">position</span> <span class="hljs-number">42</span> <span class="hljs-keyword">out</span> of <span class="hljs-built_in">range</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-3-额外格式化参数"><a href="#2-3-额外格式化参数" class="headerlink" title="2.3 额外格式化参数"></a>2.3 额外格式化参数</h3><p>除字段插值外，<code>#[error]</code> 还支持在模板后添加额外的格式化参数，参数值可以是任意表达式。具名字段用 <code>.field</code> 引用，元组字段用 <code>.0</code> 引用：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> thiserror::Error;<br><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">Error</span> &#123;<br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;first letter must be lowercase but was &#123;:?&#125;&quot;</span>, first_char(.0))]</span><br>    <span class="hljs-title function_ invoke__">WrongCase</span>(<span class="hljs-type">String</span>),<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;invalid index &#123;idx&#125;, expected at least &#123;&#125; and at most &#123;&#125;&quot;</span>, .limits.0, .limits.1)]</span><br>    OutOfBounds &#123; idx: <span class="hljs-type">usize</span>, limits: (<span class="hljs-type">usize</span>, <span class="hljs-type">usize</span>) &#125;,<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;invalid lookahead &#123;0&#125; (max = &#123;max&#125;)&quot;</span>, max = i32::MAX)]</span><br>    <span class="hljs-title function_ invoke__">BadLookahead</span>(<span class="hljs-type">u32</span>),<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">first_char</span>(s: &amp;<span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">char</span> &#123;<br>    s.<span class="hljs-title function_ invoke__">chars</span>().<span class="hljs-title function_ invoke__">next</span>().<span class="hljs-title function_ invoke__">unwrap_or</span>(<span class="hljs-string">&#x27;<span class="hljs-char escape_">\0</span>&#x27;</span>)<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e1</span> = Error::<span class="hljs-title function_ invoke__">WrongCase</span>(<span class="hljs-string">&quot;Hello&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>());<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e2</span> = Error::OutOfBounds &#123; idx: <span class="hljs-number">100</span>, limits: (<span class="hljs-number">0</span>, <span class="hljs-number">50</span>) &#125;;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e3</span> = Error::<span class="hljs-title function_ invoke__">BadLookahead</span>(<span class="hljs-number">42</span>);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e1);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e2);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e3);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">first</span> letter must be lowercase but was &#x27;H&#x27;<br><span class="hljs-attribute">invalid</span> index <span class="hljs-number">100</span>, expected at least <span class="hljs-number">0</span> and at most <span class="hljs-number">50</span><br><span class="hljs-attribute">invalid</span> lookahead <span class="hljs-number">42</span> (max = <span class="hljs-number">2147483647</span>)<br></code></pre></td></tr></table></figure>
+
+<h2 id="三、自动-From-转换"><a href="#三、自动-From-转换" class="headerlink" title="三、自动 From 转换"></a>三、自动 <code>From</code> 转换</h2><p><code>#[from]</code> 属性为包含错误源字段的变体自动生成 <code>From</code> trait 实现，使错误可以在 <code>?</code> 运算符中自动转换。</p>
+<h3 id="用于-enum-变体"><a href="#用于-enum-变体" class="headerlink" title="用于 enum 变体"></a>用于 enum 变体</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::io;<br><span class="hljs-keyword">use</span> thiserror::Error;<br><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">MyError</span> &#123;<br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;IO error occurred&quot;</span>)]</span><br>    <span class="hljs-title function_ invoke__">Io</span>(<span class="hljs-meta">#[from]</span> io::Error),<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;parse error: &#123;0&#125;&quot;</span>)]</span><br>    <span class="hljs-title function_ invoke__">Parse</span>(<span class="hljs-meta">#[from]</span> std::num::ParseIntError),<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">parse_int</span>(s: &amp;<span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;<span class="hljs-type">i32</span>, MyError&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">n</span>: <span class="hljs-type">i32</span> = s.<span class="hljs-title function_ invoke__">parse</span>()?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(n)<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">read_file</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;<span class="hljs-type">Vec</span>&lt;<span class="hljs-type">u8</span>&gt;, MyError&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">_</span> = std::fs::<span class="hljs-title function_ invoke__">read</span>(<span class="hljs-string">&quot;nonexistent.txt&quot;</span>)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(<span class="hljs-built_in">vec!</span>[])<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Err</span>(e) = <span class="hljs-title function_ invoke__">parse_int</span>(<span class="hljs-string">&quot;not a number&quot;</span>) &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e);<br>    &#125;<br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Err</span>(e) = <span class="hljs-title function_ invoke__">read_file</span>() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight gauss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs gauss"><span class="hljs-built_in">parse</span> <span class="hljs-built_in">error</span>: invalid digit found in <span class="hljs-keyword">string</span><br>IO <span class="hljs-built_in">error</span> occurred<br></code></pre></td></tr></table></figure>
+
+<h3 id="用于-struct-字段"><a href="#用于-struct-字段" class="headerlink" title="用于 struct 字段"></a>用于 struct 字段</h3><p><code>#[from]</code> 也可以用在 struct 的具名字段上，但此时 struct <strong>不能包含其他普通字段</strong>（只能有 source 字段和可选的 backtrace 字段）。如果需要额外上下文，建议通过 <code>From</code> impl 或构造函数注入：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::io;<br><span class="hljs-keyword">use</span> thiserror::Error;<br><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-meta">#[error(<span class="hljs-string">&quot;IO error occurred&quot;</span>)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">IoError</span> &#123;<br>    <span class="hljs-meta">#[from]</span><br>    source: io::Error,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">read_file</span>(path: &amp;<span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;<span class="hljs-type">String</span>, IoError&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s</span> = std::fs::<span class="hljs-title function_ invoke__">read_to_string</span>(path)?; <span class="hljs-comment">// io::Error 自动转换为 IoError</span><br>    <span class="hljs-title function_ invoke__">Ok</span>(s)<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Err</span>(e) = <span class="hljs-title function_ invoke__">read_file</span>(<span class="hljs-string">&quot;/nonexistent/file&quot;</span>) &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs nginx"><span class="hljs-attribute">IO</span> <span class="hljs-literal">error</span> occurred<br></code></pre></td></tr></table></figure>
+
+<p><code>#[from]</code> 隐含 <code>#[source]</code> 语义，无需同时标记两个属性。使用 <code>#[from]</code> 的字段只能是错误源（可能有 <code>Backtrace</code>），不能包含其他普通字段。</p>
+<h3 id="变体同时需要-from-和额外上下文"><a href="#变体同时需要-from-和额外上下文" class="headerlink" title="变体同时需要 #[from] 和额外上下文"></a>变体同时需要 <code>#[from]</code> 和额外上下文</h3><p><code>#[from]</code> 的约束是：使用 <code>#[from]</code> 的变体，其字段<strong>只能是 source 字段</strong>（和可选 backtrace），不能混合存储额外上下文。因此，如果希望变体既能通过 <code>?</code> 自动转换、又携带额外结构化信息，必须<strong>放弃 <code>#[from]</code>，改用 <code>#[source]</code> 配合手动 <code>From</code> impl</strong>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::io;<br><span class="hljs-keyword">use</span> thiserror::Error;<br><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">MyError</span> &#123;<br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;IO error while &#123;operation&#125;: &#123;source&#125;&quot;</span>)]</span><br>    Io &#123;<br>        operation: <span class="hljs-type">String</span>,      <span class="hljs-comment">// 额外上下文</span><br>        <span class="hljs-meta">#[source]</span><br>        source: io::Error,      <span class="hljs-comment">// source 字段，但不用 #[from]</span><br>    &#125;,<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;parse error in &#123;field&#125;: &#123;source&#125;&quot;</span>)]</span><br>    Parse &#123;<br>        field: <span class="hljs-type">String</span>,<br>        source: std::num::ParseIntError,<br>    &#125;,<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">From</span>&lt;io::Error&gt; <span class="hljs-keyword">for</span> <span class="hljs-title class_">MyError</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">from</span>(e: io::Error) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-keyword">Self</span> &#123;<br>        MyError::Io &#123; operation: <span class="hljs-string">&quot;reading&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>(), source: e &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">From</span>&lt;std::num::ParseIntError&gt; <span class="hljs-keyword">for</span> <span class="hljs-title class_">MyError</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">from</span>(e: std::num::ParseIntError) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-keyword">Self</span> &#123;<br>        MyError::Parse &#123; field: <span class="hljs-string">&quot;user_id&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>(), source: e &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">read_config</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;<span class="hljs-type">String</span>, MyError&gt; &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">_</span> = std::fs::<span class="hljs-title function_ invoke__">read</span>(<span class="hljs-string">&quot;/nonexistent/file&quot;</span>)?;<br>        <span class="hljs-title function_ invoke__">Ok</span>(<span class="hljs-string">&quot;ok&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>())<br>    &#125;<br><br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Err</span>(e) = <span class="hljs-title function_ invoke__">read_config</span>() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs routeros">IO <span class="hljs-built_in">error</span> <span class="hljs-keyword">while</span> reading: <span class="hljs-literal">No</span> such file <span class="hljs-keyword">or</span> directory (os <span class="hljs-built_in">error</span> 2)<br></code></pre></td></tr></table></figure>
+
+<p>变体内使用 <code>#[source]</code> 标记错误源字段（而非 <code>#[from]</code>），由开发者手动实现 <code>From</code> impl，在转换时注入额外上下文。这样既保留了 <code>?</code> 的自动转换能力，又能让错误携带结构化的附加信息。</p>
+<h2 id="四、手动指定错误源"><a href="#四、手动指定错误源" class="headerlink" title="四、手动指定错误源"></a>四、手动指定错误源</h2><h3 id="使用场景"><a href="#使用场景" class="headerlink" title="使用场景"></a>使用场景</h3><p><code>#[source]</code> 的核心作用是实现 <code>Error::source()</code>，让调用方可以通过错误链追溯底层原因。以下是 <code>#[source]</code> 的典型适用场景：</p>
+<p><strong>场景一：结构体错误包装单一底层错误</strong></p>
+<p>用结构体包装一个带附加上下文的错误，同时暴露底层错误源。例如数据库连接错误，可能需要在连接失败时保留底层 <code>io::Error</code>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> thiserror::Error;<br><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-meta">#[error(<span class="hljs-string">&quot;database error: &#123;operation&#125; failed&quot;</span>)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">DatabaseError</span> &#123;<br>    operation: <span class="hljs-type">String</span>,<br>    <span class="hljs-meta">#[source]</span><br>    cause: std::io::Error,<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这里 <code>cause</code> 不是 <code>source</code> 命名，必须显式标记 <code>#[source]</code> 才能让 <code>Error::source()</code> 返回底层的 <code>io::Error</code>。</p>
+<p><strong>场景二：结构体字段名不是 <code>source</code></strong></p>
+<p>如果底层错误字段命名为其他名称（如 <code>cause</code>、<code>underlying</code>、<code>inner</code>），<code>thiserror</code> 不会自动将其识别为错误源，此时必须显式标注 <code>#[source]</code>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-meta">#[error(<span class="hljs-string">&quot;request failed&quot;</span>)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">RequestError</span> &#123;<br>    <span class="hljs-meta">#[source]</span><br>    cause: reqwest::Error, <span class="hljs-comment">// 显式标记，字段名不是 source</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>场景三：与 <code>#[from]</code> 不同的行为</strong></p>
+<p><code>#[from]</code> 在 <code>enum</code> 中隐含 <code>#[source]</code>，且自动生成 <code>From</code> impl。如果只希望暴露错误链而不生成 <code>From</code> 转换，则必须用 <code>#[source]</code>。例如在结构体中手动构造错误而非通过 <code>?</code> 自动转换：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> thiserror::Error;<br><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-meta">#[error(<span class="hljs-string">&quot;config error: &#123;msg&#125;&quot;</span>)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">ConfigError</span> &#123;<br>    msg: <span class="hljs-type">String</span>,<br>    <span class="hljs-meta">#[source]</span><br>    source: std::io::Error,<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="使用方式"><a href="#使用方式" class="headerlink" title="使用方式"></a>使用方式</h3><p>当底层错误字段名为 <code>source</code> 时，<code>#[source]</code> 可以省略（<code>thiserror</code> 会自动识别）。当字段名为其他名称时，必须显式添加 <code>#[source]</code> 属性：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> thiserror::Error;<br><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-meta">#[error(<span class="hljs-string">&quot;config error: &#123;msg&#125;&quot;</span>)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">ConfigError</span> &#123;<br>    msg: <span class="hljs-type">String</span>,<br>    <span class="hljs-meta">#[source]</span> <span class="hljs-comment">// 字段名非 source，必须显式标记</span><br>    cause: std::io::Error,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">io_err</span> = std::io::Error::<span class="hljs-title function_ invoke__">new</span>(std::io::ErrorKind::NotFound, <span class="hljs-string">&quot;file not found&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">err</span> = ConfigError &#123; msg: <span class="hljs-string">&quot;config file missing&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>(), cause: io_err &#125;;<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, err);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;source: &#123;:?&#125;&quot;</span>, std::error::Error::<span class="hljs-title function_ invoke__">source</span>(&amp;err));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs lua"><span class="hljs-built_in">config</span> <span class="hljs-built_in">error</span>: <span class="hljs-built_in">config</span> file missing<br>source: Some(Custom &#123; kind: NotFound, <span class="hljs-built_in">error</span>: <span class="hljs-string">&quot;file not found&quot;</span> &#125;)<br></code></pre></td></tr></table></figure>
+
+<h3 id="source-vs-from-对比"><a href="#source-vs-from-对比" class="headerlink" title="#[source] vs #[from] 对比"></a><code>#[source]</code> vs <code>#[from]</code> 对比</h3><table>
+<thead>
+<tr>
+<th>特性</th>
+<th><code>#[source]</code></th>
+<th><code>#[from]</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>指定 <code>Error::source()</code></td>
+<td>✅</td>
+<td>✅（隐含）</td>
+</tr>
+<tr>
+<td>生成 <code>From</code> impl</td>
+<td>❌</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>用于 enum 变体</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>用于 struct 字段</td>
+<td>✅</td>
+<td>✅（但所有字段必须均为 source&#x2F;backtrace）</td>
+</tr>
+<tr>
+<td>字段名非 <code>source</code> 时可用</td>
+<td>✅</td>
+<td>❌（字段名需与底层错误类型一致）</td>
+</tr>
+</tbody></table>
+<p><code>#[from]</code> 用于 struct 字段时，struct 中不能包含其他普通字段（只能是 source&#x2F;backtrace 字段）。如果需要额外上下文，建议通过 <code>From</code> impl 或构造函数方式注入，而非作为 struct 字段。</p>
+<h2 id="五、结构体风格的错误类型"><a href="#五、结构体风格的错误类型" class="headerlink" title="五、结构体风格的错误类型"></a>五、结构体风格的错误类型</h2><p>错误类型可以是 <code>enum</code>、具名字段 <code>struct</code>、元组 <code>struct</code> 或单元 <code>struct</code>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> thiserror::Error;<br><br><span class="hljs-comment">// 具名字段 struct</span><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-meta">#[error(<span class="hljs-string">&quot;validation failed: &#123;field&#125; is invalid (&#123;reason&#125;)&quot;</span>)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">ValidationError</span> &#123;<br>    <span class="hljs-keyword">pub</span> field: <span class="hljs-type">String</span>,<br>    <span class="hljs-keyword">pub</span> reason: <span class="hljs-type">String</span>,<br>&#125;<br><br><span class="hljs-comment">// 元组 struct</span><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-meta">#[error(<span class="hljs-string">&quot;parse error at position &#123;0&#125;: &#123;1&#125;&quot;</span>)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">ParseError</span>(<span class="hljs-type">usize</span>, <span class="hljs-type">String</span>);<br><br><span class="hljs-comment">// 单元 struct</span><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-meta">#[error(<span class="hljs-string">&quot;service unavailable&quot;</span>)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">ServiceUnavailableError</span>;<br><br><span class="hljs-comment">// enum 中混合使用</span><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">ComplexError</span> &#123;<br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;named field variant: x=&#123;x&#125;, y=&#123;y&#125;&quot;</span>)]</span><br>    Point &#123; x: <span class="hljs-type">f64</span>, y: <span class="hljs-type">f64</span> &#125;,<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;tuple variant: (&#123;0&#125;, &#123;1&#125;)&quot;</span>)]</span><br>    <span class="hljs-title function_ invoke__">Pair</span>(<span class="hljs-type">String</span>, <span class="hljs-type">i32</span>),<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;unit variant: done&quot;</span>)]</span><br>    Done,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e1</span> = ValidationError &#123; field: <span class="hljs-string">&quot;email&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>(), reason: <span class="hljs-string">&quot;格式不正确&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>() &#125;;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e2</span> = <span class="hljs-title function_ invoke__">ParseError</span>(<span class="hljs-number">10</span>, <span class="hljs-string">&quot;unexpected token&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>());<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e3</span> = ServiceUnavailableError;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e4</span> = ComplexError::Point &#123; x: <span class="hljs-number">1.5</span>, y: <span class="hljs-number">2.5</span> &#125;;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e5</span> = ComplexError::<span class="hljs-title function_ invoke__">Pair</span>(<span class="hljs-string">&quot;hello&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>(), <span class="hljs-number">42</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e6</span> = ComplexError::Done;<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e1);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e2);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e3);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e4);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e5);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e6);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs routeros">validation failed: email is invalid (格式不正确)<br>parse <span class="hljs-built_in">error</span> at position 10: unexpected token<span class="hljs-built_in"></span><br><span class="hljs-built_in">service </span>unavailable<br>named field variant: <span class="hljs-attribute">x</span>=1.5, <span class="hljs-attribute">y</span>=2.5<br>tuple variant: (hello, 42)<br>unit variant: done<br></code></pre></td></tr></table></figure>
+
+<h2 id="六、透明错误"><a href="#六、透明错误" class="headerlink" title="六、透明错误"></a>六、透明错误</h2><p><code>#[error(transparent)]</code> 将 <code>Display</code> 和 <code>source</code> 方法直接转发到底层错误类型，不添加额外消息。以下是两个典型用法。</p>
+<h3 id="用法一：enum-的兜底变体"><a href="#用法一：enum-的兜底变体" class="headerlink" title="用法一：enum 的兜底变体"></a>用法一：enum 的兜底变体</h3><p>当 enum 中存在”其他未知错误”变体时，用 <code>transparent</code> 包装 <code>anyhow::Error</code> 或其他通用错误类型：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> thiserror::Error;<br><br><span class="hljs-meta">#[derive(Debug)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">OpaqueError</span>(<span class="hljs-type">String</span>);<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">std</span>::fmt::Display <span class="hljs-keyword">for</span> <span class="hljs-title class_">OpaqueError</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">fmt</span>(&amp;<span class="hljs-keyword">self</span>, f: &amp;<span class="hljs-keyword">mut</span> std::fmt::Formatter&lt;<span class="hljs-symbol">&#x27;_</span>&gt;) <span class="hljs-punctuation">-&gt;</span> std::fmt::<span class="hljs-type">Result</span> &#123;<br>        <span class="hljs-built_in">write!</span>(f, <span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-keyword">self</span>.<span class="hljs-number">0</span>)<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">std</span>::error::Error <span class="hljs-keyword">for</span> <span class="hljs-title class_">OpaqueError</span> &#123;&#125;<br><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">MyError</span> &#123;<br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;specific error: &#123;0&#125;&quot;</span>)]</span><br>    <span class="hljs-title function_ invoke__">Specific</span>(<span class="hljs-type">String</span>),<br><br>    <span class="hljs-meta">#[error(transparent)]</span><br>    <span class="hljs-title function_ invoke__">Other</span>(OpaqueError),<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e1</span> = MyError::<span class="hljs-title function_ invoke__">Specific</span>(<span class="hljs-string">&quot;just this&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>());<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">e2</span> = MyError::<span class="hljs-title function_ invoke__">Other</span>(<span class="hljs-title function_ invoke__">OpaqueError</span>(<span class="hljs-string">&quot;underlying error details&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>()));<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e1);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, e2);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight aspectj"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs aspectj">specific <span class="hljs-keyword">error</span>: just <span class="hljs-keyword">this</span><br>underlying <span class="hljs-keyword">error</span> details<br></code></pre></td></tr></table></figure>
+
+<h3 id="用法二：opaque-public-type（内部实现可演进）"><a href="#用法二：opaque-public-type（内部实现可演进）" class="headerlink" title="用法二：opaque public type（内部实现可演进）"></a>用法二：opaque public type（内部实现可演进）</h3><p>将内部错误表示的具体实现隐藏在公开的 opaque 错误类型之后，使内部表示可以在不破坏公开 API 的前提下自由演进。<code>PublicError</code> 对外公开但内部结构不可见，<code>ErrorRepr</code> 则是私有实现细节：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> thiserror::Error;<br><br><span class="hljs-comment">// 对外公开但内部结构不可见，opaque public type</span><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-meta">#[error(transparent)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">PublicError</span>(<span class="hljs-meta">#[from]</span> ErrorRepr);<br><br><span class="hljs-comment">// 私有实现，可自由演进，不影响公开 API</span><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-keyword">enum</span> <span class="hljs-title class_">ErrorRepr</span> &#123;<br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;file not found: &#123;0&#125;&quot;</span>)]</span><br>    <span class="hljs-title function_ invoke__">FileNotFound</span>(<span class="hljs-type">String</span>),<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;permission denied&quot;</span>)]</span><br>    PermissionDenied,<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">PublicError</span> &#123;<br>    <span class="hljs-comment">// 公开访问器，只暴露必要信息</span><br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">is_file_not_found</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">bool</span> &#123;<br>        matches!(<span class="hljs-keyword">self</span>.<span class="hljs-number">0</span>, ErrorRepr::<span class="hljs-title function_ invoke__">FileNotFound</span>(_))<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">err</span> = PublicError::<span class="hljs-title function_ invoke__">from</span>(ErrorRepr::<span class="hljs-title function_ invoke__">FileNotFound</span>(<span class="hljs-string">&quot;/etc/passwd&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>()));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, err);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;is file not found: &#123;&#125;&quot;</span>, err.<span class="hljs-title function_ invoke__">is_file_not_found</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs applescript"><span class="hljs-built_in">file</span> <span class="hljs-keyword">not</span> found: /etc/passwd<br><span class="hljs-keyword">is</span> <span class="hljs-built_in">file</span> <span class="hljs-keyword">not</span> found: <span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="transparent-vs-普通变体对比"><a href="#transparent-vs-普通变体对比" class="headerlink" title="transparent vs 普通变体对比"></a><code>transparent</code> vs 普通变体对比</h3><table>
+<thead>
+<tr>
+<th>特性</th>
+<th>普通变体 <code>#[error(&quot;...&quot;)]</code></th>
+<th><code>#[error(transparent)]</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>消息内容</td>
+<td>使用模板字符串自定义</td>
+<td>直接透传底层错误消息</td>
+</tr>
+<tr>
+<td><code>Display</code> 转发</td>
+<td>不转发</td>
+<td>转发到底层错误类型</td>
+</tr>
+<tr>
+<td><code>Error::source()</code> 转发</td>
+<td>不转发</td>
+<td>转发到底层错误类型</td>
+</tr>
+<tr>
+<td>典型用途</td>
+<td>已知具体错误类型</td>
+<td>兜底变体或 opaque type</td>
+</tr>
+</tbody></table>
+<h2 id="七、thiserror-与-anyhow-的选择"><a href="#七、thiserror-与-anyhow-的选择" class="headerlink" title="七、thiserror 与 anyhow 的选择"></a>七、thiserror 与 anyhow 的选择</h2><p><code>thiserror</code> 和 <code>anyhow</code> 均来自 <code>dtolnay</code> 之手，适用于不同场景：</p>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>thiserror</th>
+<th>anyhow</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>定位</td>
+<td>定义专用错误类型</td>
+<td>使用通用错误类型</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>库代码（需要公开错误 API）</td>
+<td>应用代码（不关心具体错误类型）</td>
+</tr>
+<tr>
+<td>API 影响</td>
+<td>不进入公开 API，可与手写实现互换</td>
+<td>进入公开 API，返回 <code>Result&lt;T, anyhow::Error&gt;</code></td>
+</tr>
+<tr>
+<td>灵活性</td>
+<td>高，由 <code>you</code> 定义每个错误变体的结构</td>
+<td>中，所有错误统一为一种类型</td>
+</tr>
+</tbody></table>
+<p>简言之：编写库代码时使用 <code>thiserror</code> 定义清晰的错误类型；编写应用代码时使用 <code>anyhow</code> 简化错误传播。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/thiserror/" class="print-no-link">#thiserror</a>
+      
+        <a href="/tags/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86/" class="print-no-link">#错误处理</a>
+      
+        <a href="/tags/derive-%E5%AE%8F/" class="print-no-link">#derive 宏</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/04/01/mysql/InnoDB%20%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" title="InnoDB 存储引擎">
+                        <span class="hidden-mobile">InnoDB 存储引擎</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

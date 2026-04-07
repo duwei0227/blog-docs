@@ -1,0 +1,1420 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="一、MySQL 日志类型概述MySQL Server 在运行过程中会生成多种日志，用于记录服务器状态、客户端请求、语句执行和故障排查等信息。    日志类型 作用 默认状态    error log 记录服务器启动、运行和停止过程中的关键事件 始终启用   general query log 记录所有客户端连接和接收到的 SQL 语句 默认关闭   binary log 记录数据变更（用于复制和增">
+  
+  
+  
+  <title>MySQL 日志类型与配置 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="MySQL 日志类型与配置"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-03-30 15:38" pubdate>
+          2026年3月30日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.2k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          36 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">MySQL 日志类型与配置</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="一、MySQL-日志类型概述"><a href="#一、MySQL-日志类型概述" class="headerlink" title="一、MySQL 日志类型概述"></a>一、MySQL 日志类型概述</h2><p>MySQL Server 在运行过程中会生成多种日志，用于记录服务器状态、客户端请求、语句执行和故障排查等信息。</p>
+<table>
+<thead>
+<tr>
+<th>日志类型</th>
+<th>作用</th>
+<th>默认状态</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>error log</code></td>
+<td>记录服务器启动、运行和停止过程中的关键事件</td>
+<td>始终启用</td>
+</tr>
+<tr>
+<td><code>general query log</code></td>
+<td>记录所有客户端连接和接收到的 SQL 语句</td>
+<td>默认关闭</td>
+</tr>
+<tr>
+<td><code>binary log</code></td>
+<td>记录数据变更（用于复制和增量恢复）</td>
+<td>默认启用</td>
+</tr>
+<tr>
+<td><code>slow query log</code></td>
+<td>记录执行时间超过阈值的查询</td>
+<td>默认关闭</td>
+</tr>
+</tbody></table>
+<h2 id="二、错误日志"><a href="#二、错误日志" class="headerlink" title="二、错误日志"></a>二、错误日志</h2><p>错误日志记录服务器启动、运行、停止过程中的关键事件，以及警告和错误信息，是排查 MySQL 故障的主要信息来源。</p>
+<h3 id="2-1-默认路径与配置"><a href="#2-1-默认路径与配置" class="headerlink" title="2.1 默认路径与配置"></a>2.1 默认路径与配置</h3><p>在 Unix&#x2F;Linux 系统中，<code>mysqld</code> 通过 <code>--log-error</code> 选项决定错误日志的默认目标：</p>
+<table>
+<thead>
+<tr>
+<th>启动方式</th>
+<th>默认行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>未指定 <code>--log-error</code></td>
+<td>输出到控制台（stderr）</td>
+</tr>
+<tr>
+<td><code>--log-error</code>（无文件名）</td>
+<td>输出到 <code>host_name.err</code>，位于数据目录</td>
+</tr>
+<tr>
+<td><code>--log-error=file_name</code></td>
+<td>输出到指定文件，自动添加 <code>.err</code> 后缀</td>
+</tr>
+</tbody></table>
+<p><strong>验证：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> @<span class="hljs-variable">@log_error</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-------------------------+</span><br><span class="hljs-section">| @@log_error             |</span><br><span class="hljs-section">+-------------------------+</span><br><span class="hljs-section">| /var/log/mysql/mysqld.log |</span><br><span class="hljs-section">+-------------------------+</span><br></code></pre></td></tr></table></figure>
+
+<p>本机错误日志路径为 <code>/var/log/mysql/mysqld.log</code>。</p>
+<p>修改日志路径示例（在配置文件中，路径为 <code>/etc/my.cnf.d/mysql-server.cnf</code>）：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-section">[mysqld]</span><br><span class="hljs-attr">log-error</span>=/var/log/mysql/mysqld.log<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>RPM 或 APT 包安装时通常配置为 <code>/var/log/mysqld.log</code>。移除路径名后，改为数据目录下的 <code>host_name.err</code>。</p>
+</blockquote>
+<h3 id="2-2-日志格式"><a href="#2-2-日志格式" class="headerlink" title="2.2 日志格式"></a>2.2 日志格式</h3><p><code>log_sink_internal</code> 产生的传统错误日志格式为：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs css"><span class="hljs-selector-tag">time</span> thread <span class="hljs-selector-attr">[label]</span> <span class="hljs-selector-attr">[err_code]</span> <span class="hljs-selector-attr">[subsystem]</span> msg<br></code></pre></td></tr></table></figure>
+
+<p>每条消息包含：时间戳、线程 ID、优先级标签、错误码、子系统、消息内容。</p>
+<p><code>label</code> 为优先级的字符串形式，对应关系如下：</p>
+<table>
+<thead>
+<tr>
+<th>优先级</th>
+<th><code>prio</code> 值</th>
+<th><code>label</code> 字符串</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SYSTEM</code></td>
+<td>0</td>
+<td><code>System</code></td>
+</tr>
+<tr>
+<td><code>ERROR</code></td>
+<td>1</td>
+<td><code>Error</code></td>
+</tr>
+<tr>
+<td><code>WARNING</code></td>
+<td>2</td>
+<td><code>Warning</code></td>
+</tr>
+<tr>
+<td><code>INFORMATION</code></td>
+<td>3</td>
+<td><code>Note</code> 或 <code>Information</code></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>SYSTEM 优先级为启动&#x2F;关闭等系统消息，无法被过滤。</p>
+</blockquote>
+<p><code>subsystem</code> 标识产生该事件的 MySQL 子系统：</p>
+<table>
+<thead>
+<tr>
+<th><code>subsystem</code> 值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>InnoDB</code></td>
+<td>InnoDB 存储引擎</td>
+</tr>
+<tr>
+<td><code>Repl</code></td>
+<td>复制子系统</td>
+</tr>
+<tr>
+<td><code>Server</code></td>
+<td>服务器通用部分</td>
+</tr>
+</tbody></table>
+<p><strong>时间戳格式</strong>由 <code>log_timestamps</code> 控制：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> @<span class="hljs-variable">@log_timestamps</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-------------------+</span><br><span class="hljs-section">| @@log_timestamps  |</span><br><span class="hljs-section">+-------------------+</span><br><span class="hljs-section">| UTC               |</span><br><span class="hljs-section">+-------------------+</span><br></code></pre></td></tr></table></figure>
+
+<p>可选值为 <code>UTC</code>（默认）和 <code>SYSTEM</code>（本地时区）。时间戳格式为 <code>ISO 8601</code>&#x2F;<code>RFC 3339</code>：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">2020</span>-<span class="hljs-number">08</span>-<span class="hljs-number">07</span>T15:<span class="hljs-number">02</span>:<span class="hljs-number">00</span>.<span class="hljs-number">832521</span>Z       # UTC<br><span class="hljs-attribute">2020</span>-<span class="hljs-number">08</span>-<span class="hljs-number">07</span>T10:<span class="hljs-number">02</span>:<span class="hljs-number">00</span>.<span class="hljs-number">832521</span>-<span class="hljs-number">05</span>:<span class="hljs-number">00</span>  # SYSTEM（本地时区）<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-3-日志过滤"><a href="#2-3-日志过滤" class="headerlink" title="2.3 日志过滤"></a>2.3 日志过滤</h3><p>错误日志组件体系由过滤器（filter）和写入器（sink）组成。过滤器处理日志事件，写入器负责输出到具体目的地。</p>
+<h4 id="2-3-1-优先级过滤（log-filter-internal）"><a href="#2-3-1-优先级过滤（log-filter-internal）" class="headerlink" title="2.3.1 优先级过滤（log_filter_internal）"></a>2.3.1 优先级过滤（<code>log_filter_internal</code>）</h4><p><code>log_filter_internal</code> 是内置的优先级过滤器，受 <code>log_error_verbosity</code> 控制：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> @<span class="hljs-variable">@log_error_verbosity</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+------------------------+</span><br><span class="hljs-section">| @@log_error_verbosity  |</span><br><span class="hljs-section">+------------------------+</span><br><span class="hljs-section">|                      2 |</span><br><span class="hljs-section">+------------------------+</span><br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th><code>log_error_verbosity</code> 值</th>
+<th>记录的优先级</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>ERROR</td>
+</tr>
+<tr>
+<td>2</td>
+<td>ERROR, WARNING（默认）</td>
+</tr>
+<tr>
+<td>3</td>
+<td>ERROR, WARNING, INFORMATION</td>
+</tr>
+</tbody></table>
+<p>优先级含义：</p>
+<table>
+<thead>
+<tr>
+<th>优先级</th>
+<th>数字值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>SYSTEM</td>
+<td>0</td>
+<td>启动&#x2F;关闭等系统消息，无法过滤</td>
+</tr>
+<tr>
+<td>ERROR</td>
+<td>1</td>
+<td>错误</td>
+</tr>
+<tr>
+<td>WARNING</td>
+<td>2</td>
+<td>警告</td>
+</tr>
+<tr>
+<td>INFORMATION</td>
+<td>3</td>
+<td>信息</td>
+</tr>
+</tbody></table>
+<p>另外，<code>log_error_suppression_list</code> 可按错误码压制特定消息（仅对 WARNING 和 INFORMATION 生效）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> log_error_suppression_list <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;ER_PARSER_TRACE,MY-010001,10002&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p>错误码支持符号名（如 <code>ER_PARSER_TRACE</code>）、带 <code>MY-</code> 前缀（如 <code>MY-010001</code>）或纯数字（如 <code>10002</code>）。符号名优于数字，可读性更好。</p>
+<p><strong>优先级过滤规则（与 <code>log_error_verbosity</code> 等效）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>规则</th>
+<th>等效 <code>log_error_verbosity</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>IF prio &gt; ERROR THEN drop.</code></td>
+<td>1（仅 ERROR）</td>
+</tr>
+<tr>
+<td><code>IF prio &gt; WARNING THEN drop.</code></td>
+<td>2（ERROR + WARNING）</td>
+</tr>
+<tr>
+<td><code>IF prio &gt; INFORMATION THEN drop.</code></td>
+<td>3（全部）</td>
+</tr>
+</tbody></table>
+<h4 id="2-3-2-规则过滤（log-filter-dragnet）"><a href="#2-3-2-规则过滤（log-filter-dragnet）" class="headerlink" title="2.3.2 规则过滤（log_filter_dragnet）"></a>2.3.2 规则过滤（<code>log_filter_dragnet</code>）</h4><p><code>log_filter_dragnet</code> 支持用户自定义规则过滤。先加载组件，再配置：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql">INSTALL COMPONENT <span class="hljs-string">&#x27;file://component_log_filter_dragnet&#x27;</span>;<br><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> log_error_services <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;log_filter_dragnet; log_sink_internal&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p>通过 <code>dragnet.log_error_filter_rules</code> 设置规则，规则以 <code>IF condition THEN action.</code> 格式编写：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> dragnet.log_error_filter_rules <span class="hljs-operator">=</span><br><span class="hljs-string">&#x27;IF prio&gt;=INFORMATION THEN drop. IF EXISTS source_line THEN unset source_line.&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p>支持的 action 包括：</p>
+<table>
+<thead>
+<tr>
+<th>action</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>drop</code></td>
+<td>丢弃该日志事件</td>
+</tr>
+<tr>
+<td><code>throttle count</code> 或 <code>count/window_size</code></td>
+<td>限流，限制单位时间内的记录次数</td>
+</tr>
+<tr>
+<td><code>set field = value</code></td>
+<td>设置字段值</td>
+</tr>
+<tr>
+<td><code>unset field</code></td>
+<td>移除字段</td>
+</tr>
+</tbody></table>
+<p>限流示例——每 60 秒最多记录 1 条 INFORMATION 级别事件：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> dragnet.log_error_filter_rules <span class="hljs-operator">=</span><br><span class="hljs-string">&#x27;IF prio&gt;=INFORMATION THEN throttle 1/60.&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>log_filter_dragnet</code> 启用后，<code>log_error_suppression_list</code> 不再生效。</p>
+</blockquote>
+<h3 id="2-4-JSON-格式输出"><a href="#2-4-JSON-格式输出" class="headerlink" title="2.4 JSON 格式输出"></a>2.4 JSON 格式输出</h3><p><code>log_sink_json</code> 将错误日志输出为 JSON 格式。先加载组件：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql">INSTALL COMPONENT <span class="hljs-string">&#x27;file://component_log_sink_json&#x27;</span>;<br><span class="hljs-keyword">SET</span> PERSIST log_error_services <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;log_filter_internal; log_sink_json&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p>JSON 格式每条消息包含键值对，例如：</p>
+<figure class="highlight json"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs json"><span class="hljs-punctuation">&#123;</span><br>  <span class="hljs-attr">&quot;prio&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">3</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;err_code&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">10051</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;source_line&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">561</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;source_file&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;event_scheduler.cc&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;msg&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Event Scheduler: scheduler thread started with id 5&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;time&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;2020-08-06T14:25:03.109022Z&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;ts&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">1596724012005</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;thread&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-number">5</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;err_symbol&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;ER_SCHEDULER_STARTED&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;SQL_state&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;HY000&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;subsystem&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Server&quot;</span><span class="hljs-punctuation">,</span><br>  <span class="hljs-attr">&quot;label&quot;</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Note&quot;</span><br><span class="hljs-punctuation">&#125;</span><br></code></pre></td></tr></table></figure>
+
+<p>其中 <code>ts</code> 为毫秒级 Unix 时间戳，可用 <code>FROM_UNIXTIME()</code> 转换：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> FROM_UNIXTIME(<span class="hljs-number">1596724012005</span><span class="hljs-operator">/</span><span class="hljs-number">1000.0</span>);<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+-------------------------------------+</span><br><span class="hljs-section">| FROM_UNIXTIME(1596724012005/1000.0)|</span><br><span class="hljs-section">+-------------------------------------+</span><br><span class="hljs-section">| 2020-08-06 14:26:52.0050            |</span><br><span class="hljs-section">+-------------------------------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><code>log_sink_json</code> 允许多次出现，可同时写入未过滤和已过滤的事件：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> PERSIST log_error_services <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;log_sink_json; log_filter_internal; log_sink_json&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p>多个实例的输出文件以 <code>.00.json</code>、<code>.01.json</code> 递增编号。</p>
+<h3 id="2-5-输出到系统日志"><a href="#2-5-输出到系统日志" class="headerlink" title="2.5 输出到系统日志"></a>2.5 输出到系统日志</h3><p><code>log_sink_syseventlog</code> 将错误日志写入系统日志（Unix 的 <code>syslog</code> 或 Windows 的 Event Log）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql">INSTALL COMPONENT <span class="hljs-string">&#x27;file://component_log_sink_syseventlog&#x27;</span>;<br><span class="hljs-keyword">SET</span> PERSIST log_error_services <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;log_filter_internal; log_sink_syseventlog&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p>相关系统变量：</p>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>说明</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>syseventlog.facility</code></td>
+<td><code>syslog</code> 的 facility 类型</td>
+<td><code>daemon</code></td>
+</tr>
+<tr>
+<td><code>syseventlog.include_pid</code></td>
+<td>是否包含进程 ID</td>
+<td>取决于平台</td>
+</tr>
+<tr>
+<td><code>syseventlog.tag</code></td>
+<td>在 <code>mysqld</code> 标识后追加的标签</td>
+<td>未设置</td>
+</tr>
+</tbody></table>
+<p>Windows 上日志来源标记为 <code>MySQL</code>（或 <code>MySQL-tag</code>），Unix 上写入 <code>syslog</code>。</p>
+<h3 id="2-6-日志刷新与重命名"><a href="#2-6-日志刷新与重命名" class="headerlink" title="2.6 日志刷新与重命名"></a>2.6 日志刷新与重命名</h3><p>手动刷新错误日志时，服务器关闭并重新打开日志文件。操作前应先重命名旧文件：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">mv</span> /var/log/mysql/mysqld.log /var/log/mysql/mysqld.log-old<br>mysqladmin flush-logs error<br><span class="hljs-built_in">mv</span> /var/log/mysql/mysqld.log-old /backup-directory/<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>如果服务器无法写入日志文件（例如 <code>/var/log</code> 目录属主为 <code>root</code>），刷新操作无法创建新文件，此时需手动创建文件并赋予正确权限。</p>
+</blockquote>
+<h2 id="三、通用查询日志"><a href="#三、通用查询日志" class="headerlink" title="三、通用查询日志"></a>三、通用查询日志</h2><p>通用查询日志记录所有客户端的连接断开信息和接收到的每条 SQL 语句。当怀疑客户端发送了错误语句时，可通过该日志精确还原客户端请求。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 验证：默认状态</span><br><span class="hljs-keyword">SELECT</span> @<span class="hljs-variable">@general_log</span>, @<span class="hljs-variable">@general_log_file</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+--------------+</span>----------------------------------+<br><span class="hljs-section">| general_log  | general_log_file                 |</span><br><span class="hljs-section">+--------------+----------------------------------+</span><br><span class="hljs-section">|            0 | /var/lib/mysql/probiecoder.log |</span><br><span class="hljs-section">+--------------+----------------------------------+</span><br></code></pre></td></tr></table></figure>
+
+<p>默认关闭。启用并指定输出目标：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> general_log <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> log_output <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;FILE&#x27;</span>;  <span class="hljs-comment">-- 或 TABLE，或 FILE,TABLE</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>默认输出目标为 <code>FILE</code>。如果设为 <code>NONE</code>，即使 <code>general_log = 1</code> 也不会记录。</p>
+</blockquote>
+<p><strong>永久配置：</strong> 在配置文件中设置（<code>/etc/my.cnf.d/mysql-server.cnf</code>）：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-section">[mysqld]</span><br><span class="hljs-attr">general_log</span> = <span class="hljs-number">1</span><br><span class="hljs-attr">log_output</span> = TABLE<br><span class="hljs-attr">general_log_file</span> = /var/lib/mysql/general.log<br></code></pre></td></tr></table></figure>
+
+<p><strong>临时配置：</strong> 运行时 <code>SET GLOBAL</code>（重启后失效）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> general_log <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> log_output <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;TABLE&#x27;</span>;<br><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> general_log_file <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;/var/lib/mysql/general.log&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-1-输出目标为-TABLE-时的存储"><a href="#3-1-输出目标为-TABLE-时的存储" class="headerlink" title="3.1 输出目标为 TABLE 时的存储"></a>3.1 输出目标为 TABLE 时的存储</h3><p><code>log_output = &#39;TABLE&#39;</code> 时，日志数据存储在 <code>mysql.general_log</code> 表中：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> @<span class="hljs-variable">@log_output</span>;<br><span class="hljs-keyword">SHOW</span> <span class="hljs-keyword">CREATE TABLE</span> mysql.general_log\G<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight pgsql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs pgsql">+<span class="hljs-comment">-------------+</span><br>| log_output  |<br>+<span class="hljs-comment">-------------+</span><br>| FILE        |<br>+<span class="hljs-comment">-------------+</span><br>*************************** <span class="hljs-number">1.</span> <span class="hljs-keyword">row</span> ***************************<br>       <span class="hljs-keyword">Table</span>: general_log<br><span class="hljs-keyword">Create</span> <span class="hljs-keyword">Table</span>: <span class="hljs-keyword">CREATE</span> <span class="hljs-keyword">TABLE</span> `general_log` (<br>  `event_time` <span class="hljs-type">timestamp</span>(<span class="hljs-number">6</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span>(<span class="hljs-number">6</span>) <span class="hljs-keyword">ON</span> <span class="hljs-keyword">UPDATE</span> <span class="hljs-built_in">CURRENT_TIMESTAMP</span>(<span class="hljs-number">6</span>),<br>  `user_host` mediumtext <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `thread_id` <span class="hljs-type">bigint</span> unsigned <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `server_id` <span class="hljs-type">int</span> unsigned <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `command_type` <span class="hljs-type">varchar</span>(<span class="hljs-number">64</span>) <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span>,<br>  `argument` mediumblob <span class="hljs-keyword">NOT</span> <span class="hljs-keyword">NULL</span><br>) ENGINE=CSV <span class="hljs-keyword">DEFAULT</span> CHARSET=utf8mb3 <span class="hljs-keyword">COMMENT</span>=<span class="hljs-string">&#x27;General log&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<p>表结构说明：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>event_time</code></td>
+<td>事件时间戳，精度到微秒</td>
+</tr>
+<tr>
+<td><code>user_host</code></td>
+<td>客户端用户和主机信息</td>
+</tr>
+<tr>
+<td><code>thread_id</code></td>
+<td>连接线程 ID</td>
+</tr>
+<tr>
+<td><code>server_id</code></td>
+<td>服务器 ID</td>
+</tr>
+<tr>
+<td><code>command_type</code></td>
+<td>命令类型</td>
+</tr>
+<tr>
+<td><code>argument</code></td>
+<td>执行的语句内容（二进制格式）</td>
+</tr>
+</tbody></table>
+<p><code>command_type</code> 字段支持的类型：</p>
+<table>
+<thead>
+<tr>
+<th><code>command_type</code> 值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Connect</code></td>
+<td>客户端连接或断开连接</td>
+</tr>
+<tr>
+<td><code>Query</code></td>
+<td>执行的 SQL 查询语句</td>
+</tr>
+<tr>
+<td><code>Quit</code></td>
+<td>客户端退出连接</td>
+</tr>
+<tr>
+<td><code>Prepare</code></td>
+<td>预处理语句（<code>PREPARE</code>）</td>
+</tr>
+<tr>
+<td><code>Execute</code></td>
+<td>执行预处理语句（<code>EXECUTE</code>）</td>
+</tr>
+<tr>
+<td><code>Init DB</code></td>
+<td>切换数据库（<code>USE db_name</code>）</td>
+</tr>
+</tbody></table>
+<p>查看日志内容：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- argument 是 mediumblob（二进制），需要转换后查看</span><br><span class="hljs-keyword">SELECT</span> event_time, thread_id, command_type,<br>       <span class="hljs-keyword">CONVERT</span>(argument <span class="hljs-keyword">USING</span> utf8mb4) <span class="hljs-keyword">AS</span> argument_text<br><span class="hljs-keyword">FROM</span> mysql.general_log<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> event_time <span class="hljs-keyword">DESC</span><br>LIMIT <span class="hljs-number">10</span>;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>argument</code> 字段类型为 <code>mediumblob</code>，存储的是二进制内容。使用 <code>CONVERT(argument USING utf8mb4)</code> 或 <code>CAST(argument AS CHAR)</code> 将其转换为可读字符串。</p>
+</blockquote>
+<blockquote>
+<p>该表默认使用 <code>CSV</code> 存储引擎，也可转换为 <code>MyISAM</code> 引擎。<code>INSERT</code>、<code>DELETE</code>、<code>UPDATE</code> 操作只能在服务器内部进行，用户无法直接修改日志表。</p>
+</blockquote>
+<h3 id="3-2-会话级禁用"><a href="#3-2-会话级禁用" class="headerlink" title="3.2 会话级禁用"></a>3.2 会话级禁用</h3><p>会话级禁用通用查询日志（需 <code>general_log = 1</code> 前提下）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> SESSION sql_log_off <span class="hljs-operator">=</span> <span class="hljs-keyword">ON</span>;  <span class="hljs-comment">-- 当前会话禁用</span><br><span class="hljs-keyword">SET</span> SESSION sql_log_off <span class="hljs-operator">=</span> OFF; <span class="hljs-comment">-- 恢复记录</span><br></code></pre></td></tr></table></figure>
+
+<p>密码在日志中会被自动重写，不会明文出现。如果需要诊断目的查看原始语句，可使用 <code>--log-raw</code> 选项启动服务器（生产环境慎用）。</p>
+<p>日志记录顺序为服务器接收顺序，与执行顺序可能不一致。不同于二进制日志（先执行后记录），通用查询日志可能包含未实际执行的语句。</p>
+<h2 id="四、二进制日志"><a href="#四、二进制日志" class="headerlink" title="四、二进制日志"></a>四、二进制日志</h2><p>二进制日志记录数据库的数据变更事件，用于复制和增量恢复。默认启用。</p>
+<h3 id="4-1-默认配置"><a href="#4-1-默认配置" class="headerlink" title="4.1 默认配置"></a>4.1 默认配置</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> @<span class="hljs-variable">@log_bin</span>, @<span class="hljs-variable">@log_bin_basename</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+--------+</span>------------------------+<br><span class="hljs-section">| log_bin| log_bin_basename       |</span><br><span class="hljs-section">+--------+------------------------+</span><br><span class="hljs-section">|      1 | /var/lib/mysql/binlog  |</span><br><span class="hljs-section">+--------+------------------------+</span><br></code></pre></td></tr></table></figure>
+
+<p>二进制日志文件位于 <code>/var/lib/mysql/</code> 目录下：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">ls</span> -la /var/lib/mysql/binlog*<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs tap">-rw-r-----.<span class="hljs-number"> 1 </span>mysql mysql <span class="hljs-number"> 2569 </span>Mar<span class="hljs-number"> 25 </span>11:57 binlog.000001<br>-rw-r-----.<span class="hljs-number"> 1 </span>mysql mysql <span class="hljs-number"> 1158 </span>Mar<span class="hljs-number"> 25 </span>16:37 binlog.000002<br>-rw-r-----.<span class="hljs-number"> 1 </span>mysql mysql<span class="hljs-number"> 12874 </span>Mar<span class="hljs-number"> 25 </span>20:02 binlog.000003<br>...<br>-rw-r-----.<span class="hljs-number"> 1 </span>mysql mysql  <span class="hljs-number"> 144 </span>Mar<span class="hljs-number"> 30 </span>08:19 binlog.index<br></code></pre></td></tr></table></figure>
+
+<p>日志文件说明：</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>binlog.000001</code> 等</td>
+<td>二进制日志文件，编号递增</td>
+</tr>
+<tr>
+<td><code>binlog.index</code></td>
+<td>二进制日志索引文件，记录所有日志文件名</td>
+</tr>
+</tbody></table>
+<h3 id="4-2-三种日志格式"><a href="#4-2-三种日志格式" class="headerlink" title="4.2 三种日志格式"></a>4.2 三种日志格式</h3><p><code>binlog_format</code> 系统变量控制二进制日志的格式：</p>
+<table>
+<thead>
+<tr>
+<th>格式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>STATEMENT</code></td>
+<td>记录实际执行的 SQL 语句（基于语句的复制）</td>
+</tr>
+<tr>
+<td><code>ROW</code></td>
+<td>记录每行数据的变更（基于行的复制，默认）</td>
+</tr>
+<tr>
+<td><code>MIXED</code></td>
+<td>默认使用 <code>STATEMENT</code>，在特定条件下自动切换为 <code>ROW</code></td>
+</tr>
+</tbody></table>
+<p>运行时切换：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> binlog_format <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;ROW&#x27;</span>;<br><span class="hljs-keyword">SET</span> SESSION binlog_format <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;MIXED&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p><strong><code>MIXED</code> 模式自动切换为 <code>ROW</code> 的条件包括：</strong></p>
+<ul>
+<li>语句中包含 <code>UUID()</code></li>
+<li>包含 <code>AUTO_INCREMENT</code> 列的表触发存储过程&#x2F;函数</li>
+<li>视图创建时需要 <code>ROW</code> 格式</li>
+<li>调用了可加载函数</li>
+<li>使用了 <code>FOUND_ROWS()</code>、<code>ROW_COUNT()</code></li>
+<li>使用了 <code>USER()</code>、<code>CURRENT_USER()</code></li>
+<li>涉及 <code>mysql</code> 数据库中的日志表</li>
+<li>使用了 <code>LOAD_FILE()</code></li>
+<li>引用了某些系统变量</li>
+</ul>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 查看当前格式</span><br><span class="hljs-keyword">SELECT</span> @<span class="hljs-variable">@binlog_format</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+---------------+</span><br><span class="hljs-section">| binlog_format |</span><br><span class="hljs-section">+---------------+</span><br><span class="hljs-section">| ROW           |</span><br><span class="hljs-section">+---------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><code>ROW</code> 模式下，所有修改数据的语句都以行变化形式记录。但部分语句（如 <code>CREATE TABLE</code>、<code>ALTER TABLE</code> 等 DDL）仍以语句形式记录。</p>
+<p>使用 <code>mysqlbinlog</code> 查看 <code>ROW</code> 格式日志时，必须加 <code>-v</code> 选项才能将行事件还原为可读 SQL，否则显示为二进制标记：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 不带 -v：显示为二进制标记</span><br>mysqlbinlog binlog.000009<br><br><span class="hljs-comment"># 带 -v：还原为可读 SQL（-vv 包含更多列信息）</span><br>mysqlbinlog binlog.000009 -v<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>使用 <code>STATEMENT</code> 格式时，某些不确定的语句可能导致主从数据不一致。<code>ROW</code> 格式精度更高，但日志体积通常更大。</p>
+</blockquote>
+<h3 id="4-3-查看二进制日志内容"><a href="#4-3-查看二进制日志内容" class="headerlink" title="4.3 查看二进制日志内容"></a>4.3 查看二进制日志内容</h3><p><strong>方式一：SQL 语句</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SHOW</span> BINLOG EVENTS <span class="hljs-keyword">IN</span> <span class="hljs-string">&#x27;binlog.000009&#x27;</span> LIMIT <span class="hljs-number">10</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs gherkin">+-----------+-----+---------------+-----------+-------------+---------------------------------------+<br>|<span class="hljs-string"> Log_name  </span>|<span class="hljs-string"> Pos </span>|<span class="hljs-string"> Event_type    </span>|<span class="hljs-string"> Server_id </span>|<span class="hljs-string"> End_log_pos </span>|<span class="hljs-string"> Info                                  </span>|<br>+-----------+-----+---------------+-----------+-------------+---------------------------------------+<br>|<span class="hljs-string"> binlog.000009 </span>|<span class="hljs-string">   4 </span>|<span class="hljs-string"> Format_desc     </span>|<span class="hljs-string">         1 </span>|<span class="hljs-string">         127 </span>|<span class="hljs-string"> Server ver: 8.4.8, Binlog ver: 4  </span>|<br>|<span class="hljs-string"> binlog.000009 </span>|<span class="hljs-string"> 127 </span>|<span class="hljs-string"> Previous_gtids </span>|<span class="hljs-string">         1 </span>|<span class="hljs-string">         158 </span>|<span class="hljs-string">                                      </span>|<br>|<span class="hljs-string"> binlog.000009 </span>|<span class="hljs-string"> 158 </span>|<span class="hljs-string"> Anonymous_Gtid </span>|<span class="hljs-string">         1 </span>|<span class="hljs-string">         235 </span>|<span class="hljs-string"> SET @@SESSION.GTID_NEXT= &#x27;ANONYMOUS&#x27; </span>|<br>|<span class="hljs-string"> binlog.000009 </span>|<span class="hljs-string"> 235 </span>|<span class="hljs-string"> Query          </span>|<span class="hljs-string">         1 </span>|<span class="hljs-string">         384 </span>|<span class="hljs-string"> CREATE DATABASE IF NOT EXISTS test... </span>|<br>|<span class="hljs-string"> binlog.000009 </span>|<span class="hljs-string"> 384 </span>|<span class="hljs-string"> Anonymous_Gtid </span>|<span class="hljs-string">         1 </span>|<span class="hljs-string">         461 </span>|<span class="hljs-string"> SET @@SESSION.GTID_NEXT= &#x27;ANONYMOUS&#x27; </span>|<br>+-----------+-----+---------------+-----------+-------------+---------------------------------------+<br></code></pre></td></tr></table></figure>
+
+<p>主要事件类型说明：</p>
+<table>
+<thead>
+<tr>
+<th>Event_type</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Format_desc</code></td>
+<td>日志格式描述</td>
+</tr>
+<tr>
+<td><code>Previous_gtids</code></td>
+<td>前一个日志的 GTID 集合</td>
+</tr>
+<tr>
+<td><code>Gtid</code></td>
+<td>GTID 事务标识</td>
+</tr>
+<tr>
+<td><code>Query</code></td>
+<td>DDL&#x2F;DML 语句</td>
+</tr>
+<tr>
+<td><code>Xid</code></td>
+<td>事务提交标识</td>
+</tr>
+<tr>
+<td><code>Table_map</code></td>
+<td>表结构映射</td>
+</tr>
+<tr>
+<td><code>Write_rows</code> &#x2F; <code>Update_rows</code> &#x2F; <code>Delete_rows</code></td>
+<td>行数据变更（ROW 格式）</td>
+</tr>
+</tbody></table>
+<p><strong>查看日志事件：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 从文件开头遍历，限制返回 10 条</span><br><span class="hljs-keyword">SHOW</span> BINLOG EVENTS <span class="hljs-keyword">IN</span> <span class="hljs-string">&#x27;binlog.000009&#x27;</span> LIMIT <span class="hljs-number">10</span>;<br></code></pre></td></tr></table></figure>
+
+<p><strong>过滤特定数据库的变更：</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 使用 LIMIT 控制返回数量（从文件开头遍历，性能较差）</span><br><span class="hljs-keyword">SHOW</span> BINLOG EVENTS <span class="hljs-keyword">IN</span> <span class="hljs-string">&#x27;binlog.000009&#x27;</span> LIMIT <span class="hljs-number">20</span>;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>SHOW BINLOG EVENTS</code> 不支持 <code>WHERE</code> 子句，也无法直接按数据库过滤。查看特定数据库的变更需要结合外部工具。</p>
+</blockquote>
+<p><strong>方式二：mysqlbinlog 命令行工具</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">mysqlbinlog /var/lib/mysql/binlog.000009 | <span class="hljs-built_in">head</span> -50<br></code></pre></td></tr></table></figure>
+
+<p>常用选项：</p>
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>--start-position=#</code></td>
+<td>从指定位置开始读取</td>
+</tr>
+<tr>
+<td><code>--stop-position=#</code></td>
+<td>读到指定位置停止</td>
+</tr>
+<tr>
+<td><code>--start-datetime=datetime</code></td>
+<td>从指定时间开始读取</td>
+</tr>
+<tr>
+<td><code>--stop-datetime=datetime</code></td>
+<td>读到指定时间停止</td>
+</tr>
+<tr>
+<td><code>--database=db_name</code></td>
+<td>只显示指定数据库的事件</td>
+</tr>
+<tr>
+<td><code>-v, --verbose</code></td>
+<td>将行事件重构为可读 SQL（<code>-vv</code> 包含更多列信息）</td>
+</tr>
+<tr>
+<td><code>--include-gtids=gtid_set</code></td>
+<td>只输出指定 GTID 的事务</td>
+</tr>
+<tr>
+<td><code>--exclude-gtids=gtid_set</code></td>
+<td>排除指定 GTID 的事务</td>
+</tr>
+<tr>
+<td><code>--stop-never</code></td>
+<td>持续监听新事件（用于实时跟踪）</td>
+</tr>
+<tr>
+<td><code>--raw</code></td>
+<td>输出原始二进制格式（需配合 <code>-R</code> 远程读取）</td>
+</tr>
+</tbody></table>
+<p>常用示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 从指定位置读取到结束</span><br>mysqlbinlog /var/lib/mysql/binlog.000009 --start-position=1000<br><br><span class="hljs-comment"># 读取指定位置范围</span><br>mysqlbinlog /var/lib/mysql/binlog.000009 --start-position=1000 --stop-position=2000<br><br><span class="hljs-comment"># 只看特定数据库的事件</span><br>mysqlbinlog /var/lib/mysql/binlog.000009 --database=test_charsets<br><br><span class="hljs-comment"># 行事件重构为可读 SQL</span><br>mysqlbinlog /var/lib/mysql/binlog.000009 -v<br><br><span class="hljs-comment"># 从指定时间开始</span><br>mysqlbinlog /var/lib/mysql/binlog.000009 --start-datetime=<span class="hljs-string">&#x27;2026-03-30 10:00:00&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>mysqlbinlog</code> 需要读取权限，可能需要 <code>sudo</code> 或调整文件权限。<code>-v</code> 选项可显示更详细的可读格式，<code>--base64-output=DECODE_ROWS</code> 解码行事件。</p>
+</blockquote>
+<h3 id="4-4-二进制日志事务压缩"><a href="#4-4-二进制日志事务压缩" class="headerlink" title="4.4 二进制日志事务压缩"></a>4.4 二进制日志事务压缩</h3><p>MySQL 8.0.20+ 支持二进制日志事务压缩，使用 <code>zstd</code> 算法压缩事务载荷：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> binlog_transaction_compression <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br></code></pre></td></tr></table></figure>
+
+<p>压缩级别可通过 <code>binlog_transaction_compression_level_zstd</code> 设置（1 到 22，越高压缩率越大）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> binlog_transaction_compression_level_zstd <span class="hljs-operator">=</span> <span class="hljs-number">5</span>;<br></code></pre></td></tr></table></figure>
+
+<p>以下事件不压缩，始终以原始形式写入：</p>
+<ul>
+<li>GTID 相关事件</li>
+<li>控制事件（视图变更、心跳等）</li>
+<li>事件和事务（包含 incident 事件的事务）</li>
+<li>非事务引擎的事件和事务</li>
+<li>语句格式的日志记录</li>
+</ul>
+<p>加密和压缩可同时启用。启用后，副本接收到压缩载荷，直接写入中继日志，解压后应用事件，再压缩写入自己的二进制日志。</p>
+<p>可通过 <code>performance_schema.binary_log_transaction_compression_stats</code> 表监控压缩效果。</p>
+<h2 id="五、慢查询日志"><a href="#五、慢查询日志" class="headerlink" title="五、慢查询日志"></a>五、慢查询日志</h2><p>慢查询日志记录执行时间超过 <code>long_query_time</code> 秒且检查行数至少达到 <code>min_examined_row_limit</code> 的查询。默认关闭。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> @<span class="hljs-variable">@slow_query_log</span>, @<span class="hljs-variable">@slow_query_log_file</span>, @<span class="hljs-variable">@long_query_time</span>;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-code">+----------------+</span>------------------------------------<span class="hljs-code">+----------------+</span><br><span class="hljs-section">| slow_query_log | slow_query_log_file                | long_query_time|</span><br><span class="hljs-section">+----------------+------------------------------------+----------------+</span><br><span class="hljs-section">|              0 | /var/lib/mysql/probiecoder-slow.log|    10.000000  |</span><br><span class="hljs-section">+----------------+------------------------------------+----------------+</span><br></code></pre></td></tr></table></figure>
+
+<p><code>long_query_time</code> 默认 10 秒，最小值 0，可精确到微秒：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> long_query_time <span class="hljs-operator">=</span> <span class="hljs-number">1.5</span>;<br></code></pre></td></tr></table></figure>
+
+<p>慢查询日志的输出目标由 <code>log_output</code> 系统变量控制，与通用查询日志共享同一配置：</p>
+<table>
+<thead>
+<tr>
+<th>值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>FILE</code></td>
+<td>写入日志文件（默认）</td>
+</tr>
+<tr>
+<td><code>TABLE</code></td>
+<td>写入 <code>mysql.slow_log</code> 表</td>
+</tr>
+<tr>
+<td><code>FILE,TABLE</code></td>
+<td>同时写入文件和表</td>
+</tr>
+<tr>
+<td><code>NONE</code></td>
+<td>不记录，即使 <code>slow_query_log = 1</code> 也不记录</td>
+</tr>
+</tbody></table>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 查看当前输出目标</span><br><span class="hljs-keyword">SELECT</span> @<span class="hljs-variable">@log_output</span>;<br><br><span class="hljs-comment">-- 修改为同时写入文件和表</span><br><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> log_output <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;FILE,TABLE&#x27;</span>;<br><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> slow_query_log <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br></code></pre></td></tr></table></figure>
+
+<h3 id="5-1-输出为-FILE"><a href="#5-1-输出为-FILE" class="headerlink" title="5.1 输出为 FILE"></a>5.1 输出为 FILE</h3><p><code>log_output = &#39;FILE&#39;</code> 时，慢查询日志写入文件。</p>
+<p>启用慢查询日志：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> slow_query_log <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> log_output <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;FILE&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p>启用后，可在 FILE 输出中记录更丰富的调试信息。<code>log_slow_extra</code> 是 MySQL 8.0.14 引入的系统变量，默认关闭。启用后，慢查询日志除了包含基本字段外，还输出 Handler 读操作统计、排序统计、临时表统计等信息：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> log_slow_extra <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br></code></pre></td></tr></table></figure>
+
+<p>或在配置文件中设置：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-section">[mysqld]</span><br><span class="hljs-attr">log_slow_extra</span> = <span class="hljs-number">1</span><br></code></pre></td></tr></table></figure>
+
+<p>日志文件路径由 <code>slow_query_log_file</code> 控制，默认为数据目录下的 <code>host_name-slow.log</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">ls</span> -la /var/lib/mysql/probiecoder-slow.log<br></code></pre></td></tr></table></figure>
+
+<p>文件每条记录格式：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs routeros"><span class="hljs-comment"># Time: 2026-03-30T10:00:01.123456Z</span><br><span class="hljs-comment"># User@Host: root[root] @ localhost []</span><br><span class="hljs-comment"># Query_time: 2.534120  Lock_time: 0.000089 Rows_sent: 5  Rows_examined: 50000</span><br><span class="hljs-built_in">SET</span> <span class="hljs-attribute">timestamp</span>=1743328801;<br>SELECT * <span class="hljs-keyword">FROM</span> large_table WHERE status = 1;<br></code></pre></td></tr></table></figure>
+
+<p>启用 <code>log_slow_extra</code> 后，FILE 输出包含更多字段：</p>
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Query_time</code></td>
+<td>执行时长（秒）</td>
+</tr>
+<tr>
+<td><code>Lock_time</code></td>
+<td>锁等待时长</td>
+</tr>
+<tr>
+<td><code>Rows_sent</code></td>
+<td>发送给客户端的行数</td>
+</tr>
+<tr>
+<td><code>Rows_examined</code></td>
+<td>服务器层检查的行数（不含存储引擎内部处理）</td>
+</tr>
+<tr>
+<td><code>Thread_id</code></td>
+<td>语句线程标识</td>
+</tr>
+<tr>
+<td><code>Bytes_received</code></td>
+<td>从客户端接收的字节数</td>
+</tr>
+<tr>
+<td><code>Bytes_sent</code></td>
+<td>发送给客户端的字节数</td>
+</tr>
+<tr>
+<td><code>Read_first/Key/Next/Prev</code> 等</td>
+<td>各类 Handler 读操作统计</td>
+</tr>
+<tr>
+<td><code>Sort_merge_passes</code></td>
+<td>排序合并遍历次数</td>
+</tr>
+<tr>
+<td><code>Created_tmp_disk_tables</code></td>
+<td>磁盘创建临时表数</td>
+</tr>
+<tr>
+<td><code>Created_tmp_tables</code></td>
+<td>内存创建临时表数</td>
+</tr>
+<tr>
+<td><code>Start</code> &#x2F; <code>End</code></td>
+<td>执行开始和结束时间戳</td>
+</tr>
+</tbody></table>
+<p><code>mysqldumpslow</code> 工具可汇总慢查询日志：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">mysqldumpslow /var/lib/mysql/probiecoder-slow.log<br>mysqldumpslow -s r -t 5 /var/lib/mysql/probiecoder-slow.log  <span class="hljs-comment"># 按返回行数排序，显示前5</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="5-2-输出为-TABLE"><a href="#5-2-输出为-TABLE" class="headerlink" title="5.2 输出为 TABLE"></a>5.2 输出为 TABLE</h3><p><code>log_output = &#39;TABLE&#39;</code> 时，慢查询日志写入 <code>mysql.slow_log</code> 表：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> slow_query_log <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> log_output <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;TABLE&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p>表结构：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SHOW</span> <span class="hljs-keyword">CREATE TABLE</span> mysql.slow_log\G<br></code></pre></td></tr></table></figure>
+
+<p><code>slow_log</code> 表结构与 <code>general_log</code> 类似，包含 <code>start_time</code>、<code>user_host</code>、<code>query_time</code>、<code>rows_examined</code>、<code>rows_sent</code>、<code>db</code>、<code>sql_text</code> 等字段。<code>sql_text</code> 字段类型为 <code>blob</code>，查看时需转换：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> start_time, query_time, rows_examined,<br>       <span class="hljs-keyword">CONVERT</span>(sql_text <span class="hljs-keyword">USING</span> utf8mb4) <span class="hljs-keyword">AS</span> sql_text<br><span class="hljs-keyword">FROM</span> mysql.slow_log<br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> start_time <span class="hljs-keyword">DESC</span><br>LIMIT <span class="hljs-number">10</span>;<br></code></pre></td></tr></table></figure>
+
+<h3 id="5-3-记录条件与参数"><a href="#5-3-记录条件与参数" class="headerlink" title="5.3 记录条件与参数"></a>5.3 记录条件与参数</h3><p>服务器判断是否记录某查询的顺序：</p>
+<ol>
+<li>管理语句必须 <code>log_slow_admin_statements = 1</code> 才能记录</li>
+<li>执行时间达到 <code>long_query_time</code> <strong>或</strong> <code>log_queries_not_using_indexes = 1</code> 且未使用索引</li>
+<li>检查行数达到 <code>min_examined_row_limit</code></li>
+<li>未被 <code>log_throttle_queries_not_using_indexes</code> 压制</li>
+</ol>
+<p>常用参数：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>slow_query_log</code></td>
+<td>0</td>
+<td>是否启用</td>
+</tr>
+<tr>
+<td><code>long_query_time</code></td>
+<td>10.0 秒</td>
+<td>触发阈值，最小 0，可精确到微秒</td>
+</tr>
+<tr>
+<td><code>min_examined_row_limit</code></td>
+<td>0</td>
+<td>检查行数下限</td>
+</tr>
+<tr>
+<td><code>log_slow_admin_statements</code></td>
+<td>0</td>
+<td>是否记录管理语句</td>
+</tr>
+<tr>
+<td><code>log_queries_not_using_indexes</code></td>
+<td>0</td>
+<td>是否记录未使用索引的查询</td>
+</tr>
+<tr>
+<td><code>log_throttle_queries_not_using_indexes</code></td>
+<td>0</td>
+<td>每分钟压制未使用索引查询数量上限</td>
+</tr>
+<tr>
+<td><code>log_slow_extra</code></td>
+<td>0</td>
+<td>是否输出额外字段（FILE 模式）</td>
+</tr>
+</tbody></table>
+<p>启用未使用索引的查询记录并压制（每分钟最多 10 条）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> log_queries_not_using_indexes <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;<br><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> log_throttle_queries_not_using_indexes <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;<br></code></pre></td></tr></table></figure>
+
+<h2 id="六、日志维护"><a href="#六、日志维护" class="headerlink" title="六、日志维护"></a>六、日志维护</h2><h3 id="6-1-日志刷新"><a href="#6-1-日志刷新" class="headerlink" title="6.1 日志刷新"></a>6.1 日志刷新</h3><p>执行 <code>FLUSH LOGS</code> 或 <code>mysqladmin flush-logs</code> 后，服务器重新打开各日志文件：</p>
+<table>
+<thead>
+<tr>
+<th>日志类型</th>
+<th>刷新行为</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>二进制日志</td>
+<td>关闭当前文件，创建新文件（递增编号）</td>
+</tr>
+<tr>
+<td>通用查询日志 &#x2F; 慢查询日志</td>
+<td>关闭并重新打开文件（不创建新文件）</td>
+</tr>
+<tr>
+<td>错误日志</td>
+<td>关闭并重新打开文件（不创建新文件）</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>刷新前应先重命名旧文件，否则日志内容被覆盖。</p>
+</blockquote>
+<p>Unix 信号刷新日志（无需连接服务器）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">kill</span> -SIGUSR1 $(<span class="hljs-built_in">cat</span> /var/run/mysqld/mysqld.pid)<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><code>SIGHUP</code>：刷新所有日志，但有其他副作用</li>
+<li><code>SIGUSR1</code>：仅刷新错误日志、通用查询日志、慢查询日志，更轻量</li>
+</ul>
+<h3 id="6-2-二进制日志清理"><a href="#6-2-二进制日志清理" class="headerlink" title="6.2 二进制日志清理"></a>6.2 二进制日志清理</h3><p><strong>自动过期：</strong> 二进制日志默认 30 天后自动删除，通过 <code>binlog_expire_logs_seconds</code> 控制：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SET</span> <span class="hljs-keyword">GLOBAL</span> binlog_expire_logs_seconds <span class="hljs-operator">=</span> <span class="hljs-number">604800</span>;  <span class="hljs-comment">-- 7 天</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>手动清理：</strong> 使用 <code>PURGE BINARY LOGS</code> 删除指定日期或文件之前的日志：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql">PURGE <span class="hljs-type">BINARY</span> LOGS BEFORE <span class="hljs-string">&#x27;2026-03-01 00:00:00&#x27;</span>;<br>PURGE <span class="hljs-type">BINARY</span> LOGS <span class="hljs-keyword">TO</span> <span class="hljs-string">&#x27;binlog.000005&#x27;</span>;  <span class="hljs-comment">-- 删除该文件之前的所有日志</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>全部删除：</strong> <code>RESET BINARY LOGS AND GTIDS</code> 慎用，会删除所有二进制日志。</p>
+<blockquote>
+<p>在主从复制环境中，删除二进制日志前应确保所有从库已完成同步。</p>
+</blockquote>
+<h3 id="6-3-日志文件权限问题"><a href="#6-3-日志文件权限问题" class="headerlink" title="6.3 日志文件权限问题"></a>6.3 日志文件权限问题</h3><p>日志文件所在目录若无写权限（如 <code>/var/log</code> 属主为 <code>root</code>），日志刷新无法创建新文件。解决方案：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 手动创建新文件并赋予正确权限</span><br>install -omysql -gmysql -m0644 /dev/null /var/log/mysqld.log<br></code></pre></td></tr></table></figure>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/MySQL/" class="category-chain-item">MySQL</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E9%94%99%E8%AF%AF%E6%97%A5%E5%BF%97/" class="print-no-link">#错误日志</a>
+      
+        <a href="/tags/%E4%BA%8C%E8%BF%9B%E5%88%B6%E6%97%A5%E5%BF%97/" class="print-no-link">#二进制日志</a>
+      
+        <a href="/tags/%E9%80%9A%E7%94%A8%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97/" class="print-no-link">#通用查询日志</a>
+      
+        <a href="/tags/%E6%85%A2%E6%9F%A5%E8%AF%A2%E6%97%A5%E5%BF%97/" class="print-no-link">#慢查询日志</a>
+      
+        <a href="/tags/%E6%97%A5%E5%BF%97%E9%85%8D%E7%BD%AE/" class="print-no-link">#日志配置</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/03/31/mysql/MySQL%20INFORMATION_SCHEMA/" title="MySQL INFORMATION_SCHEMA">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">MySQL INFORMATION_SCHEMA</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/03/30/mysql/MySQL%20%E5%AD%97%E7%AC%A6%E9%9B%86%E4%B8%8E%E6%8E%92%E5%BA%8F%E8%A7%84%E5%88%99%E5%AE%8C%E5%85%A8%E6%8C%87%E5%8D%97/" title="MySQL 字符集与排序规则">
+                        <span class="hidden-mobile">MySQL 字符集与排序规则</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

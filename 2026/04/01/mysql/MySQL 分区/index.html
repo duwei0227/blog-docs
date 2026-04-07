@@ -1,0 +1,1358 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="一、分区概述MySQL 分区（Partitioning）将一张表的数据按规则拆分到多个物理分区中，每个分区作为独立对象存储。分区函数基于用户给定的表达式计算整数值，从而决定数据行属于哪个分区。 分区属于水平分区——即同一表的不同行分配到不同物理分区。MySQL 8.4 不支持垂直分区（将不同列分配到不同分区），也没有引入垂直分区的计划。 1.1 支持的存储引擎MySQL 8.4 中，仅 InnoD">
+  
+  
+  
+  <title>MySQL 分区 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.8","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.1"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="MySQL 分区"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-04-01 08:27" pubdate>
+          2026年4月1日 早上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          4.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          41 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">MySQL 分区</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="一、分区概述"><a href="#一、分区概述" class="headerlink" title="一、分区概述"></a>一、分区概述</h2><p>MySQL 分区（Partitioning）将一张表的数据按规则拆分到多个物理分区中，每个分区作为独立对象存储。分区函数基于用户给定的表达式计算整数值，从而决定数据行属于哪个分区。</p>
+<p>分区属于<strong>水平分区</strong>——即同一表的不同行分配到不同物理分区。MySQL 8.4 不支持垂直分区（将不同列分配到不同分区），也没有引入垂直分区的计划。</p>
+<h3 id="1-1-支持的存储引擎"><a href="#1-1-支持的存储引擎" class="headerlink" title="1.1 支持的存储引擎"></a>1.1 支持的存储引擎</h3><p>MySQL 8.4 中，仅 <code>InnoDB</code> 和 <code>NDB</code> 两个存储引擎支持分区。分区表的所有分区必须使用同一存储引擎，但不同分区表可以使用不同引擎。</p>
+<p>使用 <code>ENGINE</code> 选项指定存储引擎时，该选项必须出现在所有分区选项之前：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> ti (id <span class="hljs-type">INT</span>, amount <span class="hljs-type">DECIMAL</span>(<span class="hljs-number">7</span>,<span class="hljs-number">2</span>), tr_date <span class="hljs-type">DATE</span>)<br>ENGINE<span class="hljs-operator">=</span>INNODB<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> HASH(<span class="hljs-keyword">MONTH</span>(tr_date))<br>PARTITIONS <span class="hljs-number">6</span>;<br></code></pre></td></tr></table></figure>
+
+<h3 id="1-2-分区与主键-唯一键的关系"><a href="#1-2-分区与主键-唯一键的关系" class="headerlink" title="1.2 分区与主键&#x2F;唯一键的关系"></a>1.2 分区与主键&#x2F;唯一键的关系</h3><p>这是分区表中最重要的约束：<strong>分区键必须是表中每个唯一键的超集</strong>——即每个唯一键的所有列必须全部出现在分区键中。反过来说，MySQL 8.4 要求分区键是每个唯一键的子集。</p>
+<p>以下表定义中，唯一键 <code>uk(name)</code> 与主键 <code>pk(id)</code> 没有共同列。由于主键 <code>(id)</code> 和唯一键 <code>(name)</code> 之间没有交集，不存在任何分区键能同时是两者的超集，因此该表<strong>无法分区</strong>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> tnp (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">NOT NULL</span> AUTO_INCREMENT,<br>    <span class="hljs-keyword">ref</span> <span class="hljs-type">BIGINT</span> <span class="hljs-keyword">NOT NULL</span>,<br>    name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">255</span>),<br>    <span class="hljs-keyword">PRIMARY KEY</span> pk (id),<br>    <span class="hljs-keyword">UNIQUE</span> KEY uk (name)<br>);<br><span class="hljs-comment">-- 表本身可以正常创建</span><br><br><span class="hljs-comment">-- 尝试按 id 分区：唯一键 uk(name) 不包含列 id，报错</span><br><span class="hljs-keyword">ALTER TABLE</span> tnp <span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> HASH(id) PARTITIONS <span class="hljs-number">4</span>;<br><span class="hljs-comment">-- ERROR 1503 (HY000): A UNIQUE INDEX must include all columns</span><br><span class="hljs-comment">-- in this partitioned table&#x27;s partitioning function</span><br><br><span class="hljs-comment">-- 尝试按 name 分区：主键 pk(id) 不包含列 name，报错</span><br><span class="hljs-keyword">ALTER TABLE</span> tnp <span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> KEY(name) PARTITIONS <span class="hljs-number">4</span>;<br><span class="hljs-comment">-- ERROR 1503 (HY000): A PRIMARY KEY must include all columns</span><br><span class="hljs-comment">-- in this partitioned table&#x27;s partitioning function</span><br></code></pre></td></tr></table></figure>
+
+<p>解决方式：</p>
+<ul>
+<li><strong>将 <code>name</code> 加入主键</strong>：主键改为 <code>(id, name)</code>，唯一键变为仅 <code>(id)</code>，此时可以按 <code>name</code> 进行 <code>KEY</code> 分区</li>
+<li><strong>将 <code>id</code> 加入唯一键</strong>：唯一键改为 <code>(id, name)</code>，主键仍为 <code>(id)</code>，此时可以按 <code>id</code> 进行 <code>HASH</code> 分区</li>
+<li><strong>移除唯一键</strong>：只保留主键，直接按 <code>id</code> 分区</li>
+</ul>
+<h3 id="1-3-分区的优势"><a href="#1-3-分区的优势" class="headerlink" title="1.3 分区的优势"></a>1.3 分区的优势</h3><ul>
+<li><strong>容纳更多数据</strong>：单表数据量可以超过单个磁盘分区的容量</li>
+<li><strong>快速删除旧数据</strong>：通过 <code>DROP PARTITION</code> 删除整个分区，比 <code>DELETE</code> 高效得多</li>
+<li><strong>查询优化</strong>：分区裁剪使查询只扫描相关分区，大幅提升性能</li>
+<li><strong>灵活维护</strong>：可以单独对某个分区执行检查、修复、优化操作</li>
+</ul>
+<h2 id="二、分区类型"><a href="#二、分区类型" class="headerlink" title="二、分区类型"></a>二、分区类型</h2><p>MySQL 8.4 支持以下分区类型：<code>RANGE</code>、<code>LIST</code>、<code>HASH</code>、<code>KEY</code>，以及基于它们的 <code>COLUMNS</code> 变体和 <code>LINEAR</code> 变体。</p>
+<h3 id="2-1-RANGE-分区"><a href="#2-1-RANGE-分区" class="headerlink" title="2.1 RANGE 分区"></a>2.1 RANGE 分区</h3><p>按连续范围划分分区，使用 <code>VALUES LESS THAN</code> 定义。范围必须<strong>严格递增</strong>，不重叠。建议在最后使用 <code>MAXVALUE</code> 作为”兜底”分区，接收所有超出定义范围的行。</p>
+<p>语法格式：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span> (expression) (<br>    <span class="hljs-keyword">PARTITION</span> partition_name <span class="hljs-keyword">VALUES</span> LESS THAN (expr),<br>    <span class="hljs-keyword">PARTITION</span> partition_name <span class="hljs-keyword">VALUES</span> LESS THAN (expr),<br>    ...<br>    <span class="hljs-keyword">PARTITION</span> partition_name <span class="hljs-keyword">VALUES</span> LESS THAN (MAXVALUE)<br>);<br></code></pre></td></tr></table></figure>
+
+<p>以下按 <code>store_id</code> 将员工表分为 4 个分区：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> employees (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">NOT NULL</span>,<br>    fname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>),<br>    lname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>),<br>    hired <span class="hljs-type">DATE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;1970-01-01&#x27;</span>,<br>    separated <span class="hljs-type">DATE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;9999-12-31&#x27;</span>,<br>    job_code <span class="hljs-type">INT</span> <span class="hljs-keyword">NOT NULL</span>,<br>    store_id <span class="hljs-type">INT</span> <span class="hljs-keyword">NOT NULL</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span> (store_id) (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">6</span>),<br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">11</span>),<br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">16</span>),<br>    <span class="hljs-keyword">PARTITION</span> p3 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">21</span>)<br>);<br></code></pre></td></tr></table></figure>
+
+<p>插入数据，验证各行是否落入预期分区：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">INSERT INTO</span> employees <span class="hljs-keyword">VALUES</span><br>(<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;Smith&#x27;</span>, <span class="hljs-string">&#x27;1998-03-15&#x27;</span>, <span class="hljs-string">&#x27;2005-06-01&#x27;</span>, <span class="hljs-number">100</span>, <span class="hljs-number">3</span>),   <span class="hljs-comment">-- store_id=3 → p0</span><br>(<span class="hljs-number">2</span>, <span class="hljs-string">&#x27;Bob&#x27;</span>, <span class="hljs-string">&#x27;Jones&#x27;</span>, <span class="hljs-string">&#x27;2000-07-20&#x27;</span>, <span class="hljs-string">&#x27;2010-12-31&#x27;</span>, <span class="hljs-number">200</span>, <span class="hljs-number">8</span>),    <span class="hljs-comment">-- store_id=8 → p1</span><br>(<span class="hljs-number">3</span>, <span class="hljs-string">&#x27;Carol&#x27;</span>, <span class="hljs-string">&#x27;White&#x27;</span>, <span class="hljs-string">&#x27;2005-01-10&#x27;</span>, <span class="hljs-string">&#x27;2015-03-15&#x27;</span>, <span class="hljs-number">150</span>, <span class="hljs-number">12</span>), <span class="hljs-comment">-- store_id=12 → p2</span><br>(<span class="hljs-number">4</span>, <span class="hljs-string">&#x27;Dave&#x27;</span>, <span class="hljs-string">&#x27;Brown&#x27;</span>, <span class="hljs-string">&#x27;2010-09-01&#x27;</span>, <span class="hljs-string">&#x27;2020-05-20&#x27;</span>, <span class="hljs-number">300</span>, <span class="hljs-number">18</span>); <span class="hljs-comment">-- store_id=18 → p3</span><br><br><span class="hljs-keyword">SELECT</span> PARTITION_NAME, TABLE_ROWS<br><span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> DATABASE() <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;employees&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p>添加带 <code>MAXVALUE</code> 的兜底分区，避免插入超出范围的 <code>store_id</code> 时报错：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">ALTER TABLE</span> employees <span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span> (store_id) (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">6</span>),<br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">11</span>),<br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">16</span>),<br>    <span class="hljs-keyword">PARTITION</span> p3 <span class="hljs-keyword">VALUES</span> LESS THAN MAXVALUE<br>);<br></code></pre></td></tr></table></figure>
+
+<p>按年份删除离职员工数据（删除分区即删除数据，比 <code>DELETE</code> 高效得多）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 按年分区后，删除 1991 年前离职的员工</span><br><span class="hljs-keyword">ALTER TABLE</span> employees <span class="hljs-keyword">DROP</span> <span class="hljs-keyword">PARTITION</span> p0;<br></code></pre></td></tr></table></figure>
+
+<p><code>VALUES LESS THAN</code> 中也可以使用表达式，只要表达式结果可与 <code>&lt;</code> 比较：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> employees (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">NOT NULL</span>,<br>    fname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>),<br>    lname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>),<br>    hired <span class="hljs-type">DATE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;1970-01-01&#x27;</span>,<br>    separated <span class="hljs-type">DATE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;9999-12-31&#x27;</span>,<br>    job_code <span class="hljs-type">INT</span>,<br>    store_id <span class="hljs-type">INT</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span> (<span class="hljs-keyword">YEAR</span>(separated)) (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1991</span>),<br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1996</span>),<br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">2001</span>),<br>    <span class="hljs-keyword">PARTITION</span> p3 <span class="hljs-keyword">VALUES</span> LESS THAN MAXVALUE<br>);<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-2-LIST-分区"><a href="#2-2-LIST-分区" class="headerlink" title="2.2 LIST 分区"></a>2.2 LIST 分区</h3><p>按离散值列表划分分区，使用 <code>VALUES IN</code> 定义。分区之间不需要有序，但同一值不能出现在多个分区中。</p>
+<p>语法格式：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> LIST (expression) (<br>    <span class="hljs-keyword">PARTITION</span> partition_name <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span> (val1, val2, ...),<br>    <span class="hljs-keyword">PARTITION</span> partition_name <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span> (val1, val2, ...),<br>    ...<br>);<br></code></pre></td></tr></table></figure>
+
+<p>按地区划分员工表（4 个地区对应不同 <code>store_id</code> 集合）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> employees (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">NOT NULL</span>,<br>    fname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>),<br>    lname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>),<br>    hired <span class="hljs-type">DATE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;1970-01-01&#x27;</span>,<br>    separated <span class="hljs-type">DATE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;9999-12-31&#x27;</span>,<br>    job_code <span class="hljs-type">INT</span>,<br>    store_id <span class="hljs-type">INT</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> LIST(store_id) (<br>    <span class="hljs-keyword">PARTITION</span> pNorth <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span> (<span class="hljs-number">3</span>,<span class="hljs-number">5</span>,<span class="hljs-number">6</span>,<span class="hljs-number">9</span>,<span class="hljs-number">17</span>),<br>    <span class="hljs-keyword">PARTITION</span> pEast <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span> (<span class="hljs-number">1</span>,<span class="hljs-number">2</span>,<span class="hljs-number">10</span>,<span class="hljs-number">11</span>,<span class="hljs-number">19</span>,<span class="hljs-number">20</span>),<br>    <span class="hljs-keyword">PARTITION</span> pWest <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span> (<span class="hljs-number">4</span>,<span class="hljs-number">12</span>,<span class="hljs-number">13</span>,<span class="hljs-number">14</span>,<span class="hljs-number">18</span>),<br>    <span class="hljs-keyword">PARTITION</span> pCentral <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span> (<span class="hljs-number">7</span>,<span class="hljs-number">8</span>,<span class="hljs-number">15</span>,<span class="hljs-number">16</span>)<br>);<br></code></pre></td></tr></table></figure>
+
+<p>与 <code>RANGE</code> 不同，<code>LIST</code> 没有类似 <code>MAXVALUE</code> 的兜底机制。如果插入的值不在任何分区列表中，语句报错。使用 <code>IGNORE</code> 关键字可以静默跳过不匹配的行：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 插入不匹配的值会报错：store_id=21 不属于任何地区分区</span><br><span class="hljs-keyword">INSERT INTO</span> employees <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">99</span>, <span class="hljs-string">&#x27;Zara&#x27;</span>, <span class="hljs-string">&#x27;Lee&#x27;</span>, <span class="hljs-string">&#x27;2024-01-01&#x27;</span>, <span class="hljs-string">&#x27;2024-01-01&#x27;</span>, <span class="hljs-number">999</span>, <span class="hljs-number">21</span>);<br><span class="hljs-comment">-- ERROR 1526 (HY000): Table has no partition for value 21</span><br><br><span class="hljs-comment">-- 使用 IGNORE 静默跳过不匹配的行</span><br><span class="hljs-keyword">INSERT</span> IGNORE <span class="hljs-keyword">INTO</span> employees <span class="hljs-keyword">VALUES</span><br>(<span class="hljs-number">99</span>, <span class="hljs-string">&#x27;Zara&#x27;</span>, <span class="hljs-string">&#x27;Lee&#x27;</span>, <span class="hljs-string">&#x27;2024-01-01&#x27;</span>, <span class="hljs-string">&#x27;2024-01-01&#x27;</span>, <span class="hljs-number">999</span>, <span class="hljs-number">21</span>),<br>(<span class="hljs-number">100</span>, <span class="hljs-string">&#x27;Tom&#x27;</span>, <span class="hljs-string">&#x27;Green&#x27;</span>, <span class="hljs-string">&#x27;2024-02-01&#x27;</span>, <span class="hljs-string">&#x27;2024-02-01&#x27;</span>, <span class="hljs-number">100</span>, <span class="hljs-number">1</span>),<br>(<span class="hljs-number">101</span>, <span class="hljs-string">&#x27;Amy&#x27;</span>, <span class="hljs-string">&#x27;Brown&#x27;</span>, <span class="hljs-string">&#x27;2024-03-01&#x27;</span>, <span class="hljs-string">&#x27;2024-03-01&#x27;</span>, <span class="hljs-number">101</span>, <span class="hljs-number">12</span>);<br><span class="hljs-comment">-- Query OK, 2 rows affected, 1 warning</span><br><span class="hljs-comment">-- Records: 3  Duplicates: 0  Warnings: 1</span><br><span class="hljs-comment">-- Warning: Table has no partition for value 21（该行被静默跳过）</span><br></code></pre></td></tr></table></figure>
+
+<p>清空某个地区的所有数据，使用 <code>TRUNCATE PARTITION</code>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 清空西部地区数据，但保留分区结构</span><br><span class="hljs-keyword">ALTER TABLE</span> employees <span class="hljs-keyword">TRUNCATE</span> <span class="hljs-keyword">PARTITION</span> pWest;<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-3-COLUMNS-分区"><a href="#2-3-COLUMNS-分区" class="headerlink" title="2.3 COLUMNS 分区"></a>2.3 COLUMNS 分区</h3><p><code>RANGE COLUMNS</code> 和 <code>LIST COLUMNS</code> 是 <code>RANGE</code> 和 <code>LIST</code> 的扩展，支持以下特性：</p>
+<ul>
+<li>支持<strong>多列</strong>作为分区键</li>
+<li>支持<strong>非整数类型</strong>：整数类型、<code>DATE</code>、<code>DATETIME</code>、<code>CHAR</code>、<code>VARCHAR</code>、<code>BINARY</code>、<code>VARBINARY</code></li>
+</ul>
+<p>语法格式：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span> COLUMNS (col1, col2, ...) (<br>    <span class="hljs-keyword">PARTITION</span> partition_name <span class="hljs-keyword">VALUES</span> LESS THAN (val1, val2, ...),<br>    ...<br>    <span class="hljs-keyword">PARTITION</span> partition_name <span class="hljs-keyword">VALUES</span> LESS THAN (MAXVALUE, MAXVALUE, ...)<br>);<br><br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> LIST COLUMNS (col1, col2, ...) (<br>    <span class="hljs-keyword">PARTITION</span> partition_name <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span> (val1, val2, ...),<br>    ...<br>);<br></code></pre></td></tr></table></figure>
+
+<p><strong>RANGE COLUMNS</strong> 的核心语义与 <code>RANGE</code> 不同：比较的是<strong>元组（元组即多列值的列表）</strong>，而不是标量值。</p>
+<p>以下示例演示元组比较语义——插入 <code>(5,10)</code>、<code>(5,11)</code>、<code>(5,12)</code> 三个元组：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> rc1 (a <span class="hljs-type">INT</span>, b <span class="hljs-type">INT</span>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span> COLUMNS(a, b) (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">5</span>, <span class="hljs-number">12</span>),<br>    <span class="hljs-keyword">PARTITION</span> p3 <span class="hljs-keyword">VALUES</span> LESS THAN (MAXVALUE, MAXVALUE)<br>);<br><br><span class="hljs-keyword">INSERT INTO</span> rc1 <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">5</span>,<span class="hljs-number">10</span>), (<span class="hljs-number">5</span>,<span class="hljs-number">11</span>), (<span class="hljs-number">5</span>,<span class="hljs-number">12</span>);<br><br><span class="hljs-keyword">SELECT</span> PARTITION_NAME, TABLE_ROWS<br><span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> DATABASE() <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;rc1&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p>元组比较规则：<code>ROW(5,10) &lt; ROW(5,12)</code> 和 <code>ROW(5,11) &lt; ROW(5,12)</code> 为真，但 <code>ROW(5,12) &lt; ROW(5,12)</code> 为假（相等），所以值 <code>(5,12)</code> 落入 <code>p3</code>。</p>
+<h4 id="2-3-1-RANGE-COLUMNS-字符串列分区"><a href="#2-3-1-RANGE-COLUMNS-字符串列分区" class="headerlink" title="2.3.1 RANGE COLUMNS 字符串列分区"></a>2.3.1 RANGE COLUMNS 字符串列分区</h4><p>按姓氏首字母进行 <code>RANGE COLUMNS</code> 分区，验证字符串分区键的行为：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> employees_by_lname (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">NOT NULL</span>, fname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>), lname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>),<br>    hired <span class="hljs-type">DATE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;1970-01-01&#x27;</span>,<br>    separated <span class="hljs-type">DATE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;9999-12-31&#x27;</span>,<br>    job_code <span class="hljs-type">INT</span> <span class="hljs-keyword">NOT NULL</span>, store_id <span class="hljs-type">INT</span> <span class="hljs-keyword">NOT NULL</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span> COLUMNS (lname) (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-string">&#x27;g&#x27;</span>),<br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-string">&#x27;m&#x27;</span>),<br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-string">&#x27;t&#x27;</span>),<br>    <span class="hljs-keyword">PARTITION</span> p3 <span class="hljs-keyword">VALUES</span> LESS THAN (MAXVALUE)<br>);<br><br><span class="hljs-keyword">INSERT INTO</span> employees_by_lname <span class="hljs-keyword">VALUES</span><br>(<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;Brown&#x27;</span>, <span class="hljs-string">&#x27;1990-01-01&#x27;</span>, <span class="hljs-string">&#x27;2010-01-01&#x27;</span>, <span class="hljs-number">100</span>, <span class="hljs-number">1</span>),  <span class="hljs-comment">-- lname=&#x27;Brown&#x27;  &lt; &#x27;g&#x27; → p0</span><br>(<span class="hljs-number">2</span>, <span class="hljs-string">&#x27;Bob&#x27;</span>, <span class="hljs-string">&#x27;Green&#x27;</span>, <span class="hljs-string">&#x27;1992-03-15&#x27;</span>, <span class="hljs-string">&#x27;2012-03-15&#x27;</span>, <span class="hljs-number">200</span>, <span class="hljs-number">2</span>),     <span class="hljs-comment">-- lname=&#x27;Green&#x27;  &lt; &#x27;m&#x27; → p1</span><br>(<span class="hljs-number">3</span>, <span class="hljs-string">&#x27;Carol&#x27;</span>, <span class="hljs-string">&#x27;Orange&#x27;</span>, <span class="hljs-string">&#x27;1994-06-20&#x27;</span>, <span class="hljs-string">&#x27;2014-06-20&#x27;</span>, <span class="hljs-number">300</span>, <span class="hljs-number">3</span>); <span class="hljs-comment">-- lname=&#x27;Orange&#x27; &lt; &#x27;t&#x27; → p2</span><br><br><span class="hljs-keyword">SELECT</span> PARTITION_NAME, TABLE_ROWS<br><span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> DATABASE() <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;employees_by_lname&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>PARTITION_NAME</th>
+<th>TABLE_ROWS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>p0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>p1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>p2</td>
+<td>1</td>
+</tr>
+<tr>
+<td>p3</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p>实际排序依赖列的字符集和排序规则。此处使用默认的 <code>utf8mb4_0900_ai_ci</code>（大小写不敏感），字母 G 排在 F 之后、M 之前。</p>
+<h4 id="2-3-2-LIST-COLUMNS-日期分区"><a href="#2-3-2-LIST-COLUMNS-日期分区" class="headerlink" title="2.3.2 LIST COLUMNS 日期分区"></a>2.3.2 LIST COLUMNS 日期分区</h4><p>使用 <code>DATE</code> 列进行 <code>LIST COLUMNS</code> 分区：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> customers (<br>    first_name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">25</span>), last_name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">25</span>), renewal <span class="hljs-type">DATE</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> LIST COLUMNS(renewal) (<br>    <span class="hljs-keyword">PARTITION</span> pWeek_1 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span>(<span class="hljs-string">&#x27;2010-02-01&#x27;</span>, <span class="hljs-string">&#x27;2010-02-02&#x27;</span>, <span class="hljs-string">&#x27;2010-02-03&#x27;</span>,<br>        <span class="hljs-string">&#x27;2010-02-04&#x27;</span>, <span class="hljs-string">&#x27;2010-02-05&#x27;</span>, <span class="hljs-string">&#x27;2010-02-06&#x27;</span>, <span class="hljs-string">&#x27;2010-02-07&#x27;</span>),<br>    <span class="hljs-keyword">PARTITION</span> pWeek_2 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span>(<span class="hljs-string">&#x27;2010-02-08&#x27;</span>, <span class="hljs-string">&#x27;2010-02-09&#x27;</span>, <span class="hljs-string">&#x27;2010-02-10&#x27;</span>,<br>        <span class="hljs-string">&#x27;2010-02-11&#x27;</span>, <span class="hljs-string">&#x27;2010-02-12&#x27;</span>, <span class="hljs-string">&#x27;2010-02-13&#x27;</span>, <span class="hljs-string">&#x27;2010-02-14&#x27;</span>)<br>);<br><br><span class="hljs-keyword">INSERT INTO</span> customers <span class="hljs-keyword">VALUES</span><br>(<span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;Anderson&#x27;</span>, <span class="hljs-string">&#x27;2010-02-03&#x27;</span>), <span class="hljs-comment">-- renewal=&#x27;2010-02-03&#x27; → pWeek_1</span><br>(<span class="hljs-string">&#x27;Bob&#x27;</span>, <span class="hljs-string">&#x27;Miller&#x27;</span>, <span class="hljs-string">&#x27;2010-02-10&#x27;</span>),    <span class="hljs-comment">-- renewal=&#x27;2010-02-10&#x27; → pWeek_2</span><br>(<span class="hljs-string">&#x27;Carol&#x27;</span>, <span class="hljs-string">&#x27;Taylor&#x27;</span>, <span class="hljs-string">&#x27;2010-02-07&#x27;</span>);  <span class="hljs-comment">-- renewal=&#x27;2010-02-07&#x27; → pWeek_1</span><br><br><span class="hljs-keyword">SELECT</span> PARTITION_NAME, TABLE_ROWS<br><span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> DATABASE() <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;customers&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>PARTITION_NAME</th>
+<th>TABLE_ROWS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>pWeek_1</td>
+<td>2</td>
+</tr>
+<tr>
+<td>pWeek_2</td>
+<td>1</td>
+</tr>
+</tbody></table>
+<h3 id="2-4-HASH-分区"><a href="#2-4-HASH-分区" class="headerlink" title="2.4 HASH 分区"></a>2.4 HASH 分区</h3><p><code>HASH</code> 分区根据分区键表达式的<strong>模运算结果</strong>决定分区。MySQL 计算 <code>MOD(expr, num)</code>，其中 <code>num</code> 为分区数。</p>
+<p>语法格式：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> HASH (expression)<br>PARTITIONS num;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> employees (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">NOT NULL</span>,<br>    fname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>),<br>    lname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">30</span>),<br>    hired <span class="hljs-type">DATE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;1970-01-01&#x27;</span>,<br>    separated <span class="hljs-type">DATE</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">DEFAULT</span> <span class="hljs-string">&#x27;9999-12-31&#x27;</span>,<br>    job_code <span class="hljs-type">INT</span>,<br>    store_id <span class="hljs-type">INT</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> HASH(store_id)<br>PARTITIONS <span class="hljs-number">4</span>;<br></code></pre></td></tr></table></figure>
+
+<p>插入数据，验证按 <code>store_id</code> 的模运算结果分配分区：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">INSERT INTO</span> employees <span class="hljs-keyword">VALUES</span><br>(<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;Smith&#x27;</span>, <span class="hljs-string">&#x27;1998-03-15&#x27;</span>, <span class="hljs-string">&#x27;2005-06-01&#x27;</span>, <span class="hljs-number">100</span>, <span class="hljs-number">3</span>),  <span class="hljs-comment">-- MOD(3,4)=3 → p3</span><br>(<span class="hljs-number">2</span>, <span class="hljs-string">&#x27;Bob&#x27;</span>, <span class="hljs-string">&#x27;Jones&#x27;</span>, <span class="hljs-string">&#x27;2000-07-20&#x27;</span>, <span class="hljs-string">&#x27;2010-12-31&#x27;</span>, <span class="hljs-number">200</span>, <span class="hljs-number">7</span>),   <span class="hljs-comment">-- MOD(7,4)=3 → p3</span><br>(<span class="hljs-number">3</span>, <span class="hljs-string">&#x27;Carol&#x27;</span>, <span class="hljs-string">&#x27;White&#x27;</span>, <span class="hljs-string">&#x27;2005-01-10&#x27;</span>, <span class="hljs-string">&#x27;2015-03-15&#x27;</span>, <span class="hljs-number">150</span>, <span class="hljs-number">12</span>), <span class="hljs-comment">-- MOD(12,4)=0 → p0</span><br>(<span class="hljs-number">4</span>, <span class="hljs-string">&#x27;Dave&#x27;</span>, <span class="hljs-string">&#x27;Brown&#x27;</span>, <span class="hljs-string">&#x27;2010-09-01&#x27;</span>, <span class="hljs-string">&#x27;2020-05-20&#x27;</span>, <span class="hljs-number">300</span>, <span class="hljs-number">18</span>); <span class="hljs-comment">-- MOD(18,4)=2 → p2</span><br><br><span class="hljs-keyword">SELECT</span> PARTITION_NAME, TABLE_ROWS<br><span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> DATABASE() <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;employees&#x27;</span>;<br><br><span class="hljs-operator">|</span> PARTITION_NAME <span class="hljs-operator">|</span> TABLE_ROWS <span class="hljs-operator">|</span><br><span class="hljs-operator">|</span><span class="hljs-comment">----------------|-----------|</span><br><span class="hljs-operator">|</span> p0             <span class="hljs-operator">|</span> <span class="hljs-number">1</span>         <span class="hljs-operator">|</span><br><span class="hljs-operator">|</span> p1             <span class="hljs-operator">|</span> <span class="hljs-number">0</span>         <span class="hljs-operator">|</span><br><span class="hljs-operator">|</span> p2             <span class="hljs-operator">|</span> <span class="hljs-number">1</span>         <span class="hljs-operator">|</span><br><span class="hljs-operator">|</span> p3             <span class="hljs-operator">|</span> <span class="hljs-number">2</span>         <span class="hljs-operator">|</span><br><br>模运算规则：`partition_number <span class="hljs-operator">=</span> <span class="hljs-built_in">MOD</span>(expr, num)`，其中 `num` 为分区数，MySQL 自动计算表达式结果并取模，余数即为目标分区号（从 <span class="hljs-number">0</span> 开始编号）。例如 `<span class="hljs-built_in">MOD</span>(<span class="hljs-number">12</span>, <span class="hljs-number">4</span>) <span class="hljs-operator">=</span> <span class="hljs-number">0</span>`，对应分区 `p0`。<br><br>如果省略 `PARTITIONS num`，默认只有 <span class="hljs-number">1</span> 个分区。<br><br><span class="hljs-operator">*</span><span class="hljs-operator">*</span>为什么不直接用 `store_id` 作为分区键？<span class="hljs-operator">*</span><span class="hljs-operator">*</span> `store_id` 的值可能集中在某个范围，导致数据分布不均。用 `<span class="hljs-built_in">MOD</span>(store_id, <span class="hljs-number">4</span>)` 可以将连续值打散到 <span class="hljs-number">4</span> 个分区中，使数据更均匀。<br><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-5-KEY-分区"><a href="#2-5-KEY-分区" class="headerlink" title="2.5 KEY 分区"></a>2.5 KEY 分区</h3><p><code>KEY</code> 分区与 <code>HASH</code> 类似，但<strong>哈希函数由 MySQL 自动提供</strong>，无需用户指定表达式。分区键默认为主键（或唯一键），如果表无主键&#x2F;唯一键，则使用所有 <code>NOT NULL</code> 列。</p>
+<p>语法格式：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> KEY (column_name)<br>PARTITIONS num;<br></code></pre></td></tr></table></figure>
+
+<p>MySQL 内部的哈希函数对不同类型的列有不同的处理方式：</p>
+<ul>
+<li><strong>整数类型列</strong>：<code>MOD(column_value, num)</code>，与 <code>HASH(expr)</code> 类似，通过模运算得到分区号</li>
+<li><strong>字符串类型列</strong>：MySQL 使用内部的哈希算法将字符串映射为整数值，再进行模运算。</li>
+</ul>
+<p>无论哪种类型，最终都是通过 <code>MOD(hash_value, num_partitions)</code> 确定分区。关键区别在于：<code>HASH</code> 分区的表达式由用户指定，<code>KEY</code> 分区的哈希函数由 MySQL 自动选择，用户无法干预。</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 主键作为分区键</span><br><span class="hljs-keyword">CREATE TABLE</span> k1 (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">NOT NULL</span> <span class="hljs-keyword">PRIMARY KEY</span>,<br>    name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>)<br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> KEY()<br>PARTITIONS <span class="hljs-number">2</span>;<br><br><span class="hljs-keyword">INSERT INTO</span> k1 <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;Alice&#x27;</span>), (<span class="hljs-number">2</span>, <span class="hljs-string">&#x27;Bob&#x27;</span>), (<span class="hljs-number">3</span>, <span class="hljs-string">&#x27;Carol&#x27;</span>);<br><br><span class="hljs-keyword">SELECT</span> PARTITION_NAME, TABLE_ROWS<br><span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> DATABASE() <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;k1&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>PARTITION_NAME</th>
+<th>TABLE_ROWS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>p0</td>
+<td>2</td>
+</tr>
+<tr>
+<td>p1</td>
+<td>1</td>
+</tr>
+</tbody></table>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 无主键但有唯一键，唯一键作为分区键</span><br><span class="hljs-keyword">CREATE TABLE</span> k2 (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">NOT NULL</span>,<br>    name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>),<br>    <span class="hljs-keyword">UNIQUE</span> KEY (id)<br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> KEY()<br>PARTITIONS <span class="hljs-number">2</span>;<br><br><span class="hljs-keyword">INSERT INTO</span> k2 <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;Apple&#x27;</span>), (<span class="hljs-number">4</span>, <span class="hljs-string">&#x27;Google&#x27;</span>), (<span class="hljs-number">7</span>, <span class="hljs-string">&#x27;Meta&#x27;</span>);<br><br><span class="hljs-keyword">SELECT</span> PARTITION_NAME, TABLE_ROWS<br><span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> DATABASE() <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;k2&#x27;</span>;<br><br><span class="hljs-operator">|</span> PARTITION_NAME <span class="hljs-operator">|</span> TABLE_ROWS <span class="hljs-operator">|</span><br><span class="hljs-operator">|</span><span class="hljs-comment">----------------|-----------|</span><br><span class="hljs-operator">|</span> p0             <span class="hljs-operator">|</span> <span class="hljs-number">2</span>         <span class="hljs-operator">|</span><br><span class="hljs-operator">|</span> p1             <span class="hljs-operator">|</span> <span class="hljs-number">1</span>         <span class="hljs-operator">|</span><br></code></pre></td></tr></table></figure>
+
+<p><code>KEY</code> 分区的一个独特优势：分区键可以是<strong>非整数类型</strong>（<code>TEXT</code> 和 <code>BLOB</code> 除外），因为 MySQL 内部哈希函数会处理各种数据类型：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> tm1 (<br>    s1 <span class="hljs-type">CHAR</span>(<span class="hljs-number">32</span>) <span class="hljs-keyword">PRIMARY KEY</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> KEY(s1)<br>PARTITIONS <span class="hljs-number">10</span>;<br><br><span class="hljs-keyword">INSERT INTO</span> tm1 <span class="hljs-keyword">VALUES</span> (<span class="hljs-string">&#x27;Alice&#x27;</span>), (<span class="hljs-string">&#x27;Bob&#x27;</span>), (<span class="hljs-string">&#x27;Carol&#x27;</span>);<br><br><span class="hljs-keyword">SELECT</span> PARTITION_NAME, TABLE_ROWS<br><span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> DATABASE() <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;tm1&#x27;</span>;<br><br><span class="hljs-operator">|</span> PARTITION_NAME <span class="hljs-operator">|</span> TABLE_ROWS <span class="hljs-operator">|</span><br><span class="hljs-operator">|</span><span class="hljs-comment">----------------|-----------|</span><br><span class="hljs-operator">|</span> p0             <span class="hljs-operator">|</span> <span class="hljs-number">1</span>         <span class="hljs-operator">|</span><br><span class="hljs-operator">|</span> p1             <span class="hljs-operator">|</span> <span class="hljs-number">1</span>         <span class="hljs-operator">|</span><br><span class="hljs-operator">|</span> p2             <span class="hljs-operator">|</span> <span class="hljs-number">0</span>         <span class="hljs-operator">|</span><br><span class="hljs-operator">|</span> p3             <span class="hljs-operator">|</span> <span class="hljs-number">1</span>         <span class="hljs-operator">|</span><br><span class="hljs-operator">|</span> p4–p9          <span class="hljs-operator">|</span> <span class="hljs-number">0</span>         <span class="hljs-operator">|</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-6-子分区"><a href="#2-6-子分区" class="headerlink" title="2.6 子分区"></a>2.6 子分区</h3><p>子分区（Subpartitioning，组合分区）在 <code>RANGE</code> 或 <code>LIST</code> 分区的基础上，再按 <code>HASH</code> 或 <code>KEY</code> 划分。总分区数 &#x3D; 外层分区数 × 子分区数。</p>
+<p>语法格式：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span> (expression)<br>SUBPARTITION <span class="hljs-keyword">BY</span> HASH (expression)<br>SUBPARTITIONS num (<br>    <span class="hljs-keyword">PARTITION</span> partition_name <span class="hljs-keyword">VALUES</span> LESS THAN (expr) (<br>        SUBPARTITION subpartition_name,<br>        SUBPARTITION subpartition_name<br>    ),<br>    ...<br>);<br></code></pre></td></tr></table></figure>
+
+<p>以下示例演示数据分布过程：外层按年份 <code>RANGE</code> 分区，内层按 <code>HASH(TO_DAYS(purchased))</code> 再分：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> ts (id <span class="hljs-type">INT</span>, purchased <span class="hljs-type">DATE</span>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span>(<span class="hljs-keyword">YEAR</span>(purchased))<br>SUBPARTITION <span class="hljs-keyword">BY</span> HASH(TO_DAYS(purchased))<br>SUBPARTITIONS <span class="hljs-number">2</span> (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1990</span>),<br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">2000</span>),<br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> LESS THAN MAXVALUE<br>);<br></code></pre></td></tr></table></figure>
+
+<p>插入 6 条数据：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">INSERT INTO</span> ts <span class="hljs-keyword">VALUES</span><br>(<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;1985-06-15&#x27;</span>),<br>(<span class="hljs-number">2</span>, <span class="hljs-string">&#x27;1995-03-20&#x27;</span>),<br>(<span class="hljs-number">3</span>, <span class="hljs-string">&#x27;2005-09-10&#x27;</span>),<br>(<span class="hljs-number">4</span>, <span class="hljs-string">&#x27;1989-12-31&#x27;</span>),<br>(<span class="hljs-number">5</span>, <span class="hljs-string">&#x27;1998-07-08&#x27;</span>),<br>(<span class="hljs-number">6</span>, <span class="hljs-string">&#x27;2010-01-01&#x27;</span>);<br></code></pre></td></tr></table></figure>
+
+<p>查询各子分区的数据分布：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> PARTITION_NAME, SUBPARTITION_NAME, TABLE_ROWS<br><span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> DATABASE() <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;ts&#x27;</span><br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> PARTITION_NAME, SUBPARTITION_NAME;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>PARTITION_NAME</th>
+<th>SUBPARTITION_NAME</th>
+<th>TABLE_ROWS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>p0</td>
+<td>p0sp0</td>
+<td>2</td>
+</tr>
+<tr>
+<td>p0</td>
+<td>p0sp1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>p1</td>
+<td>p1sp0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>p1</td>
+<td>p1sp1</td>
+<td>2</td>
+</tr>
+<tr>
+<td>p2</td>
+<td>p2sp0</td>
+<td>2</td>
+</tr>
+<tr>
+<td>p2</td>
+<td>p2sp1</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p>分布规则分两步计算：</p>
+<ol>
+<li><p><strong>先定外层分区</strong>：根据 <code>YEAR(purchased)</code> 落入哪个 <code>RANGE</code></p>
+<ul>
+<li>id&#x3D;1、id&#x3D;4 → <code>YEAR</code> 分别为 1985、1989 → <code>&lt; 1990</code> → <strong>p0</strong></li>
+<li>id&#x3D;2、id&#x3D;5 → <code>YEAR</code> 分别为 1995、1998 → <code>1990 ≤ YEAR &lt; 2000</code> → <strong>p1</strong></li>
+<li>id&#x3D;3、id&#x3D;6 → <code>YEAR</code> 分别为 2005、2010 → <code>≥ 2000</code> → <strong>p2</strong></li>
+</ul>
+</li>
+<li><p><strong>再定子分区</strong>：在已确定的 RANGE 分区内部，用 <code>MOD(TO_DAYS(purchased), 2)</code> 确定子分区</p>
+<ul>
+<li>p0 中：id&#x3D;1 → <code>MOD(725172, 2) = 0</code> → <strong>p0sp0</strong>；id&#x3D;4 → <code>MOD(726832, 2) = 0</code> → <strong>p0sp0</strong></li>
+<li>p1 中：id&#x3D;2 → <code>MOD(728737, 2) = 1</code> → <strong>p1sp1</strong>；id&#x3D;5 → <code>MOD(729943, 2) = 1</code> → <strong>p1sp1</strong></li>
+<li>p2 中：id&#x3D;3 → <code>MOD(732564, 2) = 0</code> → <strong>p2sp0</strong>；id&#x3D;6 → <code>MOD(734138, 2) = 0</code> → <strong>p2sp0</strong></li>
+</ul>
+</li>
+</ol>
+<p>本例中外层 <code>RANGE</code> 与内层 <code>HASH</code> 相配合，6 条数据均落入各自的子分区中。</p>
+<p>显式指定子分区名称（便于维护和管理）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> ts (id <span class="hljs-type">INT</span>, purchased <span class="hljs-type">DATE</span>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span>(<span class="hljs-keyword">YEAR</span>(purchased))<br>SUBPARTITION <span class="hljs-keyword">BY</span> HASH(TO_DAYS(purchased)) (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1990</span>) (<br>        SUBPARTITION s0,<br>        SUBPARTITION s1<br>    ),<br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">2000</span>) (<br>        SUBPARTITION s2,<br>        SUBPARTITION s3<br>    ),<br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> LESS THAN MAXVALUE (<br>        SUBPARTITION s4,<br>        SUBPARTITION s5<br>    )<br>);<br></code></pre></td></tr></table></figure>
+
+<p>注意事项：</p>
+<ul>
+<li>所有外层分区的<strong>子分区数必须相同</strong></li>
+<li>子分区名称在整个表中必须<strong>唯一</strong></li>
+<li>子分区只能是 <code>HASH</code> 或 <code>KEY</code>，<code>RANGE</code>&#x2F;<code>LIST</code> 分区不能作为子分区</li>
+<li><code>SUBPARTITION BY KEY</code> 必须显式指定列（不能省略，这是与 <code>PARTITION BY KEY</code> 的差异）</li>
+</ul>
+<h2 id="三、NULL-值处理"><a href="#三、NULL-值处理" class="headerlink" title="三、NULL 值处理"></a>三、NULL 值处理</h2><p>MySQL 分区将 <code>NULL</code> 视为小于任何非 NULL 值，但不同分区类型处理方式不同。</p>
+<h3 id="3-1-RANGE-分区中的-NULL"><a href="#3-1-RANGE-分区中的-NULL" class="headerlink" title="3.1 RANGE 分区中的 NULL"></a>3.1 RANGE 分区中的 NULL</h3><p><code>NULL</code> 存入<strong>编号最小的分区</strong>（第一个分区）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> t1 (<br>    c1 <span class="hljs-type">INT</span>,<br>    c2 <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>)<br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span>(c1) (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">0</span>),<br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">10</span>),<br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> LESS THAN MAXVALUE<br>);<br><br><span class="hljs-keyword">INSERT INTO</span> t1 <span class="hljs-keyword">VALUES</span> (<span class="hljs-keyword">NULL</span>, <span class="hljs-string">&#x27;mothra&#x27;</span>);<br></code></pre></td></tr></table></figure>
+
+<p>查询验证：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> PARTITION_NAME, TABLE_ROWS<br><span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> DATABASE() <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;t1&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>PARTITION_NAME</th>
+<th>TABLE_ROWS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>p0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>p1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>p2</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p><code>NULL</code> 值被存入 <code>p0</code>。</p>
+<h3 id="3-2-LIST-分区中的-NULL"><a href="#3-2-LIST-分区中的-NULL" class="headerlink" title="3.2 LIST 分区中的 NULL"></a>3.2 LIST 分区中的 NULL</h3><p><code>LIST</code> 分区中，<code>NULL</code> <strong>只有在一个分区的值列表中显式包含 <code>NULL</code> 时</strong>才被接受：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 无 NULL 值的分区，拒绝 NULL</span><br><span class="hljs-keyword">CREATE TABLE</span> ts1 (<br>    c1 <span class="hljs-type">INT</span>,<br>    c2 <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>)<br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> LIST(c1) (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span> (<span class="hljs-number">0</span>, <span class="hljs-number">3</span>, <span class="hljs-number">6</span>),<br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span> (<span class="hljs-number">1</span>, <span class="hljs-number">4</span>, <span class="hljs-number">7</span>),<br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span> (<span class="hljs-number">2</span>, <span class="hljs-number">5</span>, <span class="hljs-number">8</span>)<br>);<br><br><span class="hljs-keyword">INSERT INTO</span> ts1 <span class="hljs-keyword">VALUES</span> (<span class="hljs-keyword">NULL</span>, <span class="hljs-string">&#x27;mothra&#x27;</span>);<br><span class="hljs-comment">-- ERROR 1504 (HY000): Table has no partition for value NULL</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 显式包含 NULL</span><br><span class="hljs-keyword">CREATE TABLE</span> ts2 (<br>    c1 <span class="hljs-type">INT</span>,<br>    c2 <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>)<br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> LIST(c1) (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span> (<span class="hljs-number">0</span>, <span class="hljs-number">3</span>, <span class="hljs-number">6</span>),<br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span> (<span class="hljs-number">1</span>, <span class="hljs-number">4</span>, <span class="hljs-number">7</span>),<br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span> (<span class="hljs-number">2</span>, <span class="hljs-number">5</span>, <span class="hljs-number">8</span>),<br>    <span class="hljs-keyword">PARTITION</span> p3 <span class="hljs-keyword">VALUES</span> <span class="hljs-keyword">IN</span> (<span class="hljs-keyword">NULL</span>)<br>);<br><br><span class="hljs-keyword">INSERT INTO</span> ts2 <span class="hljs-keyword">VALUES</span> (<span class="hljs-keyword">NULL</span>, <span class="hljs-string">&#x27;mothra&#x27;</span>);<br><span class="hljs-comment">-- Query OK, 1 row affected</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="3-3-HASH-和-KEY-分区中的-NULL"><a href="#3-3-HASH-和-KEY-分区中的-NULL" class="headerlink" title="3.3 HASH 和 KEY 分区中的 NULL"></a>3.3 HASH 和 KEY 分区中的 NULL</h3><p>在 <code>HASH</code> 和 <code>KEY</code> 分区中，<code>NULL</code> 被视为 <strong>0</strong>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> th (<br>    c1 <span class="hljs-type">INT</span>,<br>    c2 <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">20</span>)<br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> HASH(c1)<br>PARTITIONS <span class="hljs-number">2</span>;<br><br><span class="hljs-keyword">INSERT INTO</span> th <span class="hljs-keyword">VALUES</span> (<span class="hljs-keyword">NULL</span>, <span class="hljs-string">&#x27;mothra&#x27;</span>), (<span class="hljs-number">0</span>, <span class="hljs-string">&#x27;gigan&#x27;</span>);<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>PARTITION_NAME</th>
+<th>TABLE_ROWS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>p0</td>
+<td>2</td>
+</tr>
+<tr>
+<td>p1</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p><code>NULL</code> 和 <code>0</code> 都被存入 <code>p0</code>。</p>
+<h3 id="3-4-RANGE-LIST-分区管理"><a href="#3-4-RANGE-LIST-分区管理" class="headerlink" title="3.4 RANGE&#x2F;LIST 分区管理"></a>3.4 RANGE&#x2F;LIST 分区管理</h3><p><strong>删除分区</strong>（<code>DROP PARTITION</code>）会删除分区及其所有数据：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> tr (id <span class="hljs-type">INT</span>, name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>), purchased <span class="hljs-type">DATE</span>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span>(<span class="hljs-keyword">YEAR</span>(purchased)) (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1990</span>),<br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1995</span>),<br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">2000</span>),<br>    <span class="hljs-keyword">PARTITION</span> p3 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">2005</span>)<br>);<br><br><span class="hljs-comment">-- 删除 1990-1994 年的分区</span><br><span class="hljs-keyword">ALTER TABLE</span> tr <span class="hljs-keyword">DROP</span> <span class="hljs-keyword">PARTITION</span> p1;<br></code></pre></td></tr></table></figure>
+
+<p><strong>添加分区</strong>（<code>ADD PARTITION</code>）只能添加到 RANGE 分区的末端，或 LIST 分区的末尾：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> tr_add (<br>    id <span class="hljs-type">INT</span>, name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>), purchased <span class="hljs-type">DATE</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span>(<span class="hljs-keyword">YEAR</span>(purchased)) (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1990</span>),<br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">2000</span>),<br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">2005</span>)<br>);<br><br><span class="hljs-comment">-- RANGE 分区：只能添加在高端</span><br><span class="hljs-keyword">ALTER TABLE</span> tr_add <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">PARTITION</span> (<br>    <span class="hljs-keyword">PARTITION</span> p3 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">2010</span>)<br>);<br></code></pre></td></tr></table></figure>
+
+<p>尝试在中间添加分区会报错：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">ALTER TABLE</span> tr_add <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">PARTITION</span> (<br>    <span class="hljs-keyword">PARTITION</span> p4 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1970</span>)<br>);<br><span class="hljs-comment">-- ERROR 1493 (HY000): VALUES LESS THAN value must be strictly increasing for each partition</span><br></code></pre></td></tr></table></figure>
+
+<p>需要在中间插入分区时，使用 <code>REORGANIZE PARTITION</code> 重新组织现有分区：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> tr_split (<br>    id <span class="hljs-type">INT</span>, name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>), purchased <span class="hljs-type">DATE</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span>(<span class="hljs-keyword">YEAR</span>(purchased)) (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1990</span>),<br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">2000</span>),<br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">2010</span>)<br>);<br><br><span class="hljs-keyword">INSERT INTO</span> tr_split <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;item1&#x27;</span>, <span class="hljs-string">&#x27;1985-06-15&#x27;</span>);<br><span class="hljs-keyword">INSERT INTO</span> tr_split <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">2</span>, <span class="hljs-string">&#x27;item2&#x27;</span>, <span class="hljs-string">&#x27;1988-12-20&#x27;</span>);<br><span class="hljs-keyword">INSERT INTO</span> tr_split <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">3</span>, <span class="hljs-string">&#x27;item3&#x27;</span>, <span class="hljs-string">&#x27;1995-03-10&#x27;</span>);<br><br><span class="hljs-keyword">SELECT</span> PARTITION_NAME, TABLE_ROWS <span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> DATABASE() <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;tr_split&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>PARTITION_NAME</th>
+<th>TABLE_ROWS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>p0</td>
+<td>2</td>
+</tr>
+<tr>
+<td>p1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>p2</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p>将 <code>p0</code> 拆分为两个分区：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">ALTER TABLE</span> tr_split REORGANIZE <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">INTO</span> (<br>    <span class="hljs-keyword">PARTITION</span> n0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1970</span>),<br>    <span class="hljs-keyword">PARTITION</span> n1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1990</span>)<br>);<br></code></pre></td></tr></table></figure>
+
+<p>拆分后验证（注意执行 <code>ANALYZE TABLE</code> 刷新统计）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql">ANALYZE <span class="hljs-keyword">TABLE</span> tr_split;<br><br><span class="hljs-keyword">SELECT</span> PARTITION_NAME, TABLE_ROWS <span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> DATABASE() <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;tr_split&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>PARTITION_NAME</th>
+<th>TABLE_ROWS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>n0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>n1</td>
+<td>2</td>
+</tr>
+<tr>
+<td>p1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>p2</td>
+<td>0</td>
+</tr>
+</tbody></table>
+<p>拆分后数据分布说明：<code>id=1</code> (<code>purchased=1985</code>) 落入 <code>n1</code>（<code>1970 ≤ 1985 &lt; 1990</code>），<code>id=2</code> (<code>purchased=1988</code>) 也落入 <code>n1</code>（<code>1970 ≤ 1988 &lt; 1990</code>），<code>id=3</code> 不变仍在 <code>p1</code>。</p>
+<blockquote>
+<p><strong>注意</strong>：<code>INFORMATION_SCHEMA.PARTITIONS</code> 中的 <code>TABLE_ROWS</code> 是 MySQL 缓存的统计信息，<code>REORGANIZE PARTITION</code> 执行后不会立即更新。如果查询结果与实际数据不符，先执行 <code>ANALYZE TABLE table_name</code> 刷新统计，再重新查询。</p>
+</blockquote>
+<p><strong>合并相邻分区</strong>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> tr_merge (<br>    id <span class="hljs-type">INT</span>, name <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>), purchased <span class="hljs-type">DATE</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span>(<span class="hljs-keyword">YEAR</span>(purchased)) (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1970</span>),<br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1980</span>),<br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">2010</span>)<br>);<br><br><span class="hljs-keyword">INSERT INTO</span> tr_merge <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;old&#x27;</span>, <span class="hljs-string">&#x27;1965-01-01&#x27;</span>);<br><span class="hljs-keyword">INSERT INTO</span> tr_merge <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">2</span>, <span class="hljs-string">&#x27;mid1&#x27;</span>, <span class="hljs-string">&#x27;1975-06-15&#x27;</span>);<br><span class="hljs-keyword">INSERT INTO</span> tr_merge <span class="hljs-keyword">VALUES</span> (<span class="hljs-number">3</span>, <span class="hljs-string">&#x27;mid2&#x27;</span>, <span class="hljs-string">&#x27;1978-12-20&#x27;</span>);<br><br><span class="hljs-keyword">ALTER TABLE</span> tr_merge REORGANIZE <span class="hljs-keyword">PARTITION</span> p0, p1 <span class="hljs-keyword">INTO</span> (<br>    <span class="hljs-keyword">PARTITION</span> p_merged <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1980</span>)<br>);<br></code></pre></td></tr></table></figure>
+
+<p><strong>拆分分区</strong>：<code>REORGANIZE PARTITION</code> 既可以合并分区，也可以将一个分区拆分为多个。</p>
+<p><strong>减少 LIST&#x2F;HASH&#x2F;KEY 分区的数量</strong>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> clients (<br>    id <span class="hljs-type">INT</span>,<br>    signed <span class="hljs-type">DATE</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> HASH(<span class="hljs-keyword">MONTH</span>(signed))<br>PARTITIONS <span class="hljs-number">12</span>;<br><br><span class="hljs-comment">-- 将分区数从 12 减少到 8</span><br><span class="hljs-keyword">ALTER TABLE</span> clients COALESCE <span class="hljs-keyword">PARTITION</span> <span class="hljs-number">4</span>;<br></code></pre></td></tr></table></figure>
+
+<p><strong>增加分区数</strong>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 增加 6 个分区</span><br><span class="hljs-keyword">ALTER TABLE</span> clients <span class="hljs-keyword">ADD</span> <span class="hljs-keyword">PARTITION</span> PARTITIONS <span class="hljs-number">6</span>;<br></code></pre></td></tr></table></figure>
+
+
+
+<h2 id="四、分区裁剪"><a href="#四、分区裁剪" class="headerlink" title="四、分区裁剪"></a>四、分区裁剪</h2><p>分区裁剪（Partition Pruning）是 MySQL 分区最重要的查询优化手段。<strong>裁剪的原理</strong>：查询时只扫描可能包含匹配行的分区，排除不相关分区。执行效果可能使查询快一个数量级。</p>
+<h3 id="4-1-适用条件"><a href="#4-1-适用条件" class="headerlink" title="4.1 适用条件"></a>4.1 适用条件</h3><p>建表并插入测试数据：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> t1 (<br>    id <span class="hljs-type">INT</span>,<br>    fname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),<br>    lname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),<br>    region_code TINYINT UNSIGNED<br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> HASH(region_code)<br>PARTITIONS <span class="hljs-number">4</span>;<br><br><span class="hljs-keyword">INSERT INTO</span> t1 <span class="hljs-keyword">VALUES</span><br>(<span class="hljs-number">1</span>, <span class="hljs-string">&#x27;Alice&#x27;</span>, <span class="hljs-string">&#x27;Smith&#x27;</span>,   <span class="hljs-number">4</span>),  <span class="hljs-comment">-- MOD(4,4)=0 → p0</span><br>(<span class="hljs-number">2</span>, <span class="hljs-string">&#x27;Bob&#x27;</span>,   <span class="hljs-string">&#x27;Jones&#x27;</span>,    <span class="hljs-number">5</span>),  <span class="hljs-comment">-- MOD(5,4)=1 → p1</span><br>(<span class="hljs-number">3</span>, <span class="hljs-string">&#x27;Carol&#x27;</span>, <span class="hljs-string">&#x27;White&#x27;</span>,   <span class="hljs-number">6</span>),  <span class="hljs-comment">-- MOD(6,4)=2 → p2</span><br>(<span class="hljs-number">4</span>, <span class="hljs-string">&#x27;Dave&#x27;</span>,  <span class="hljs-string">&#x27;Brown&#x27;</span>,    <span class="hljs-number">7</span>),  <span class="hljs-comment">-- MOD(7,4)=3 → p3</span><br>(<span class="hljs-number">5</span>, <span class="hljs-string">&#x27;Eve&#x27;</span>,   <span class="hljs-string">&#x27;Taylor&#x27;</span>,  <span class="hljs-number">10</span>); <span class="hljs-comment">-- MOD(10,4)=2 → p2</span><br></code></pre></td></tr></table></figure>
+
+<p>分区分布：<code>region_code=4→p0</code>、<code>5→p1</code>、<code>6→p2</code>、<code>7→p3</code>、<code>10→p2</code>。</p>
+<p>当 <code>WHERE</code> 条件可以归约为以下形式时，MySQL 即可执行裁剪：</p>
+<p><strong>形式一：分区列 &#x3D; 常量</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> t1 <span class="hljs-keyword">WHERE</span> region_code <span class="hljs-operator">=</span> <span class="hljs-number">6</span>;<br></code></pre></td></tr></table></figure>
+
+<p><code>EXPLAIN</code> 显示 <code>partitions: p2</code>，只扫描 <code>p2</code>：</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs armasm"><span class="hljs-symbol">partitions:</span> <span class="hljs-built_in">p2</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>形式二：分区列 IN (常量列表)</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> t1 <span class="hljs-keyword">WHERE</span> region_code <span class="hljs-keyword">IN</span> (<span class="hljs-number">6</span>, <span class="hljs-number">7</span>);<br></code></pre></td></tr></table></figure>
+
+<p><code>EXPLAIN</code> 显示 <code>partitions: p2,p3</code>，扫描 <code>p2</code> 和 <code>p3</code>：</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs armasm"><span class="hljs-symbol">partitions:</span> <span class="hljs-built_in">p2</span>,<span class="hljs-built_in">p3</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>形式三：短范围可转化为 IN 列表</strong></p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> t1 <span class="hljs-keyword">WHERE</span> region_code <span class="hljs-operator">&gt;</span> <span class="hljs-number">4</span> <span class="hljs-keyword">AND</span> region_code <span class="hljs-operator">&lt;</span> <span class="hljs-number">8</span>;<br></code></pre></td></tr></table></figure>
+
+<p><code>EXPLAIN</code> 显示 <code>partitions: p1,p2,p3</code>，扫描 <code>p1</code>、<code>p2</code>、<code>p3</code>（对应 <code>region_code=5,6,7</code>）：</p>
+<figure class="highlight armasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs armasm"><span class="hljs-symbol">partitions:</span> <span class="hljs-built_in">p1</span>,<span class="hljs-built_in">p2</span>,<span class="hljs-built_in">p3</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>重要限制</strong>：范围包含的值数量必须小于分区数，否则无法裁剪。如果范围覆盖 9 个值而表只有 8 个分区，优化器不会进行裁剪。</p>
+</blockquote>
+<h3 id="4-2-日期分区与裁剪"><a href="#4-2-日期分区与裁剪" class="headerlink" title="4.2 日期分区与裁剪"></a>4.2 日期分区与裁剪</h3><p>使用 <code>YEAR()</code> 或 <code>TO_DAYS()</code> 进行日期分区时，MySQL 也能利用裁剪：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> t2 (<br>    fname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),<br>    lname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">50</span>),<br>    region_code TINYINT UNSIGNED,<br>    dob <span class="hljs-type">DATE</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span>(<span class="hljs-keyword">YEAR</span>(dob)) (<br>    <span class="hljs-keyword">PARTITION</span> d0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1970</span>),<br>    <span class="hljs-keyword">PARTITION</span> d1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1975</span>),<br>    <span class="hljs-keyword">PARTITION</span> d2 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1980</span>),<br>    <span class="hljs-keyword">PARTITION</span> d3 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1985</span>),<br>    <span class="hljs-keyword">PARTITION</span> d4 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">1990</span>),<br>    <span class="hljs-keyword">PARTITION</span> d5 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">2000</span>),<br>    <span class="hljs-keyword">PARTITION</span> d6 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">2005</span>),<br>    <span class="hljs-keyword">PARTITION</span> d7 <span class="hljs-keyword">VALUES</span> LESS THAN MAXVALUE<br>);<br></code></pre></td></tr></table></figure>
+
+<p>以下查询均可触发裁剪：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- 等值查询</span><br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> t2 <span class="hljs-keyword">WHERE</span> dob <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;1982-06-23&#x27;</span>;<br><br><span class="hljs-comment">-- 范围查询</span><br><span class="hljs-keyword">UPDATE</span> t2 <span class="hljs-keyword">SET</span> region_code <span class="hljs-operator">=</span> <span class="hljs-number">8</span><br><span class="hljs-keyword">WHERE</span> dob <span class="hljs-keyword">BETWEEN</span> <span class="hljs-string">&#x27;1991-02-15&#x27;</span> <span class="hljs-keyword">AND</span> <span class="hljs-string">&#x27;1997-04-25&#x27;</span>;<br><br><span class="hljs-keyword">DELETE</span> <span class="hljs-keyword">FROM</span> t2 <span class="hljs-keyword">WHERE</span> dob <span class="hljs-operator">&gt;=</span> <span class="hljs-string">&#x27;1984-06-21&#x27;</span> <span class="hljs-keyword">AND</span> dob <span class="hljs-operator">&lt;=</span> <span class="hljs-string">&#x27;1999-06-21&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<p>范围查询的裁剪过程：找到低端值所在分区（<code>d3</code>）和高端值所在分区（<code>d5</code>），然后扫描这两个分区及其之间的所有分区（<code>d3</code>, <code>d4</code>, <code>d5</code>），其余分区直接跳过。</p>
+<h3 id="4-3-各分区类型的裁剪差异"><a href="#4-3-各分区类型的裁剪差异" class="headerlink" title="4.3 各分区类型的裁剪差异"></a>4.3 各分区类型的裁剪差异</h3><table>
+<thead>
+<tr>
+<th>分区类型</th>
+<th>裁剪条件</th>
+<th>限制</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RANGE</td>
+<td><code>=</code>、<code>IN</code>、BETWEEN、短范围</td>
+<td>无</td>
+</tr>
+<tr>
+<td>LIST</td>
+<td><code>=</code>、<code>IN</code></td>
+<td>无</td>
+</tr>
+<tr>
+<td>HASH&#x2F;KEY</td>
+<td><code>=</code></td>
+<td>只能用于整数列</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>⚠️ <code>HASH</code>&#x2F;<code>KEY</code> 分区中，如果分区键是 <code>DATE</code> 类型（如 <code>WHERE dob &gt;= &#39;2001-04-14&#39;</code>），<strong>无法裁剪</strong>。因为 MySQL 无法将日期比较转化为模运算。如果用整数列存储年份，则 <code>WHERE year_col &gt;= 2001 AND year_col &lt;= 2005</code> 可以裁剪。</p>
+</blockquote>
+<h3 id="4-4-验证裁剪效果"><a href="#4-4-验证裁剪效果" class="headerlink" title="4.4 验证裁剪效果"></a>4.4 验证裁剪效果</h3><p>使用 <code>EXPLAIN</code> 查看查询是否使用了分区裁剪：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql">EXPLAIN <span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> t2 <span class="hljs-keyword">WHERE</span> <span class="hljs-keyword">YEAR</span>(dob) <span class="hljs-operator">=</span> <span class="hljs-number">1982</span>;<br></code></pre></td></tr></table></figure>
+
+<p>输出中可以看到只扫描了相关分区，而不是所有分区。</p>
+<h2 id="五、分区选择"><a href="#五、分区选择" class="headerlink" title="五、分区选择"></a>五、分区选择</h2><p>分区选择（Partition Selection）允许在 SQL 语句中<strong>显式指定</strong>要操作的分区或子分区，与分区裁剪不同，裁剪是优化器自动决定，选择是用户主动指定。</p>
+<h3 id="5-1-基本语法"><a href="#5-1-基本语法" class="headerlink" title="5.1 基本语法"></a>5.1 基本语法</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> table_name <span class="hljs-keyword">PARTITION</span> (partition_name[, ...])<br></code></pre></td></tr></table></figure>
+
+<p><code>PARTITION</code> 选项紧跟在表名之后，可指定多个分区名（以逗号分隔），分区顺序无关紧要，可以重叠。</p>
+<h3 id="5-2-查询中的分区选择"><a href="#5-2-查询中的分区选择" class="headerlink" title="5.2 查询中的分区选择"></a>5.2 查询中的分区选择</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> employees (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">NOT NULL</span> AUTO_INCREMENT <span class="hljs-keyword">PRIMARY KEY</span>,<br>    fname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">25</span>),<br>    lname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">25</span>),<br>    store_id <span class="hljs-type">INT</span>,<br>    department_id <span class="hljs-type">INT</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span>(id) (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">5</span>),     <span class="hljs-comment">-- id 1-4</span><br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">10</span>),   <span class="hljs-comment">-- id 5-9</span><br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">15</span>),  <span class="hljs-comment">-- id 10-14</span><br>    <span class="hljs-keyword">PARTITION</span> p3 <span class="hljs-keyword">VALUES</span> LESS THAN MAXVALUE <span class="hljs-comment">-- id 15+</span><br>);<br><br><span class="hljs-keyword">INSERT INTO</span> employees (fname, lname, store_id, department_id) <span class="hljs-keyword">VALUES</span><br>(<span class="hljs-string">&#x27;Bob&#x27;</span>,    <span class="hljs-string">&#x27;Taylor&#x27;</span>,   <span class="hljs-number">3</span>, <span class="hljs-number">2</span>),<br>(<span class="hljs-string">&#x27;Frank&#x27;</span>,  <span class="hljs-string">&#x27;Williams&#x27;</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>),<br>(<span class="hljs-string">&#x27;Ellen&#x27;</span>,  <span class="hljs-string">&#x27;Johnson&#x27;</span>,  <span class="hljs-number">3</span>, <span class="hljs-number">4</span>),<br>(<span class="hljs-string">&#x27;Jim&#x27;</span>,    <span class="hljs-string">&#x27;Smith&#x27;</span>,    <span class="hljs-number">2</span>, <span class="hljs-number">4</span>),<br>(<span class="hljs-string">&#x27;Mary&#x27;</span>,   <span class="hljs-string">&#x27;Jones&#x27;</span>,    <span class="hljs-number">1</span>, <span class="hljs-number">1</span>),<br>(<span class="hljs-string">&#x27;Linda&#x27;</span>,  <span class="hljs-string">&#x27;Black&#x27;</span>,    <span class="hljs-number">2</span>, <span class="hljs-number">3</span>),<br>(<span class="hljs-string">&#x27;Ed&#x27;</span>,     <span class="hljs-string">&#x27;Jones&#x27;</span>,    <span class="hljs-number">2</span>, <span class="hljs-number">1</span>),<br>(<span class="hljs-string">&#x27;June&#x27;</span>,   <span class="hljs-string">&#x27;Wilson&#x27;</span>,   <span class="hljs-number">3</span>, <span class="hljs-number">1</span>),<br>(<span class="hljs-string">&#x27;Andy&#x27;</span>,   <span class="hljs-string">&#x27;Smith&#x27;</span>,    <span class="hljs-number">1</span>, <span class="hljs-number">3</span>),<br>(<span class="hljs-string">&#x27;Lou&#x27;</span>,    <span class="hljs-string">&#x27;Waters&#x27;</span>,   <span class="hljs-number">2</span>, <span class="hljs-number">4</span>),<br>(<span class="hljs-string">&#x27;Jill&#x27;</span>,   <span class="hljs-string">&#x27;Stone&#x27;</span>,    <span class="hljs-number">1</span>, <span class="hljs-number">4</span>),<br>(<span class="hljs-string">&#x27;Roger&#x27;</span>,  <span class="hljs-string">&#x27;White&#x27;</span>,    <span class="hljs-number">3</span>, <span class="hljs-number">2</span>),<br>(<span class="hljs-string">&#x27;Howard&#x27;</span>, <span class="hljs-string">&#x27;Andrews&#x27;</span>,  <span class="hljs-number">1</span>, <span class="hljs-number">2</span>),<br>(<span class="hljs-string">&#x27;Fred&#x27;</span>,   <span class="hljs-string">&#x27;Goldberg&#x27;</span>, <span class="hljs-number">3</span>, <span class="hljs-number">3</span>),<br>(<span class="hljs-string">&#x27;Barbara&#x27;</span>,<span class="hljs-string">&#x27;Brown&#x27;</span>,    <span class="hljs-number">2</span>, <span class="hljs-number">3</span>),<br>(<span class="hljs-string">&#x27;Alice&#x27;</span>,  <span class="hljs-string">&#x27;Rogers&#x27;</span>,   <span class="hljs-number">2</span>, <span class="hljs-number">2</span>);<br></code></pre></td></tr></table></figure>
+
+<p>查询分区 <code>p1</code> 中的所有行：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> employees <span class="hljs-keyword">PARTITION</span> (p1);<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>fname</th>
+<th>lname</th>
+<th>store_id</th>
+<th>department_id</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>5</td>
+<td>Mary</td>
+<td>Jones</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>6</td>
+<td>Linda</td>
+<td>Black</td>
+<td>2</td>
+<td>3</td>
+</tr>
+<tr>
+<td>7</td>
+<td>Ed</td>
+<td>Jones</td>
+<td>2</td>
+<td>1</td>
+</tr>
+<tr>
+<td>8</td>
+<td>June</td>
+<td>Wilson</td>
+<td>3</td>
+<td>1</td>
+</tr>
+<tr>
+<td>9</td>
+<td>Andy</td>
+<td>Smith</td>
+<td>1</td>
+<td>3</td>
+</tr>
+</tbody></table>
+<p>查询多个分区的交集（排除其他分区）：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> employees <span class="hljs-keyword">PARTITION</span> (p0, p2)<br><span class="hljs-keyword">WHERE</span> lname <span class="hljs-keyword">LIKE</span> <span class="hljs-string">&#x27;S%&#x27;</span>;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>fname</th>
+<th>lname</th>
+<th>store_id</th>
+<th>department_id</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>4</td>
+<td>Jim</td>
+<td>Smith</td>
+<td>2</td>
+<td>4</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Jill</td>
+<td>Stone</td>
+<td>1</td>
+<td>4</td>
+</tr>
+</tbody></table>
+<p>结合排序和聚合：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> id, CONCAT(fname, <span class="hljs-string">&#x27; &#x27;</span>, lname) <span class="hljs-keyword">AS</span> name<br><span class="hljs-keyword">FROM</span> employees <span class="hljs-keyword">PARTITION</span> (p0) <span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> lname;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>name</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>3</td>
+<td>Ellen Johnson</td>
+</tr>
+<tr>
+<td>4</td>
+<td>Jim Smith</td>
+</tr>
+<tr>
+<td>1</td>
+<td>Bob Taylor</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Frank Williams</td>
+</tr>
+</tbody></table>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> store_id, <span class="hljs-built_in">COUNT</span>(department_id) <span class="hljs-keyword">AS</span> c<br><span class="hljs-keyword">FROM</span> employees <span class="hljs-keyword">PARTITION</span> (p1, p2, p3)<br><span class="hljs-keyword">GROUP</span> <span class="hljs-keyword">BY</span> store_id <span class="hljs-keyword">HAVING</span> c <span class="hljs-operator">&gt;</span> <span class="hljs-number">4</span>;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>store_id</th>
+<th>c</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>2</td>
+<td>5</td>
+</tr>
+</tbody></table>
+<h3 id="5-3-DML-语句中的分区选择"><a href="#5-3-DML-语句中的分区选择" class="headerlink" title="5.3 DML 语句中的分区选择"></a>5.3 DML 语句中的分区选择</h3><p>分区选择支持 <code>SELECT</code>、<code>DELETE</code>、<code>INSERT</code>、<code>REPLACE</code>、<code>UPDATE</code>、<code>LOAD DATA</code>、<code>LOAD XML</code> 等多种语句。</p>
+<p><strong>在 INSERT 中指定源分区</strong>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">DROP</span> <span class="hljs-keyword">TABLE</span> IF <span class="hljs-keyword">EXISTS</span> employees_copy;<br><span class="hljs-keyword">CREATE TABLE</span> employees_copy <span class="hljs-keyword">LIKE</span> employees;<br><span class="hljs-keyword">ALTER TABLE</span> employees_copy REMOVE PARTITIONING;<br><span class="hljs-keyword">INSERT INTO</span> employees_copy <span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> employees <span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">&lt;=</span> <span class="hljs-number">4</span>;  <span class="hljs-comment">-- 模拟已存有其他分区数据</span><br><br><span class="hljs-keyword">SELECT</span> <span class="hljs-string">&#x27;复制前:&#x27;</span> <span class="hljs-keyword">AS</span> stage;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> employees_copy;<br><br><span class="hljs-keyword">INSERT INTO</span> employees_copy<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> employees <span class="hljs-keyword">PARTITION</span> (p2);<br><br><span class="hljs-keyword">SELECT</span> <span class="hljs-string">&#x27;INSERT ... PARTITION (p2) 后:&#x27;</span> <span class="hljs-keyword">AS</span> stage;<br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> employees_copy <span class="hljs-keyword">WHERE</span> id <span class="hljs-keyword">BETWEEN</span> <span class="hljs-number">10</span> <span class="hljs-keyword">AND</span> <span class="hljs-number">14</span>;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>fname</th>
+<th>lname</th>
+<th>store_id</th>
+<th>department_id</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>10</td>
+<td>Lou</td>
+<td>Waters</td>
+<td>2</td>
+<td>4</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Jill</td>
+<td>Stone</td>
+<td>1</td>
+<td>4</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Roger</td>
+<td>White</td>
+<td>3</td>
+<td>2</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Howard</td>
+<td>Andrews</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Fred</td>
+<td>Goldberg</td>
+<td>3</td>
+<td>3</td>
+</tr>
+</tbody></table>
+<p><strong>在 DELETE 中指定分区</strong>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">DELETE</span> <span class="hljs-keyword">FROM</span> employees <span class="hljs-keyword">PARTITION</span> (p0) <span class="hljs-keyword">WHERE</span> lname <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;Smith&#x27;</span>;<br><br><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> employees <span class="hljs-keyword">PARTITION</span> (p0);<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>fname</th>
+<th>lname</th>
+<th>store_id</th>
+<th>department_id</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>1</td>
+<td>Bob</td>
+<td>Taylor</td>
+<td>3</td>
+<td>2</td>
+</tr>
+<tr>
+<td>2</td>
+<td>Frank</td>
+<td>Williams</td>
+<td>1</td>
+<td>2</td>
+</tr>
+<tr>
+<td>3</td>
+<td>Ellen</td>
+<td>Johnson</td>
+<td>3</td>
+<td>4</td>
+</tr>
+</tbody></table>
+<p><code>id=4 (Jim Smith)</code> 被删除，其他分区不受影响。</p>
+<p><strong>在 UPDATE 中指定分区</strong>：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">UPDATE</span> employees <span class="hljs-keyword">PARTITION</span> (p2) <span class="hljs-keyword">SET</span> store_id <span class="hljs-operator">=</span> <span class="hljs-number">99</span> <span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;<br><br><span class="hljs-keyword">SELECT</span> <span class="hljs-string">&#x27;UPDATE PARTITION (p2) SET store_id=99 WHERE id=10:&#x27;</span> <span class="hljs-keyword">AS</span> stage;<br><span class="hljs-keyword">SELECT</span> id, fname, store_id <span class="hljs-keyword">FROM</span> employees <span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">=</span> <span class="hljs-number">10</span>;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>fname</th>
+<th>store_id</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>10</td>
+<td>Lou</td>
+<td>99</td>
+</tr>
+</tbody></table>
+<h3 id="5-4-子分区选择"><a href="#5-4-子分区选择" class="headerlink" title="5.4 子分区选择"></a>5.4 子分区选择</h3><figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">CREATE TABLE</span> employees_sub (<br>    id <span class="hljs-type">INT</span> <span class="hljs-keyword">NOT NULL</span>,<br>    fname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">25</span>),<br>    lname <span class="hljs-type">VARCHAR</span>(<span class="hljs-number">25</span>),<br>    store_id <span class="hljs-type">INT</span><br>)<br><span class="hljs-keyword">PARTITION</span> <span class="hljs-keyword">BY</span> <span class="hljs-keyword">RANGE</span>(id)<br>SUBPARTITION <span class="hljs-keyword">BY</span> KEY(id)<br>SUBPARTITIONS <span class="hljs-number">2</span> (<br>    <span class="hljs-keyword">PARTITION</span> p0 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">5</span>),<br>    <span class="hljs-keyword">PARTITION</span> p1 <span class="hljs-keyword">VALUES</span> LESS THAN (<span class="hljs-number">10</span>),<br>    <span class="hljs-keyword">PARTITION</span> p2 <span class="hljs-keyword">VALUES</span> LESS THAN MAXVALUE<br>);<br><br><span class="hljs-keyword">INSERT INTO</span> employees_sub <span class="hljs-keyword">VALUES</span><br>(<span class="hljs-number">1</span>,<span class="hljs-string">&#x27;Bob&#x27;</span>,<span class="hljs-string">&#x27;Taylor&#x27;</span>,<span class="hljs-number">3</span>),(<span class="hljs-number">2</span>,<span class="hljs-string">&#x27;Frank&#x27;</span>,<span class="hljs-string">&#x27;Williams&#x27;</span>,<span class="hljs-number">1</span>),(<span class="hljs-number">3</span>,<span class="hljs-string">&#x27;Ellen&#x27;</span>,<span class="hljs-string">&#x27;Johnson&#x27;</span>,<span class="hljs-number">3</span>),<br>(<span class="hljs-number">4</span>,<span class="hljs-string">&#x27;Jim&#x27;</span>,<span class="hljs-string">&#x27;Smith&#x27;</span>,<span class="hljs-number">2</span>),(<span class="hljs-number">5</span>,<span class="hljs-string">&#x27;Mary&#x27;</span>,<span class="hljs-string">&#x27;Jones&#x27;</span>,<span class="hljs-number">1</span>),(<span class="hljs-number">6</span>,<span class="hljs-string">&#x27;Linda&#x27;</span>,<span class="hljs-string">&#x27;Black&#x27;</span>,<span class="hljs-number">2</span>),<br>(<span class="hljs-number">7</span>,<span class="hljs-string">&#x27;Ed&#x27;</span>,<span class="hljs-string">&#x27;Jones&#x27;</span>,<span class="hljs-number">2</span>),(<span class="hljs-number">8</span>,<span class="hljs-string">&#x27;June&#x27;</span>,<span class="hljs-string">&#x27;Wilson&#x27;</span>,<span class="hljs-number">3</span>),<br>(<span class="hljs-number">10</span>,<span class="hljs-string">&#x27;Alice&#x27;</span>,<span class="hljs-string">&#x27;Rogers&#x27;</span>,<span class="hljs-number">2</span>),(<span class="hljs-number">11</span>,<span class="hljs-string">&#x27;Tom&#x27;</span>,<span class="hljs-string">&#x27;Harris&#x27;</span>,<span class="hljs-number">3</span>),(<span class="hljs-number">12</span>,<span class="hljs-string">&#x27;Kate&#x27;</span>,<span class="hljs-string">&#x27;Lee&#x27;</span>,<span class="hljs-number">1</span>),(<span class="hljs-number">13</span>,<span class="hljs-string">&#x27;Sam&#x27;</span>,<span class="hljs-string">&#x27;Clark&#x27;</span>,<span class="hljs-number">2</span>);<br></code></pre></td></tr></table></figure>
+
+<p>查询各子分区的数据分布：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> PARTITION_NAME, SUBPARTITION_NAME, TABLE_ROWS<br><span class="hljs-keyword">FROM</span> INFORMATION_SCHEMA.PARTITIONS<br><span class="hljs-keyword">WHERE</span> TABLE_SCHEMA <span class="hljs-operator">=</span> DATABASE() <span class="hljs-keyword">AND</span> TABLE_NAME <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;employees_sub&#x27;</span><br><span class="hljs-keyword">ORDER</span> <span class="hljs-keyword">BY</span> PARTITION_NAME, SUBPARTITION_NAME;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>PARTITION_NAME</th>
+<th>SUBPARTITION_NAME</th>
+<th>TABLE_ROWS</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>p0</td>
+<td>p0sp0</td>
+<td>2</td>
+</tr>
+<tr>
+<td>p0</td>
+<td>p0sp1</td>
+<td>2</td>
+</tr>
+<tr>
+<td>p1</td>
+<td>p1sp0</td>
+<td>2</td>
+</tr>
+<tr>
+<td>p1</td>
+<td>p1sp1</td>
+<td>2</td>
+</tr>
+<tr>
+<td>p2</td>
+<td>p2sp0</td>
+<td>2</td>
+</tr>
+<tr>
+<td>p2</td>
+<td>p2sp1</td>
+<td>2</td>
+</tr>
+</tbody></table>
+<p>显式选择子分区：</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> employees_sub <span class="hljs-keyword">PARTITION</span> (p2sp0);<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>fname</th>
+<th>lname</th>
+<th>store_id</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>11</td>
+<td>Tom</td>
+<td>Harris</td>
+<td>3</td>
+</tr>
+<tr>
+<td>13</td>
+<td>Sam</td>
+<td>Clark</td>
+<td>2</td>
+</tr>
+</tbody></table>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> employees_sub <span class="hljs-keyword">PARTITION</span> (p2sp1);<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>id</th>
+<th>fname</th>
+<th>lname</th>
+<th>store_id</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>10</td>
+<td>Alice</td>
+<td>Rogers</td>
+<td>2</td>
+</tr>
+<tr>
+<td>12</td>
+<td>Kate</td>
+<td>Lee</td>
+<td>1</td>
+</tr>
+</tbody></table>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/MySQL/" class="category-chain-item">MySQL</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%88%86%E5%8C%BA/" class="print-no-link">#分区</a>
+      
+        <a href="/tags/RANGE/" class="print-no-link">#RANGE</a>
+      
+        <a href="/tags/LIST/" class="print-no-link">#LIST</a>
+      
+        <a href="/tags/HASH/" class="print-no-link">#HASH</a>
+      
+        <a href="/tags/KEY/" class="print-no-link">#KEY</a>
+      
+        <a href="/tags/%E5%AD%90%E5%88%86%E5%8C%BA/" class="print-no-link">#子分区</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2026/04/01/mysql/InnoDB%20%E5%AD%98%E5%82%A8%E5%BC%95%E6%93%8E/" title="InnoDB 存储引擎">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">InnoDB 存储引擎</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2026/03/31/mysql/MySQL%20INFORMATION_SCHEMA/" title="MySQL INFORMATION_SCHEMA">
+                        <span class="hidden-mobile">MySQL INFORMATION_SCHEMA</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
