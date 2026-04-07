@@ -92,7 +92,7 @@ pub enum Error {
 
     #[error("position {pos} out of range")]
     OutOfRange { pos: usize },
-}
+}	
 
 fn main() {
     let e1 = Error::Invalid { reason: "foo".to_string() };
@@ -173,16 +173,31 @@ pub enum MyError {
     Parse(#[from] std::num::ParseIntError),
 }
 
-fn read_and_parse(s: &str) -> Result<i32, MyError> {
-    let num: i32 = s.parse()?; // 自动 From<ParseIntError> → MyError
-    Ok(num)
+fn parse_int(s: &str) -> Result<i32, MyError> {
+    let n: i32 = s.parse()?; // 自动 From<ParseIntError> → MyError
+    Ok(n)
+}
+
+fn read_file() -> Result<Vec<u8>, MyError> {
+    let _ = std::fs::read("nonexistent.txt")?; // 自动 From<io::Error> → MyError
+    Ok(vec![])
+}
+
+fn main() {
+    if let Err(e) = parse_int("not a number") {
+        println!("{}", e);
+    }
+    if let Err(e) = read_file() {
+        println!("{}", e);
+    }
 }
 ```
 
 运行结果：
 
 ```
-parse error: parse error: invalid digit found in string
+parse error: invalid digit found in string
+IO error occurred
 ```
 
 `#[from]` 隐含 `#[source]` 语义，无需同时标记两个属性。使用 `#[from]` 的变体，其字段只能是错误源（可能有 `Backtrace`），不能包含其他字段。
@@ -200,6 +215,14 @@ pub struct ConfigError {
     msg: String,
     #[source] // 显式标记 source 字段
     source: std::io::Error,
+}
+
+fn main() {
+    let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
+    let err = ConfigError { msg: "config file missing".to_string(), source: io_err };
+
+    println!("{}", err);
+    println!("source: {:?}", std::error::Error::source(&err));
 }
 ```
 
@@ -249,6 +272,22 @@ pub enum ComplexError {
     #[error("unit variant: done")]
     Done,
 }
+
+fn main() {
+    let e1 = ValidationError { field: "email".to_string(), reason: "格式不正确".to_string() };
+    let e2 = ParseError(10, "unexpected token".to_string());
+    let e3 = ServiceUnavailableError;
+    let e4 = ComplexError::Point { x: 1.5, y: 2.5 };
+    let e5 = ComplexError::Pair("hello".to_string(), 42);
+    let e6 = ComplexError::Done;
+
+    println!("{}", e1);
+    println!("{}", e2);
+    println!("{}", e3);
+    println!("{}", e4);
+    println!("{}", e5);
+    println!("{}", e6);
+}
 ```
 
 运行结果：
@@ -288,11 +327,20 @@ pub enum MyError {
     #[error(transparent)]
     Other(OpaqueError),
 }
+
+fn main() {
+    let e1 = MyError::Specific("just this".to_string());
+    let e2 = MyError::Other(OpaqueError("underlying error details".to_string()));
+
+    println!("{}", e1);
+    println!("{}", e2);
+}
 ```
 
 运行结果：
 
 ```
+specific error: just this
 underlying error details
 ```
 
@@ -354,6 +402,17 @@ pub enum Error {
     #[error("数据文件断开连接")] // 硬编码的中文字符串
     Disconnect,
 }
+
+fn main() {
+    let err = Error::Disconnect;
+    println!("{}", err);
+}
+```
+
+运行结果：
+
+```
+数据文件断开连接
 ```
 
 编译器将 `"数据文件断开连接"` 直接嵌入生成的 `Display` 实现中，运行时不存在任何查表的逻辑。
@@ -377,7 +436,7 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("ERR_DISCONNECT: 0x{:08x}")]
+    #[error("ERR_DISCONNECT: code={0}")]
     Disconnect(u32),
 }
 
@@ -388,25 +447,57 @@ impl Error {
         }
     }
 }
+
+fn main() {
+    let err = Error::Disconnect(42);
+    println!("Display: {}", err);
+    println!("code:   {}", err.error_code());
+}
+```
+
+运行结果：
+
+```
+Display: ERR_DISCONNECT: code=42
+code:   ERR_DISCONNECT
 ```
 
 调用方根据 `error_code()` 查表返回对应语言的消息。
 
 **方案二：使用 fluent-rs 替代字符串字面量**
 
-fluent-rs 是 `Mozilla` 维护的国际化系统，通过 FTL 文件定义翻译资源。可以将错误码作为 message ID，通过 fluent-rs 查找翻译：
+fluent-rs 是 `Mozilla` 维护的国际化系统，通过 FTL 文件定义翻译资源。可以将错误码作为 message ID，通过 fluent-rs 查找翻译。以下示例演示其查表逻辑：
 
 ```rust
-use fluent::{FluentBundle, FluentResource, FluentArgs};
-use fluent::syntax::parser::parse;
+use std::collections::HashMap;
 
-fn get_localized_message(bundle: &FluentBundle<FluentResource>, error_code: &str) -> String {
-    let msg = bundle.get_message(error_code)
-        .expect("error message not found");
-    let pattern = msg.value().expect("no pattern");
-    // 使用 pattern.format(bundle, &args) 进行格式化
-    pattern.to_string()
+fn get_i18n_message(error_id: &str, lang: &str) -> String {
+    // 模拟 fluent-rs 查表行为
+    let mut zh: HashMap<&str, &str> = HashMap::new();
+    zh.insert("err_disconnect", "数据文件断开连接");
+
+    let mut en: HashMap<&str, &str> = HashMap::new();
+    en.insert("err_disconnect", "data store disconnected");
+
+    match lang {
+        "zh" => zh.get(error_id).map(|s| s.to_string()).unwrap_or_else(|| error_id.to_string()),
+        _ => en.get(error_id).map(|s| s.to_string()).unwrap_or_else(|| error_id.to_string()),
+    }
 }
+
+fn main() {
+    let msg_zh = get_i18n_message("err_disconnect", "zh");
+    let msg_en = get_i18n_message("err_disconnect", "en");
+    println!("[zh] {}", msg_zh);
+    println!("[en] {}", msg_en);
+}
+```
+
+运行结果：
+
+```
+[zh] 数据文件断开连接
+[en] data store disconnected
 ```
 
 但需要注意，`thiserror` 的 `#[error("...")]` 仍然只能接受字面量，因此这种方案实际上放弃了使用 `thiserror` 的消息模板功能，改由调用方在 `Display` 之外单独处理国际化。
@@ -416,27 +507,41 @@ fn get_localized_message(bundle: &FluentBundle<FluentResource>, error_code: &str
 完全不使用 `thiserror` 的 `#[error]` 属性，手动实现 `Display` trait 并在实现中调用翻译函数：
 
 ```rust
-use std::error::Error;
+use std::error::Error as StdError;
 use std::fmt;
 
-pub enum Error {
+#[derive(Debug)]
+pub enum MyError {
     Disconnect,
 }
 
-impl fmt::Display for Error {
+impl fmt::Display for MyError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Error::Disconnect => {
+            MyError::Disconnect => {
                 write!(f, "{}", translate("err_disconnect"))
             }
         }
     }
 }
 
+impl StdError for MyError {}
+
 fn translate(id: &str) -> String {
-    // 调用翻译系统
-    id.to_string()
+    // 实际项目中调用翻译系统
+    format!("[i18n:{}]", id)
 }
+
+fn main() {
+    let err = MyError::Disconnect;
+    println!("{}", err);
+}
+```
+
+运行结果：
+
+```
+[i18n:err_disconnect]
 ```
 
 此方案失去了 `derive` 宏的便利性，但获得了完整的国际化能力。
@@ -470,6 +575,19 @@ impl DataStoreError {
         }
     }
 }
+
+fn main() {
+    let err = DataStoreError::Disconnect;
+    println!("Display: {}", err);
+    println!("code:   {}", err.code());
+}
+```
+
+运行结果：
+
+```
+Display: data store disconnected
+code:   ERR_DISCONNECT
 ```
 
 应用层根据 `code()` 查 `fluent` 或其他 i18n 系统得到本地化消息，同时保留 `Display` 在日志和控制台输出中提供可读但不依赖特定语言的默认信息。
