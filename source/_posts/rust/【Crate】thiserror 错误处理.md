@@ -23,7 +23,7 @@ thiserror = "2"
 
 ### 2.1 错误枚举
 
-`thiserror` 最常见的用法是定义错误枚举。以下示例展示一个数据存储的错误类型：
+`thiserror` 最常见的用法是定义错误 `enum`。以下示例展示一个数据存储的错误类型：
 
 ```rust
 use thiserror::Error;
@@ -71,25 +71,25 @@ unknown data store error
 ```rust
 #[derive(Error, Debug)]
 pub enum Error {
-    // 额外参数 max 为固定常量
-    #[error("invalid rdo_lookahead_frames {0} (expected < {max})", max = i32::MAX)]
-    InvalidLookahead(u32),
-
     // extra_args 中引用字段需加前缀：具名字段加 `.`，元组字段用 `.0`
     #[error("first letter must be lowercase but was {:?}", `first_char(.0)`)]
     WrongCase(String),
 
     #[error("invalid index {idx}, expected at least {} and at most {}", .limits.0, .limits.1)]
     OutOfBounds { idx: usize, limits: (usize, usize) },
+
+    // 额外参数 max 为固定常量
+    #[error("invalid rdo_lookahead_frames {0} (expected < {max})", max = i32::MAX)]
+    InvalidLookahead(u32),
 }
 ```
 
 运行结果：
 
 ```
-invalid rdo_lookahead_frames 42 (expected < 2147483647)
 first letter must be lowercase but was 'H'
 invalid index 100, expected at least 0 and at most 50
+invalid rdo_lookahead_frames 42 (expected < 2147483647)
 ```
 
 ## 三、自动 `From` 转换
@@ -232,7 +232,7 @@ pub enum MyError {
 underlying error details
 ```
 
-`transparent` 的典型用途包括：包装 `anyhow::Error` 作为 enum 的兜底变体；将内部错误表示的具体实现隐藏在 opaque public type 之后，使内部表示可以在不破坏公开 API 的前提下自由演进。
+`transparent` 的典型用途包括：包装 `anyhow::Error` 作为 `enum` 的兜底变体；将内部错误表示的具体实现隐藏在 opaque public type 之后，使内部表示可以在不破坏公开 API 的前提下自由演进。
 
 ## 七、Backtrace 支持
 
@@ -265,14 +265,14 @@ pub enum MyError {
 
 ## 八、thiserror 与 anyhow 的选择
 
-`thiserror` 和 `anyhow` 均来自 dtolnay 之手，适用于不同场景：
+`thiserror` 和 `anyhow` 均来自 `dtolnay` 之手，适用于不同场景：
 
 | 维度 | thiserror | anyhow |
 |------|-----------|--------|
 | 定位 | 定义专用错误类型 | 使用通用错误类型 |
 | 适用场景 | 库代码（需要公开错误 API） | 应用代码（不关心具体错误类型） |
 | API 影响 | 不进入公开 API，可与手写实现互换 | 进入公开 API，返回 `Result<T, anyhow::Error>` |
-| 灵活性 | 高，由你定义每个错误变体的结构 | 中，所有错误统一为一种类型 |
+| 灵活性 | 高，由 `you` 定义每个错误变体的结构 | 中，所有错误统一为一种类型 |
 
 简言之：编写库代码时使用 `thiserror` 定义清晰的错误类型；编写应用代码时使用 `anyhow` 简化错误传播。
 
@@ -280,7 +280,7 @@ pub enum MyError {
 
 ### 9.1 thiserror 不支持国际化
 
-`thiserror` 的 `#[error("...")]` 属性接受的是编译期字符串字面量，`Display` trait 的实现由 derive 宏在编译时生成。这意味着错误消息的内容在编译阶段就固定了，无法在运行时根据语言环境动态切换。
+`thiserror` 的 `#[error("...")]` 属性接受的是编译期字符串字面量，`Display` trait 的实现由 `derive` 宏在编译时生成。这意味着错误消息的内容在编译阶段就固定了，无法在运行时根据语言环境动态切换。
 
 以下代码展示了这一限制的根源：
 
@@ -330,7 +330,7 @@ impl Error {
 
 **方案二：使用 fluent-rs 替代字符串字面量**
 
-fluent-rs 是 Mozilla 维护的国际化系统，通过 FTL（Fluent）文件定义翻译资源。可以将错误码作为 message ID，通过 fluent-rs 查找翻译：
+fluent-rs 是 `Mozilla` 维护的国际化系统，通过 FTL 文件定义翻译资源。可以将错误码作为 message ID，通过 fluent-rs 查找翻译：
 
 ```rust
 use fluent::{FluentBundle, FluentResource, FluentArgs};
@@ -375,7 +375,7 @@ fn translate(id: &str) -> String {
 }
 ```
 
-此方案失去了 derive 宏的便利性，但获得了完整的国际化能力。
+此方案失去了 `derive` 宏的便利性，但获得了完整的国际化能力。
 
 ### 9.4 推荐做法
 
