@@ -204,7 +204,44 @@ IO error occurred
 
 ## 四、手动指定错误源
 
-`#[source]` 用于显式标记哪个字段是底层错误源。如果字段名为 `source`，则可以省略该属性：
+### 使用场景
+
+`#[source]` 的核心作用是实现 `Error::source()`，让调用方可以通过错误链追溯底层原因。以下是 `#[source]` 的典型适用场景：
+
+**场景一：结构体错误包装单一底层错误**
+
+用结构体包装一个带附加上下文的错误，同时暴露底层错误源。例如数据库连接错误，可能需要在连接失败时保留底层 `io::Error`：
+
+```rust
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+#[error("database error: {operation} failed")]
+pub struct DatabaseError {
+    operation: String,
+    #[source]
+    cause: std::io::Error,
+}
+```
+
+这里 `cause` 不是 `source` 命名，必须显式标记 `#[source]` 才能让 `Error::source()` 返回底层的 `io::Error`。
+
+**场景二：结构体字段名不是 `source`**
+
+如果底层错误字段命名为其他名称（如 `cause`、`underlying`、`inner`），`thiserror` 不会自动将其识别为错误源，此时必须显式标注 `#[source]`：
+
+```rust
+#[derive(Error, Debug)]
+#[error("request failed")]
+pub struct RequestError {
+    #[source]
+    cause: reqwest::Error, // 显式标记，字段名不是 source
+}
+```
+
+**场景三：与 `#[from]` 不同的行为**
+
+`#[from]` 在 `enum` 中隐含 `#[source]`，且自动生成 `From` impl。如果只希望暴露错误链而不生成 `From` 转换，则必须用 `#[source]`。例如在结构体中手动构造错误而非通过 `?` 自动转换：
 
 ```rust
 use thiserror::Error;
@@ -213,13 +250,29 @@ use thiserror::Error;
 #[error("config error: {msg}")]
 pub struct ConfigError {
     msg: String,
-    #[source] // 显式标记 source 字段
+    #[source]
     source: std::io::Error,
+}
+```
+
+### 使用方式
+
+当底层错误字段名为 `source` 时，`#[source]` 可以省略（`thiserror` 会自动识别）。当字段名为其他名称时，必须显式添加 `#[source]` 属性：
+
+```rust
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+#[error("config error: {msg}")]
+pub struct ConfigError {
+    msg: String,
+    #[source] // 字段名非 source，必须显式标记
+    cause: std::io::Error,
 }
 
 fn main() {
     let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
-    let err = ConfigError { msg: "config file missing".to_string(), source: io_err };
+    let err = ConfigError { msg: "config file missing".to_string(), cause: io_err };
 
     println!("{}", err);
     println!("source: {:?}", std::error::Error::source(&err));
@@ -233,7 +286,15 @@ config error: config file missing
 source: Some(Custom { kind: NotFound, error: "file not found" })
 ```
 
-`#[source]` 和 `#[from]` 的区别在于：`#[from]` 会自动生成 `From` 实现并隐含 `#[source]`，而 `#[source]` 仅用于指定错误源链，不生成 `From` 实现。
+### `#[source]` vs `#[from]` 对比
+
+| 特性 | `#[source]` | `#[from]` |
+|------|-------------|-----------|
+| 指定 `Error::source()` | ✅ | ✅（隐含） |
+| 生成 `From` impl | ❌ | ✅ |
+| 支持 enum 变体 | ✅（但通常用 `#[from]`） | ✅ |
+| 支持 struct 字段 | ✅ | ❌ |
+| 字段名非 `source` 时可用 | ✅ | ❌ |
 
 ## 五、结构体风格的错误类型
 
