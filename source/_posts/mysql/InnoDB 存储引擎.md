@@ -259,7 +259,7 @@ USE test;
 DROP TABLE IF EXISTS mvcc_test;
 CREATE TABLE mvcc_test (id INT PRIMARY KEY, name VARCHAR(50), balance DECIMAL(10,2));
 INSERT INTO mvcc_test VALUES (1, 'Alice', 1000.00);
-SELECT '初始状态' AS stage, * FROM mvcc_test;
+SELECT '初始状态' AS stage, id, name, balance FROM mvcc_test;
 ```
 
 运行结果：
