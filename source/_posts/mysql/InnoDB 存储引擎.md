@@ -292,10 +292,10 @@ COMMIT;
 
 ```
 Session A 读第1次                           1000.00
-Session A 读第2次（外部事务已提交）          500.00
+Session A 读第2次（外部事务已提交）          1000.00
 ```
 
-**结果分析**：Session A 在 REPEATABLE READ 隔离级别下，第一次读取到余额 1000。Session B 修改余额为 500 并提交后，Session A 第二次读取到 500——说明 MySQL 8.4 的 REPEATABLE READ 在外部事务提交后，快照会被更新。这是 MySQL InnoDB 与 PostgreSQL 等纯快照隔离数据库的差异点。
+**结果分析**：Session A 在 REPEATABLE READ 隔离级别下，第一次读取到余额 1000。Session B 修改余额为 500 并提交后，Session A 第二次读取到**仍然是 1000**——说明 REPEATABLE READ 隔离级别下，事务开启时创建的一致性快照在整个事务期间保持不变，读操作可重复执行且结果始终一致。如果 Session A 需要读取到最新已提交的数据，必须提交当前事务并开启新事务，或使用 `READ COMMITTED` 隔离级别。
 
 可以通过 `InnoDB Monitor` 观察内部行为：
 
