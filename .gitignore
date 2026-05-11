@@ -8,3 +8,6 @@ public/
 _multiconfig.yml
 .github
 package-lock.json
+.obsidian/
+.claude/
+.remember/
