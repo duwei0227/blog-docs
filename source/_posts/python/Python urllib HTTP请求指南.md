@@ -1,6 +1,9 @@
 ---
 title: Python urllib HTTP请求指南
+published: true
+layout: post
 date: 2026-03-24 08:30:00
+permalink: /python/urllib.html
 tags:
   - Python
   - HTTP

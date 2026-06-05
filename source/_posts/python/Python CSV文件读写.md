@@ -1,6 +1,9 @@
 ---
 title: Python CSV文件读写
+published: true
+layout: post
 date: 2026-03-23 19:45:00
+permalink: /python/csv.html
 tags:
   - Python
   - CSV
@@ -159,7 +162,7 @@ print(f"初始行号: {reader.line_num}")
 for row in reader:
     print(f"行 {reader.line_num}: {row}")
 
-print(f"\n变种信息: {reader.dialect}")
+print(f"\n分隔符: {reader.dialect.delimiter}")
 ```
 
 输出：
@@ -170,7 +173,7 @@ print(f"\n变种信息: {reader.dialect}")
 行 3: ['line3']
 行 4: ['line4']
 
-变种信息: excel
+分隔符: ,
 ```
 
 ### 4. Writer对象方法
@@ -548,7 +551,7 @@ modes = [
 
 for name, mode in modes:
     output = io.StringIO()
-    writer = csv.writer(output, quoting=mode)
+    writer = csv.writer(output, quoting=mode, escapechar='\\')
     writer.writerow(data)
     print(f"{name}: {output.getvalue().strip()}")
 ```
@@ -558,7 +561,7 @@ for name, mode in modes:
 --- 不同引号模式对比 ---
 QUOTE_ALL: "Normal text","Text with, comma","123","",""
 QUOTE_MINIMAL: Normal text,"Text with, comma",123,,
-QUOTE_NONNUMERIC: "Normal text","Text with, comma",123,,
+QUOTE_NONNUMERIC: "Normal text","Text with, comma","123","",""
 QUOTE_NONE: Normal text,Text with\, comma,123,,
 ```
 

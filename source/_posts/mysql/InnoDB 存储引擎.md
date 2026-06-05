@@ -1,6 +1,9 @@
 ---
 title: InnoDB 存储引擎
+published: true
+layout: post
 date: 2026-04-01 18:49:00
+permalink: /mysql/innodb.html
 tags: [InnoDB, MVCC, ACID, 锁, 事务, 缓冲池, B+Tree]
 categories: MySQL
 ---

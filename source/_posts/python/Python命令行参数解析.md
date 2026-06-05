@@ -1,6 +1,9 @@
 ---
 title: Python命令行参数解析
+published: true
+layout: post
 date: 2026-03-23 19:50:00
+permalink: /python/argparse.html
 tags:
   - Python
   - 命令行

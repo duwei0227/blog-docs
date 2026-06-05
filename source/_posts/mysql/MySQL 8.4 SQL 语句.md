@@ -291,7 +291,7 @@ END
 | `` DECLARE CONDITION `` | 定义异常别名 |
 | `` DECLARE {EXIT|CONTINUE} HANDLER `` | 声明异常处理器 |
 
-> 使用 `` DELIMITER `` 临时修改语句分隔符，避免过程体内的分号被客户端提前解析。
+**提示**：使用 `` DELIMITER `` 临时修改语句分隔符，避免过程体内的分号被客户端提前解析。
 
 **DECLARE 与 SET 的区别：**
 
@@ -531,7 +531,7 @@ END//
 DELIMITER ;
 ```
 
-> `` GET DIAGNOSTICS `` 可在处理器内获取错误编号和信息。`` SIGNAL `` 主动抛出自定义异常。
+**补充**：`` GET DIAGNOSTICS `` 可在处理器内获取错误编号和信息。`` SIGNAL `` 主动抛出自定义异常。
 
 
 ---
@@ -940,29 +940,31 @@ IGNORE 1 LINES
 (name, email, age);
 ```
 
-> ⚠️ **ERROR 1290 / ERROR 13 错误处理**（服务端读取）
-> - **错误原因**：`LOAD DATA INFILE`（无 `LOCAL`）由服务端读取文件，受 `secure_file_priv` 限制，只能读取指定目录；若路径允许但 MySQL 服务进程无权限读取，则报 ERROR 13
-> - **解决方法一（推荐）**：改用 `LOAD DATA LOCAL INFILE`，从客户端读取文件，完全绕过 `secure_file_priv` 和路径权限限制
-> - **解决方法二**：将 `secure_file_priv` 设为空，编辑 MySQL 配置文件（`/etc/my.cnf.d/mysql-server.cnf`），在 `[mysqld]` 段落下添加：
->
-> ```ini
-> [mysqld]
-> secure_file_priv=
-> ```
->
-> 然后重启 MySQL：`sudo systemctl restart mysqld`
->
-> ⚠️ **ERROR 3948 错误处理**（客户端读取）
-> - **错误原因**：`LOAD DATA LOCAL INFILE` 需服务端开启 `local_infile=ON`，否则拒绝客户端请求；此错误与 `secure_file_priv` 无关
-> - **解决方法**：编辑 MySQL 配置文件（`/etc/my.cnf.d/mysql-server.cnf`），在 `[mysqld]` 段落下添加：
->
-> ```ini
-> [mysqld]
-> local_infile=ON
-> ```
->
-> 然后重启 MySQL：`sudo systemctl restart mysqld`
->
+**ERROR 1290 / ERROR 13 错误处理**（服务端读取）
+
+- **错误原因**：`LOAD DATA INFILE`（无 `LOCAL`）由服务端读取文件，受 `secure_file_priv` 限制，只能读取指定目录；若路径允许但 MySQL 服务进程无权限读取，则报 ERROR 13
+- **解决方法一（推荐）**：改用 `LOAD DATA LOCAL INFILE`，从客户端读取文件，完全绕过 `secure_file_priv` 和路径权限限制
+- **解决方法二**：将 `secure_file_priv` 设为空，编辑 MySQL 配置文件（`/etc/my.cnf.d/mysql-server.cnf`），在 `[mysqld]` 段落下添加：
+
+```ini
+[mysqld]
+secure_file_priv=
+```
+
+然后重启 MySQL：`sudo systemctl restart mysqld`
+
+**ERROR 3948 错误处理**（客户端读取）
+
+- **错误原因**：`LOAD DATA LOCAL INFILE` 需服务端开启 `local_infile=ON`，否则拒绝客户端请求；此错误与 `secure_file_priv` 无关
+- **解决方法**：编辑 MySQL 配置文件（`/etc/my.cnf.d/mysql-server.cnf`），在 `[mysqld]` 段落下添加：
+
+```ini
+[mysqld]
+local_infile=ON
+```
+
+然后重启 MySQL：`sudo systemctl restart mysqld`
+
 > ⚠️ **安全警告**：`secure_file_priv` 是重要的安全防护机制，设为空后 MySQL 服务进程对所有可读文件均有读取权限。生产环境中不建议长期关闭此限制，正确做法是将待导入文件放入 `secure_file_priv` 指定的目录后再导入。
 
 ---
@@ -1052,7 +1054,7 @@ COMMIT;
 
 执行结果：三条记录全部被提交。`RELEASE SAVEPOINT` 仅仅是删除保存点，不执行任何回滚操作。删除后 `ROLLBACK TO SAVEPOINT sp1` 将无法使用，报错 `Unknown savepoint 'sp1'`。
 
-> 注意：`RELEASE SAVEPOINT` 的主要作用是在事务内提前删除不再需要的保存点，释放内存。若未执行，事务结束时保存点自动释放，不需要手动处理。
+**注意**：`RELEASE SAVEPOINT` 的主要作用是在事务内提前删除不再需要的保存点，释放内存。若未执行，事务结束时保存点自动释放，不需要手动处理。
 
 ---
 
@@ -1322,7 +1324,7 @@ SHOW DATABASES;
 -- 显示当前用户有权限访问的所有数据库
 ```
 
-> 注意：用户只能看到有权限的数据库，除非拥有全局 `` SHOW DATABASES `` 权限。
+**注意**：用户只能看到有权限的数据库，除非拥有全局 `` SHOW DATABASES `` 权限。
 
 **SHOW TABLES 示例：**
 
@@ -1355,7 +1357,7 @@ DESC users name;
 | Privileges | 当前用户的列级权限（需 FULL 关键字） |
 | Comment | 列注释（需 FULL 关键字） |
 
-> `` Key `` 列注意：若唯一索引包含 NULL 值，显示为 `` MUL `` 而非 `` UNI ``，因为唯一索引允许多个 NULL；复合唯一索引的每一列都显示为 `` MUL ``。
+**`` Key `` 列注意**：若唯一索引包含 NULL 值，显示为 `` MUL `` 而非 `` UNI ``，因为唯一索引允许多个 NULL；复合唯一索引的每一列都显示为 `` MUL ``。
 
 **SHOW INDEX 示例：**
 
@@ -1379,7 +1381,7 @@ SHOW EXTENDED INDEX FROM users;
 | Visible | YES=对优化器可见，NO=不可见（Invisible Index） |
 | Expression | 函数索引的表达式；普通索引为 NULL |
 
-> `` Cardinality `` 是估算值，对于 InnoDB 由统计数据估算，不要求精确；该值越大，优化器越倾向于使用该索引进行 JOIN。
+**说明**：`` Cardinality `` 是估算值，对于 InnoDB 由统计数据估算，不要求精确；该值越大，优化器越倾向于使用该索引进行 JOIN。
 
 **SHOW CREATE TABLE 示例：**
 
@@ -1410,7 +1412,7 @@ SHOW TABLE STATUS FROM learn LIKE 'users';
 | Update_time | 数据文件最后修改时间（InnoDB 不准确） |
 | Check_time | 最后 CHECK TABLE 时间 |
 
-> InnoDB 的 `` Rows `` 为估算值，最多可能偏差 40%~50%；需要精确行数应使用 `` SELECT COUNT(*) ``。
+**说明**：InnoDB 的 `` Rows `` 为估算值，最多可能偏差 40%~50%；需要精确行数应使用 `` SELECT COUNT(*) ``。
 
 **SHOW PROCESSLIST 示例：**
 
@@ -1430,7 +1432,7 @@ SHOW FULL PROCESSLIST;
 | State | 当前执行阶段（如 Waiting for source to send event） |
 | Info | 正在执行的 SQL 语句（无 FULL 时截断为 100 字符） |
 
-> 有 `` PROCESS `` 权限可查看所有连接；否则只能看自己的。连接数满时，拥有 `` CONNECTION_ADMIN `` 权限的账户仍保留一个专属连接可用。
+**说明**：有 `` PROCESS `` 权限可查看所有连接；否则只能看自己的。连接数满时，拥有 `` CONNECTION_ADMIN `` 权限的账户仍保留一个专属连接可用。
 
 **SHOW VARIABLES 示例：**
 
@@ -1481,7 +1483,7 @@ SELECT @@warning_count;
 | Code | MySQL 错误码 |
 | Message | 具体提示信息 |
 
-> `` SHOW WARNINGS `` 显示最近一条 SQL 产生的所有警告和提示；`` SHOW ERRORS `` 仅显示错误，不含警告。`` max_error_count `` 控制服务器存储的消息数量上限。
+**说明**：`` SHOW WARNINGS `` 显示最近一条 SQL 产生的所有警告和提示；`` SHOW ERRORS `` 仅显示错误，不含警告。`` max_error_count `` 控制服务器存储的消息数量上限。
 
 **SHOW ENGINES 示例：**
 

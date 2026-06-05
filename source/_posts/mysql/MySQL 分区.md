@@ -1,6 +1,9 @@
 ---
 title: MySQL 分区
+published: true
+layout: post
 date: 2026-04-01 08:27:00
+permalink: /mysql/partitioning.html
 tags: [分区, RANGE, LIST, HASH, KEY, 子分区]
 categories: MySQL
 ---

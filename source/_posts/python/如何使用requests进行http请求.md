@@ -1,6 +1,9 @@
 ---
 title: 如何使用requests进行HTTP请求
+published: true
+layout: post
 date: 2026-03-18 16:50:00
+permalink: /python/requests.html
 tags:
   - Python
   - HTTP

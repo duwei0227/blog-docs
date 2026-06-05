@@ -1,6 +1,9 @@
 ---
 title: MySQL 字符集与排序规则
+published: true
+layout: post
 date: 2026-03-30 08:30:00
+permalink: /mysql/charset-collation.html
 tags:
   - 字符集
   - 排序规则

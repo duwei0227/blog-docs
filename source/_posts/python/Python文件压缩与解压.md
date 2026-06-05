@@ -62,7 +62,7 @@ with gzip.open('test.txt.gz', 'rt', encoding='utf-8') as f:
 **语法格式**
 
 ```
-gzip.GzipFile(filename=None, mode='rb', compresslevel=9, fileobj=None, mtime=None)
+gzip.GzipFile(filename=None, mode=None, compresslevel=9, fileobj=None, mtime=None)
 ```
 
 **参数说明**
@@ -254,7 +254,7 @@ os.remove('files.zip')
 **语法格式**
 
 ```
-zipfile.ZipInfo(filename='/', date_time=(1980,1,1,0,0,0), ...)
+zipfile.ZipInfo(filename='NoName', date_time=(1980,1,1,0,0,0))
 ```
 
 **ZipInfo属性说明**
@@ -310,7 +310,7 @@ tarfile.open(name=None, mode='r', fileobj=None, bufsize=10240, **kwargs)
 | `'r:gz'` | 读取gzip压缩tar | `mode='r:gz'` |
 | `'r:bz2'` | 读取bz2压缩tar | `mode='r:bz2'` |
 | `'r:xz'` | 读取xz压缩tar | `mode='r:xz'` |
-| `'w'` | 写入透明压缩tar | `mode='w'` |
+| `'w'` | 写入未压缩tar（等同 `'w:'`） | `mode='w'` |
 | `'w:gz'` | 写入gzip压缩tar | `mode='w:gz'` |
 | `'w:xz'` | 写入xz压缩tar | `mode='w:xz'` |
 

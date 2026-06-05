@@ -1,10 +1,11 @@
 ---
 title: Python concurrent.futures 并行任务执行
+published: true
+layout: post
 date: 2026-03-24 08:23:00
+permalink: /python/concurrent-futures.html
 tags:
-  - Python
   - 并发
-  - concurrent.futures
 categories:
   - Python
 ---
@@ -280,7 +281,7 @@ with concurrent.futures.ProcessPoolExecutor(max_workers=4) as executor:
 # 104729 是素数: True
 # 104723 是素数: True
 # 104729 是素数: True
-# 99991 是素数: False
+# 99991 是素数: True
 # 100003 是素数: True
 ```
 
@@ -293,7 +294,7 @@ ProcessPoolExecutor.terminate_workers()
 ProcessPoolExecutor.kill_workers()
 ```
 
-**说明**：terminate_workers() 尝试优雅终止工作进程，kill_workers() 强制杀死所有工作进程。
+**说明**：terminate_workers() 尝试优雅终止工作进程，kill_workers() 强制杀死所有工作进程。两个方法均为 Python 3.14+ 新增。
 
 **示例**
 
@@ -403,7 +404,7 @@ Future.cancel()
 Future.cancelled()
 ```
 
-**说明**：cancel() 尝试取消任务，返回 True 表示成功。cancelled() 返回任务是否被成功取消。
+**说明**：cancel() 尝试取消任务，返回 True 表示成功。cancelled() 返回任务是否被成功取消。**只有尚未开始执行（排队中）的 Future 才能被取消，已在运行的任务无法取消。**
 
 **示例**
 
@@ -416,14 +417,17 @@ def slow_task():
     return "完成"
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+    # 第一个任务立即占用唯一线程开始执行
+    f_running = executor.submit(slow_task)
+    # 第二个任务排队等待，尚未开始，可以取消
     future = executor.submit(slow_task)
     
-    # 尝试取消
+    # 尝试取消排队中的任务
     cancelled = future.cancel()
     print(f"取消{'成功' if cancelled else '失败'}")
     print(f"任务已被取消: {future.cancelled()}")
 
-# 输出（任务未开始时被取消）
+# 输出
 # 取消成功
 # 任务已被取消: True
 ```
@@ -589,7 +593,11 @@ def task():
     return "完成"
 
 with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+    # 第一个任务占用唯一线程，第二个任务排队
+    executor.submit(task)
     future = executor.submit(task)
+    
+    # 取消排队中（尚未开始）的任务
     future.cancel()
     
     try:

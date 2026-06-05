@@ -1,6 +1,9 @@
 ---
 title: Rust notify 文件系统监控使用指南
+published: true
+layout: post
 date: 2026-03-24 11:35:00
+permalink: /rust/notify.html
 tags:
   - Rust
   - 文件系统

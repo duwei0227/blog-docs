@@ -1,6 +1,7 @@
 ---
 layout: post
 title: Typora配置GitHub图床
+published: true
 categories: [其他]
 permalink: other/picbed.html
 tags: PicBed

@@ -1,6 +1,9 @@
 ---
 title: MySQL INFORMATION_SCHEMA
+published: true
+layout: post
 date: 2026-03-31 08:56:00
+permalink: /mysql/information-schema.html
 tags:
   - INFORMATION_SCHEMA
   - 元数据

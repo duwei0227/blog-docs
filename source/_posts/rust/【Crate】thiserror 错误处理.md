@@ -1,6 +1,9 @@
 ---
 title: thiserror 错误处理
+published: true
+layout: post
 date: 2026-04-07 08:39:00
+permalink: /rust/thiserror.html
 tags:
   - thiserror
   - 错误处理

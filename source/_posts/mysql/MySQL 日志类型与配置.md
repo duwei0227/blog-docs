@@ -1,6 +1,9 @@
 ---
 title: MySQL 日志类型与配置
+published: true
+layout: post
 date: 2026-03-30 15:38:00
+permalink: /mysql/logs.html
 tags:
   - 错误日志
   - 二进制日志

@@ -1,6 +1,9 @@
 ---
 title: Rust 错误描述国际化
+published: true
+layout: post
 date: 2026-04-07 16:51:00
+permalink: /rust/error-i18n.html
 tags:
   - 错误处理
   - 国际化
