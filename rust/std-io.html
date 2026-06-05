@@ -1,0 +1,1363 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="std::io 是 Rust 标准库的 I&amp;#x2F;O 基础层，它不面向任何具体资源，而是定义了四个通用的字节流 trait：Read（从源读取字节）、Write（向目标写入字节）、Seek（在流中移动游标）和 BufRead（带内部缓冲区的逐行读取）。凡是实现了这些 trait 的类型——文件、套接字、管道、内存缓冲区——都能无缝接入 BufReader、io::copy、Lines 等通用适">
+  
+  
+  
+  <title>[标准库] std::io 输入输出模块介绍与实战 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="[标准库] std::io 输入输出模块介绍与实战"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-28 15:00" pubdate>
+          2026年5月28日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          16k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          137 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">[标准库] std::io 输入输出模块介绍与实战</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p><code>std::io</code> 是 Rust 标准库的 I&#x2F;O 基础层，它不面向任何具体资源，而是定义了四个通用的字节流 <code>trait</code>：<code>Read</code>（从源读取字节）、<code>Write</code>（向目标写入字节）、<code>Seek</code>（在流中移动游标）和 <code>BufRead</code>（带内部缓冲区的逐行读取）。凡是实现了这些 <code>trait</code> 的类型——文件、套接字、管道、内存缓冲区——都能无缝接入 <code>BufReader</code>、<code>io::copy</code>、<code>Lines</code> 等通用适配器，而调用方无需关心底层是什么资源。模块还提供了 <code>io::Error</code> 与 <code>ErrorKind</code>，将操作系统的数百种底层错误码规范为可精确匹配的枚举变体，是 Rust I&#x2F;O 错误处理的统一入口。</p>
+<h2 id="一、模块概览"><a href="#一、模块概览" class="headerlink" title="一、模块概览"></a>一、模块概览</h2><table>
+<thead>
+<tr>
+<th>组件</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Read</code></td>
+<td><code>trait</code></td>
+<td>字节源：从 reader 读取原始字节</td>
+</tr>
+<tr>
+<td><code>Write</code></td>
+<td><code>trait</code></td>
+<td>字节目标：向 writer 写入原始字节</td>
+</tr>
+<tr>
+<td><code>Seek</code></td>
+<td><code>trait</code></td>
+<td>流内游标移动</td>
+</tr>
+<tr>
+<td><code>BufRead</code></td>
+<td><code>trait</code></td>
+<td>带内部缓冲区的 reader，支持逐行读取</td>
+</tr>
+<tr>
+<td><code>BufReader&lt;R&gt;</code></td>
+<td><code>struct</code></td>
+<td>为任意 <code>Read</code> 类型添加读缓冲</td>
+</tr>
+<tr>
+<td><code>BufWriter&lt;W&gt;</code></td>
+<td><code>struct</code></td>
+<td>为任意 <code>Write</code> 类型添加写缓冲</td>
+</tr>
+<tr>
+<td><code>LineWriter&lt;W&gt;</code></td>
+<td><code>struct</code></td>
+<td>遇到换行符自动 <code>flush</code> 的写缓冲</td>
+</tr>
+<tr>
+<td><code>Cursor&lt;T&gt;</code></td>
+<td><code>struct</code></td>
+<td>将内存缓冲区包装为可 <code>seek</code> 的 reader&#x2F;writer</td>
+</tr>
+<tr>
+<td><code>Stdin</code> &#x2F; <code>Stdout</code> &#x2F; <code>Stderr</code></td>
+<td><code>struct</code></td>
+<td>进程标准输入输出流句柄</td>
+</tr>
+<tr>
+<td><code>Lines&lt;B&gt;</code></td>
+<td><code>struct</code></td>
+<td><code>BufRead::lines()</code> 返回的行迭代器</td>
+</tr>
+<tr>
+<td><code>Bytes&lt;R&gt;</code></td>
+<td><code>struct</code></td>
+<td><code>Read::bytes()</code> 返回的字节迭代器</td>
+</tr>
+<tr>
+<td><code>Chain&lt;T, U&gt;</code></td>
+<td><code>struct</code></td>
+<td><code>Read::chain()</code> 返回的串联读取器</td>
+</tr>
+<tr>
+<td><code>Take&lt;R&gt;</code></td>
+<td><code>struct</code></td>
+<td><code>Read::take()</code> 返回的限字节读取器</td>
+</tr>
+<tr>
+<td><code>Empty</code></td>
+<td><code>struct</code></td>
+<td>永远返回 <code>EOF</code> 的 reader，同时丢弃所有写入</td>
+</tr>
+<tr>
+<td><code>Repeat</code></td>
+<td><code>struct</code></td>
+<td>无限重复某字节的 reader</td>
+</tr>
+<tr>
+<td><code>Sink</code></td>
+<td><code>struct</code></td>
+<td>丢弃所有写入数据的 writer</td>
+</tr>
+<tr>
+<td><code>Error</code></td>
+<td><code>struct</code></td>
+<td>I&#x2F;O 错误类型，包含系统错误码或自定义错误</td>
+</tr>
+<tr>
+<td><code>ErrorKind</code></td>
+<td><code>enum</code></td>
+<td>错误类别，用于模式匹配</td>
+</tr>
+<tr>
+<td><code>Result&lt;T&gt;</code></td>
+<td>类型别名</td>
+<td><code>std::result::Result&lt;T, io::Error&gt;</code> 的缩写</td>
+</tr>
+<tr>
+<td><code>copy</code></td>
+<td><code>fn</code></td>
+<td>从 reader 复制全部字节到 writer</td>
+</tr>
+<tr>
+<td><code>empty</code> &#x2F; <code>repeat</code> &#x2F; <code>sink</code></td>
+<td><code>fn</code></td>
+<td>创建占位用 reader&#x2F;writer</td>
+</tr>
+<tr>
+<td><code>stdin</code> &#x2F; <code>stdout</code> &#x2F; <code>stderr</code></td>
+<td><code>fn</code></td>
+<td>获取标准流句柄</td>
+</tr>
+</tbody></table>
+<h2 id="二、核心-trait"><a href="#二、核心-trait" class="headerlink" title="二、核心 trait"></a>二、核心 trait</h2><h3 id="2-1-Read"><a href="#2-1-Read" class="headerlink" title="2.1 Read"></a>2.1 Read</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">trait</span> <span class="hljs-title class_">Read</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">read</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, buf: &amp;<span class="hljs-keyword">mut</span> [<span class="hljs-type">u8</span>]) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">usize</span>&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">read_exact</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, buf: &amp;<span class="hljs-keyword">mut</span> [<span class="hljs-type">u8</span>]) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">read_to_end</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, buf: &amp;<span class="hljs-keyword">mut</span> <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">u8</span>&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">usize</span>&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">read_to_string</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, buf: &amp;<span class="hljs-keyword">mut</span> <span class="hljs-type">String</span>) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">usize</span>&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">bytes</span>(<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> Bytes&lt;<span class="hljs-keyword">Self</span>&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">chain</span>&lt;R: Read&gt;(<span class="hljs-keyword">self</span>, next: R) <span class="hljs-punctuation">-&gt;</span> Chain&lt;<span class="hljs-keyword">Self</span>, R&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">take</span>(<span class="hljs-keyword">self</span>, limit: <span class="hljs-type">u64</span>) <span class="hljs-punctuation">-&gt;</span> Take&lt;<span class="hljs-keyword">Self</span>&gt;;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数（主要方法）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数</th>
+<th>返回值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>read</code></td>
+<td><code>buf: &amp;mut [u8]</code></td>
+<td><code>io::Result&lt;usize&gt;</code></td>
+<td>最多读满 <code>buf</code>，返回实际读取字节数；<code>Ok(0)</code> 表示 <code>EOF</code></td>
+</tr>
+<tr>
+<td><code>read_exact</code></td>
+<td><code>buf: &amp;mut [u8]</code></td>
+<td><code>io::Result&lt;()&gt;</code></td>
+<td>恰好读满 <code>buf</code>；字节不足时返回 <code>UnexpectedEof</code></td>
+</tr>
+<tr>
+<td><code>read_to_end</code></td>
+<td><code>buf: &amp;mut Vec&lt;u8&gt;</code></td>
+<td><code>io::Result&lt;usize&gt;</code></td>
+<td>读到 <code>EOF</code>，追加到 <code>Vec</code>，返回追加的字节数</td>
+</tr>
+<tr>
+<td><code>read_to_string</code></td>
+<td><code>buf: &amp;mut String</code></td>
+<td><code>io::Result&lt;usize&gt;</code></td>
+<td>读到 <code>EOF</code> 并进行 <code>UTF-8</code> 校验后追加到 <code>String</code></td>
+</tr>
+<tr>
+<td><code>bytes</code></td>
+<td>—</td>
+<td><code>Bytes&lt;Self&gt;</code></td>
+<td>转为按字节迭代的迭代器</td>
+</tr>
+<tr>
+<td><code>chain</code></td>
+<td><code>next: R</code></td>
+<td><code>Chain&lt;Self, R&gt;</code></td>
+<td>串联另一个 reader，当前 reader 耗尽后继续读 <code>next</code></td>
+</tr>
+<tr>
+<td><code>take</code></td>
+<td><code>limit: u64</code></td>
+<td><code>Take&lt;Self&gt;</code></td>
+<td>最多读取 <code>limit</code> 字节后返回 <code>EOF</code></td>
+</tr>
+</tbody></table>
+<p><code>read</code> 与 <code>read_exact</code> 的关键差异：<code>read</code> 是<strong>允许短读</strong>的——即使缓冲区还有剩余空间，底层也可以只返回部分字节，在网络 <code>socket</code> 上尤为常见。<code>read_exact</code> 通过内部循环确保恰好填满缓冲区，但若在填满之前遇到 <code>EOF</code> 则返回 <code>UnexpectedEof</code>。协议解析中读取固定长度字段时应使用 <code>read_exact</code>，随机访问场景才需要手动处理短读。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io::&#123;<span class="hljs-keyword">self</span>, Read&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">path</span> = <span class="hljs-string">&quot;/tmp/read_demo.txt&quot;</span>;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(path, <span class="hljs-string">&quot;Hello, std::io!&quot;</span>)?;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">f</span> = fs::File::<span class="hljs-title function_ invoke__">open</span>(path)?;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">buffer</span> = [<span class="hljs-number">0u8</span>; <span class="hljs-number">8</span>];<br><br>    <span class="hljs-comment">// read 允许短读，返回实际读取字节数</span><br>    <span class="hljs-keyword">loop</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">n</span> = f.<span class="hljs-title function_ invoke__">read</span>(&amp;<span class="hljs-keyword">mut</span> buffer)?;<br>        <span class="hljs-keyword">if</span> n == <span class="hljs-number">0</span> &#123; <span class="hljs-keyword">break</span>; &#125;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;读取 &#123;n&#125; 字节: &#123;:?&#125;&quot;</span>, std::<span class="hljs-type">str</span>::<span class="hljs-title function_ invoke__">from_utf8</span>(&amp;buffer[..n]).<span class="hljs-title function_ invoke__">unwrap</span>());<br>    &#125;<br><br>    <span class="hljs-comment">// read_exact 恰好读满缓冲区</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">f2</span> = fs::File::<span class="hljs-title function_ invoke__">open</span>(path)?;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">exact</span> = [<span class="hljs-number">0u8</span>; <span class="hljs-number">5</span>];<br>    f2.<span class="hljs-title function_ invoke__">read_exact</span>(&amp;<span class="hljs-keyword">mut</span> exact)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;精确读取5字节: &#123;:?&#125;&quot;</span>, std::<span class="hljs-type">str</span>::<span class="hljs-title function_ invoke__">from_utf8</span>(&amp;exact).<span class="hljs-title function_ invoke__">unwrap</span>());<br><br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(path)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs 1c">读取 <span class="hljs-number">8</span> 字节<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Hello, s&quot;</span><br>读取 <span class="hljs-number">7</span> 字节<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;td::io!&quot;</span><br>精确读取<span class="hljs-number">5</span>字节<span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;Hello&quot;</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>对网络流调用 <code>read</code> 时，即使传入 4096 字节的缓冲区，每次也可能只返回几十字节——这是正常行为，不是错误。必须循环调用直到收到完整的消息边界，而不能假设单次 <code>read</code> 会填满缓冲区。</p>
+</blockquote>
+<h3 id="2-2-Write"><a href="#2-2-Write" class="headerlink" title="2.2 Write"></a>2.2 Write</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">trait</span> <span class="hljs-title class_">Write</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">write</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, buf: &amp;[<span class="hljs-type">u8</span>]) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">usize</span>&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">write_all</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, buf: &amp;[<span class="hljs-type">u8</span>]) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">flush</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">write_fmt</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, fmt: fmt::Arguments&lt;<span class="hljs-symbol">&#x27;_</span>&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">write_vectored</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, bufs: &amp;[IoSlice&lt;<span class="hljs-symbol">&#x27;_</span>&gt;]) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">usize</span>&gt;;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数（主要方法）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数</th>
+<th>返回值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>write</code></td>
+<td><code>buf: &amp;[u8]</code></td>
+<td><code>io::Result&lt;usize&gt;</code></td>
+<td>写入部分或全部字节，返回实际写入数；允许短写</td>
+</tr>
+<tr>
+<td><code>write_all</code></td>
+<td><code>buf: &amp;[u8]</code></td>
+<td><code>io::Result&lt;()&gt;</code></td>
+<td>循环写直到 <code>buf</code> 全部写出，或遇到非 <code>Interrupted</code> 错误</td>
+</tr>
+<tr>
+<td><code>flush</code></td>
+<td>—</td>
+<td><code>io::Result&lt;()&gt;</code></td>
+<td>将内部缓冲区全部刷到底层写目标</td>
+</tr>
+<tr>
+<td><code>write_fmt</code></td>
+<td><code>fmt::Arguments</code></td>
+<td><code>io::Result&lt;()&gt;</code></td>
+<td><code>write!</code> &#x2F; <code>writeln!</code> 宏的底层入口</td>
+</tr>
+</tbody></table>
+<p><code>write</code> 与 <code>write_all</code> 的关系与 <code>read</code> &#x2F; <code>read_exact</code> 对称：<code>write</code> 可以写出少于请求的字节（短写），调用方必须检查返回值并重新提交剩余数据；<code>write_all</code> 封装了这一循环。大多数场景直接用 <code>write_all</code>；仅在需要精确控制已写字节数时（如非阻塞 I&#x2F;O）才直接使用 <code>write</code>。</p>
+<p><code>flush</code> 对 <code>BufWriter</code> 等带缓冲 writer 尤为关键——若忘记调用，程序退出前最后一批积压在缓冲区的数据可能丢失。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io::&#123;<span class="hljs-keyword">self</span>, Write&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">path</span> = <span class="hljs-string">&quot;/tmp/write_demo.txt&quot;</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">f</span> = fs::File::<span class="hljs-title function_ invoke__">create</span>(path)?;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">n</span> = f.<span class="hljs-title function_ invoke__">write</span>(<span class="hljs-string">b&quot;Hello&quot;</span>)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;write 写入: &#123;n&#125; 字节&quot;</span>);<br><br>    f.<span class="hljs-title function_ invoke__">write_all</span>(<span class="hljs-string">b&quot;, world&quot;</span>)?;<br>    <span class="hljs-built_in">write!</span>(f, <span class="hljs-string">&quot;\n第 &#123;&#125; 行&quot;</span>, <span class="hljs-number">2</span>)?;<br>    f.<span class="hljs-title function_ invoke__">flush</span>()?;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">content</span> = fs::<span class="hljs-title function_ invoke__">read_to_string</span>(path)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文件内容:\n&#123;content&#125;&quot;</span>);<br><br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(path)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">write 写入</span><span class="hljs-punctuation">:</span> <span class="hljs-string">5 字节</span><br><span class="hljs-attribute">文件内容</span><span class="hljs-punctuation">:</span><br>Hello, world<br>第 2 行<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-3-Seek-与-SeekFrom"><a href="#2-3-Seek-与-SeekFrom" class="headerlink" title="2.3 Seek 与 SeekFrom"></a>2.3 Seek 与 SeekFrom</h3><p><code>Seek</code> 允许在 I&#x2F;O 流中任意移动读&#x2F;写游标，类似 C 的 <code>fseek</code>。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">trait</span> <span class="hljs-title class_">Seek</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">seek</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, pos: SeekFrom) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">u64</span>&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">rewind</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">stream_position</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">u64</span>&gt;;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数</th>
+<th>返回值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>seek</code></td>
+<td><code>pos: SeekFrom</code></td>
+<td><code>io::Result&lt;u64&gt;</code></td>
+<td>移动游标到指定位置，返回新的绝对字节偏移量</td>
+</tr>
+<tr>
+<td><code>rewind</code></td>
+<td>—</td>
+<td><code>io::Result&lt;()&gt;</code></td>
+<td>等价于 <code>seek(SeekFrom::Start(0))</code></td>
+</tr>
+<tr>
+<td><code>stream_position</code></td>
+<td>—</td>
+<td><code>io::Result&lt;u64&gt;</code></td>
+<td>返回当前游标位置（等价于 <code>seek(SeekFrom::Current(0))</code>）</td>
+</tr>
+</tbody></table>
+<p><strong><code>SeekFrom</code> 变体：</strong></p>
+<table>
+<thead>
+<tr>
+<th>变体</th>
+<th>偏移类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>SeekFrom::Start(u64)</code></td>
+<td><code>u64</code></td>
+<td>从流开头计算；不能为负</td>
+</tr>
+<tr>
+<td><code>SeekFrom::End(i64)</code></td>
+<td><code>i64</code></td>
+<td>从流末尾计算；负值向前，如 <code>-3</code> 表示末尾前3字节</td>
+</tr>
+<tr>
+<td><code>SeekFrom::Current(i64)</code></td>
+<td><code>i64</code></td>
+<td>从当前游标位置计算；可正可负</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io::&#123;<span class="hljs-keyword">self</span>, Read, Seek, SeekFrom&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">path</span> = <span class="hljs-string">&quot;/tmp/seek_demo.txt&quot;</span>;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(path, <span class="hljs-string">&quot;ABCDEFGHIJ&quot;</span>)?;  <span class="hljs-comment">// 10 字节</span><br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">f</span> = fs::File::<span class="hljs-title function_ invoke__">open</span>(path)?;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">buf</span> = [<span class="hljs-number">0u8</span>; <span class="hljs-number">3</span>];<br><br>    f.<span class="hljs-title function_ invoke__">read_exact</span>(&amp;<span class="hljs-keyword">mut</span> buf)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;读取前3字节: &#123;&#125;&quot;</span>, std::<span class="hljs-type">str</span>::<span class="hljs-title function_ invoke__">from_utf8</span>(&amp;buf).<span class="hljs-title function_ invoke__">unwrap</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;当前位置:   &#123;&#125;&quot;</span>, f.<span class="hljs-title function_ invoke__">stream_position</span>()?);<br><br>    <span class="hljs-comment">// seek(End(0)) 获取文件长度（不修改有意义的位置前先保存）</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">len</span> = f.<span class="hljs-title function_ invoke__">seek</span>(SeekFrom::<span class="hljs-title function_ invoke__">End</span>(<span class="hljs-number">0</span>))?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文件长度:   &#123;&#125;&quot;</span>, len);<br><br>    <span class="hljs-comment">// 从末尾倒退 3 字节</span><br>    f.<span class="hljs-title function_ invoke__">seek</span>(SeekFrom::<span class="hljs-title function_ invoke__">End</span>(-<span class="hljs-number">3</span>))?;<br>    f.<span class="hljs-title function_ invoke__">read_exact</span>(&amp;<span class="hljs-keyword">mut</span> buf)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;末尾3字节:  &#123;&#125;&quot;</span>, std::<span class="hljs-type">str</span>::<span class="hljs-title function_ invoke__">from_utf8</span>(&amp;buf).<span class="hljs-title function_ invoke__">unwrap</span>());<br><br>    <span class="hljs-comment">// 相对当前位置后退 5 字节</span><br>    f.<span class="hljs-title function_ invoke__">seek</span>(SeekFrom::<span class="hljs-title function_ invoke__">Current</span>(-<span class="hljs-number">5</span>))?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;后退后位置: &#123;&#125;&quot;</span>, f.<span class="hljs-title function_ invoke__">stream_position</span>()?);<br><br>    <span class="hljs-comment">// 回到开头</span><br>    f.<span class="hljs-title function_ invoke__">rewind</span>()?;<br>    f.<span class="hljs-title function_ invoke__">read_exact</span>(&amp;<span class="hljs-keyword">mut</span> buf)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;rewind后:   &#123;&#125;&quot;</span>, std::<span class="hljs-type">str</span>::<span class="hljs-title function_ invoke__">from_utf8</span>(&amp;buf).<span class="hljs-title function_ invoke__">unwrap</span>());<br><br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(path)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">读取前3字节: ABC</span><br><span class="hljs-section">当前位置:   3</span><br><span class="hljs-section">文件长度:   10</span><br><span class="hljs-section">末尾3字节:  HIJ</span><br><span class="hljs-section">后退后位置: 5</span><br><span class="hljs-section">rewind后:   ABC</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-4-BufRead"><a href="#2-4-BufRead" class="headerlink" title="2.4 BufRead"></a>2.4 BufRead</h3><p><code>BufRead</code> 在 <code>Read</code> 基础上增加了内部缓冲区，使逐行读取和按字节分隔符读取成为可能。实现该 <code>trait</code> 的类型必须维护一块内部缓冲区，并通过 <code>fill_buf</code> 暴露缓冲区内容、通过 <code>consume</code> 标记已处理字节。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">trait</span> <span class="hljs-title class_">BufRead</span>: Read &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">fill_buf</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;&amp;[<span class="hljs-type">u8</span>]&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">consume</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, amt: <span class="hljs-type">usize</span>);<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">read_line</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, buf: &amp;<span class="hljs-keyword">mut</span> <span class="hljs-type">String</span>) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">usize</span>&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">lines</span>(<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> Lines&lt;<span class="hljs-keyword">Self</span>&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">split</span>(<span class="hljs-keyword">self</span>, byte: <span class="hljs-type">u8</span>) <span class="hljs-punctuation">-&gt;</span> Split&lt;<span class="hljs-keyword">Self</span>&gt;;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">has_data_left</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">bool</span>&gt;;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数（主要方法）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数</th>
+<th>返回值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>fill_buf</code></td>
+<td>—</td>
+<td><code>io::Result&lt;&amp;[u8]&gt;</code></td>
+<td>填充内部缓冲区，返回可读字节切片（不消费）</td>
+</tr>
+<tr>
+<td><code>consume</code></td>
+<td><code>amt: usize</code></td>
+<td>—</td>
+<td>标记 <code>amt</code> 字节已处理，与 <code>fill_buf</code> 配合使用</td>
+</tr>
+<tr>
+<td><code>read_line</code></td>
+<td><code>buf: &amp;mut String</code></td>
+<td><code>io::Result&lt;usize&gt;</code></td>
+<td>读取一行（含 <code>\n</code>）追加到 <code>buf</code>；<code>EOF</code> 时返回 <code>Ok(0)</code></td>
+</tr>
+<tr>
+<td><code>lines</code></td>
+<td>—</td>
+<td><code>Lines&lt;Self&gt;</code></td>
+<td>转为行迭代器；每行自动剥离末尾 <code>\n</code>（及可选 <code>\r</code>）</td>
+</tr>
+<tr>
+<td><code>split</code></td>
+<td><code>byte: u8</code></td>
+<td><code>Split&lt;Self&gt;</code></td>
+<td>以指定字节分割，每段以 <code>Vec&lt;u8&gt;</code> 返回</td>
+</tr>
+</tbody></table>
+<p><code>lines()</code> 与 <code>read_line</code> 的区别：<code>lines()</code> 自动剥离换行符，错误通过 <code>Item = io::Result&lt;String&gt;</code> 传播，适合绝大多数场景；<code>read_line</code> 保留换行符，适合需要区分 <code>\n</code> 与 <code>\r\n</code> 的精确解析。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io::&#123;<span class="hljs-keyword">self</span>, BufRead, BufReader&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">path</span> = <span class="hljs-string">&quot;/tmp/bufread_demo.txt&quot;</span>;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(path, <span class="hljs-string">&quot;first line\nsecond line\nthird line\n&quot;</span>)?;<br><br>    <span class="hljs-comment">// lines() 迭代器：自动去掉 \n</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">reader</span> = BufReader::<span class="hljs-title function_ invoke__">new</span>(fs::File::<span class="hljs-title function_ invoke__">open</span>(path)?);<br>    <span class="hljs-keyword">for</span> (i, line) <span class="hljs-keyword">in</span> reader.<span class="hljs-title function_ invoke__">lines</span>().<span class="hljs-title function_ invoke__">enumerate</span>() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[&#123;&#125;] &#123;&#125;&quot;</span>, i + <span class="hljs-number">1</span>, line?);<br>    &#125;<br><br>    <span class="hljs-comment">// split() 以任意字节分隔</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">reader2</span> = BufReader::<span class="hljs-title function_ invoke__">new</span>(fs::File::<span class="hljs-title function_ invoke__">open</span>(path)?);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">chunks</span>: <span class="hljs-type">Vec</span>&lt;_&gt; = reader2<br>        .<span class="hljs-title function_ invoke__">split</span>(<span class="hljs-string">b&#x27;<span class="hljs-char escape_">\n</span>&#x27;</span>)<br>        .<span class="hljs-title function_ invoke__">filter_map</span>(|r| r.<span class="hljs-title function_ invoke__">ok</span>())<br>        .<span class="hljs-title function_ invoke__">filter</span>(|b| !b.<span class="hljs-title function_ invoke__">is_empty</span>())<br>        .<span class="hljs-title function_ invoke__">collect</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;共 &#123;&#125; 段&quot;</span>, chunks.<span class="hljs-title function_ invoke__">len</span>());<br><br>    <span class="hljs-comment">// read_line 手动循环（保留 \n）</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">reader3</span> = BufReader::<span class="hljs-title function_ invoke__">new</span>(fs::File::<span class="hljs-title function_ invoke__">open</span>(path)?);<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">line</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">new</span>();<br>    <span class="hljs-keyword">loop</span> &#123;<br>        line.<span class="hljs-title function_ invoke__">clear</span>();<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">n</span> = reader3.<span class="hljs-title function_ invoke__">read_line</span>(&amp;<span class="hljs-keyword">mut</span> line)?;<br>        <span class="hljs-keyword">if</span> n == <span class="hljs-number">0</span> &#123; <span class="hljs-keyword">break</span>; &#125;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;read_line: &#123;:?&#125;&quot;</span>, line);<br>    &#125;<br><br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(path)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs css"><span class="hljs-selector-attr">[1]</span> first <span class="hljs-selector-tag">line</span><br><span class="hljs-selector-attr">[2]</span> second <span class="hljs-selector-tag">line</span><br><span class="hljs-selector-attr">[3]</span> third <span class="hljs-selector-tag">line</span><br>共 <span class="hljs-number">3</span> 段<br>read_line: <span class="hljs-string">&quot;first line\n&quot;</span><br>read_line: <span class="hljs-string">&quot;second line\n&quot;</span><br>read_line: <span class="hljs-string">&quot;third line\n&quot;</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="三、缓冲适配器"><a href="#三、缓冲适配器" class="headerlink" title="三、缓冲适配器"></a>三、缓冲适配器</h2><h3 id="3-1-BufReader"><a href="#3-1-BufReader" class="headerlink" title="3.1 BufReader"></a>3.1 BufReader</h3><p><code>BufReader&lt;R&gt;</code> 为任意 <code>Read</code> 类型添加内部缓冲区，将多次小额 <code>read</code> 系统调用合并为少数几次大块读取，显著降低系统调用开销。它同时实现了 <code>BufRead</code>，因此可以直接调用 <code>.lines()</code>。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">BufReader</span>&lt;R: Read&gt; &#123; &#125;<br><br><span class="hljs-keyword">impl</span>&lt;R: Read&gt; BufReader&lt;R&gt; &#123;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">new</span>(inner: R) <span class="hljs-punctuation">-&gt;</span> BufReader&lt;R&gt;;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">with_capacity</span>(capacity: <span class="hljs-type">usize</span>, inner: R) <span class="hljs-punctuation">-&gt;</span> BufReader&lt;R&gt;;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">capacity</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">usize</span>;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">get_ref</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> &amp;R;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">get_mut</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-keyword">mut</span> R;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">buffer</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> &amp;[<span class="hljs-type">u8</span>];<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">into_inner</span>(<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> R;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>new(inner)</code></td>
+<td>缓冲区 8192 字节</td>
+<td>创建默认缓冲大小的 <code>BufReader</code></td>
+</tr>
+<tr>
+<td><code>with_capacity(cap, inner)</code></td>
+<td>—</td>
+<td>指定缓冲区大小；大文件可适当增大</td>
+</tr>
+<tr>
+<td><code>into_inner()</code></td>
+<td>—</td>
+<td>消费 <code>BufReader</code>，返回内层 reader；已缓冲但未消费的字节会丢失</td>
+</tr>
+</tbody></table>
+<p><code>BufReader</code> 适合<strong>顺序读取</strong>场景。需要随机访问时，调用 <code>seek</code> 会使内部缓冲区作废并重新触发系统调用，此时应直接操作底层 <code>File</code>，不要套 <code>BufReader</code>。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io::&#123;<span class="hljs-keyword">self</span>, BufRead, BufReader&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">path</span> = <span class="hljs-string">&quot;/tmp/bufcap.txt&quot;</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">content</span>: <span class="hljs-type">String</span> = (<span class="hljs-number">1</span>..=<span class="hljs-number">5</span>).<span class="hljs-title function_ invoke__">map</span>(|i| <span class="hljs-built_in">format!</span>(<span class="hljs-string">&quot;Line &#123;i&#125;\n&quot;</span>)).<span class="hljs-title function_ invoke__">collect</span>();<br>    fs::<span class="hljs-title function_ invoke__">write</span>(path, &amp;content)?;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">f</span> = fs::File::<span class="hljs-title function_ invoke__">open</span>(path)?;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">reader</span> = BufReader::<span class="hljs-title function_ invoke__">with_capacity</span>(<span class="hljs-number">32</span>, f);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;缓冲区大小: &#123;&#125; 字节&quot;</span>, reader.<span class="hljs-title function_ invoke__">capacity</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">count</span> = <span class="hljs-number">0</span>;<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">line</span> <span class="hljs-keyword">in</span> reader.<span class="hljs-title function_ invoke__">lines</span>() &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">_</span> = line?;<br>        count += <span class="hljs-number">1</span>;<br>    &#125;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;读取了 &#123;count&#125; 行&quot;</span>);<br><br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(path)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs tap">缓冲区大小:<span class="hljs-number"> 32 </span>字节<br>读取了<span class="hljs-number"> 5 </span>行<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-2-BufWriter"><a href="#3-2-BufWriter" class="headerlink" title="3.2 BufWriter"></a>3.2 BufWriter</h3><p><code>BufWriter&lt;W&gt;</code> 为任意 <code>Write</code> 类型添加写缓冲，将多次小写操作积攒到缓冲区，一次性提交到底层 writer，减少系统调用次数。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">BufWriter</span>&lt;W: Write&gt; &#123; &#125;<br><br><span class="hljs-keyword">impl</span>&lt;W: Write&gt; BufWriter&lt;W&gt; &#123;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">new</span>(inner: W) <span class="hljs-punctuation">-&gt;</span> BufWriter&lt;W&gt;;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">with_capacity</span>(capacity: <span class="hljs-type">usize</span>, inner: W) <span class="hljs-punctuation">-&gt;</span> BufWriter&lt;W&gt;;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">capacity</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">usize</span>;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">get_ref</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> &amp;W;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">get_mut</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-keyword">mut</span> W;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">buffer</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> &amp;[<span class="hljs-type">u8</span>];<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">into_inner</span>(<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;W, IntoInnerError&lt;BufWriter&lt;W&gt;&gt;&gt;;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">flush</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>new(inner)</code></td>
+<td>缓冲区 8192 字节</td>
+<td>创建默认缓冲大小的 <code>BufWriter</code></td>
+</tr>
+<tr>
+<td><code>with_capacity(cap, inner)</code></td>
+<td>—</td>
+<td>指定缓冲区大小</td>
+</tr>
+<tr>
+<td><code>into_inner()</code></td>
+<td>—</td>
+<td>先 <code>flush</code> 再消费，返回底层 writer；<code>flush</code> 失败则返回 <code>IntoInnerError</code></td>
+</tr>
+</tbody></table>
+<p><code>BufWriter</code> 在 <code>Drop</code> 时会尝试 <code>flush</code>，但 <code>Drop</code> 中产生的 <code>flush</code> 错误会被<strong>静默丢弃</strong>。若最后一批写入数据至关重要，必须手动调用 <code>flush()</code> 并处理其 <code>Result</code>，不能依赖 <code>drop</code> 隐式刷新。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io::&#123;<span class="hljs-keyword">self</span>, BufWriter, Write&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">path</span> = <span class="hljs-string">&quot;/tmp/bufwriter_demo.txt&quot;</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">f</span> = fs::File::<span class="hljs-title function_ invoke__">create</span>(path)?;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">writer</span> = BufWriter::<span class="hljs-title function_ invoke__">new</span>(f);<br><br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">i</span> <span class="hljs-keyword">in</span> <span class="hljs-number">1</span>..=<span class="hljs-number">5</span> &#123;<br>        <span class="hljs-built_in">writeln!</span>(writer, <span class="hljs-string">&quot;行 &#123;i&#125;: &#123;&#125;&quot;</span>, <span class="hljs-string">&quot;★&quot;</span>.<span class="hljs-title function_ invoke__">repeat</span>(i))?;<br>    &#125;<br><br>    <span class="hljs-comment">// 显式 flush，确保数据落盘</span><br>    writer.<span class="hljs-title function_ invoke__">flush</span>()?;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">content</span> = fs::<span class="hljs-title function_ invoke__">read_to_string</span>(path)?;<br>    <span class="hljs-built_in">print!</span>(<span class="hljs-string">&quot;&#123;content&#125;&quot;</span>);<br><br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(path)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">行 1</span><span class="hljs-punctuation">:</span> <span class="hljs-string">★</span><br><span class="hljs-attribute">行 2</span><span class="hljs-punctuation">:</span> <span class="hljs-string">★★</span><br><span class="hljs-attribute">行 3</span><span class="hljs-punctuation">:</span> <span class="hljs-string">★★★</span><br><span class="hljs-attribute">行 4</span><span class="hljs-punctuation">:</span> <span class="hljs-string">★★★★</span><br><span class="hljs-attribute">行 5</span><span class="hljs-punctuation">:</span> <span class="hljs-string">★★★★★</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="3-3-LineWriter"><a href="#3-3-LineWriter" class="headerlink" title="3.3 LineWriter"></a>3.3 LineWriter</h3><p><code>LineWriter&lt;W&gt;</code> 是 <code>BufWriter</code> 的变体，在每次检测到 <code>\n</code> 字节后自动执行 <code>flush</code>，适合需要实时输出的场景，例如写入终端、日志转发管道。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">LineWriter</span>&lt;W: Write&gt; &#123; &#125;<br><br><span class="hljs-keyword">impl</span>&lt;W: Write&gt; LineWriter&lt;W&gt; &#123;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">new</span>(inner: W) <span class="hljs-punctuation">-&gt;</span> LineWriter&lt;W&gt;;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">with_capacity</span>(capacity: <span class="hljs-type">usize</span>, inner: W) <span class="hljs-punctuation">-&gt;</span> LineWriter&lt;W&gt;;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">into_inner</span>(<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;W, IntoInnerError&lt;LineWriter&lt;W&gt;&gt;&gt;;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>stdout()</code> 在终端下默认即为行缓冲（<code>LineWriter</code> 语义），但当 <code>stdout</code> 被重定向到文件或管道时，Rust 进程切换为全缓冲（<code>BufWriter</code> 语义），<code>println!</code> 的输出不会逐行立即出现——这是管道中”没有输出”的常见原因。</p>
+</blockquote>
+<h2 id="四、标准输入输出"><a href="#四、标准输入输出" class="headerlink" title="四、标准输入输出"></a>四、标准输入输出</h2><h3 id="4-1-stdin-stdout-stderr"><a href="#4-1-stdin-stdout-stderr" class="headerlink" title="4.1 stdin &#x2F; stdout &#x2F; stderr"></a>4.1 stdin &#x2F; stdout &#x2F; stderr</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">stdin</span>()  <span class="hljs-punctuation">-&gt;</span> Stdin<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">stdout</span>() <span class="hljs-punctuation">-&gt;</span> Stdout<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">stderr</span>() <span class="hljs-punctuation">-&gt;</span> Stderr<br></code></pre></td></tr></table></figure>
+
+<p>三个函数分别返回进程标准流的句柄：</p>
+<table>
+<thead>
+<tr>
+<th>句柄</th>
+<th>默认连接</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Stdin</code></td>
+<td>键盘 &#x2F; 管道输入</td>
+<td>读取用户输入、处理管道数据</td>
+</tr>
+<tr>
+<td><code>Stdout</code></td>
+<td>终端输出</td>
+<td>程序正常输出</td>
+</tr>
+<tr>
+<td><code>Stderr</code></td>
+<td>终端错误输出</td>
+<td>错误、警告、调试信息（不受 <code>&gt;</code> 重定向影响）</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::io::&#123;<span class="hljs-keyword">self</span>, Write&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-comment">// 向 stderr 写入（不受 &gt; 重定向影响）</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">err</span> = io::<span class="hljs-title function_ invoke__">stderr</span>();<br>    <span class="hljs-built_in">writeln!</span>(err, <span class="hljs-string">&quot;[warn] 这是一条警告信息&quot;</span>)?;<br><br>    <span class="hljs-comment">// 向 stdout 写入</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">out</span> = io::<span class="hljs-title function_ invoke__">stdout</span>();<br>    <span class="hljs-built_in">writeln!</span>(out, <span class="hljs-string">&quot;正常输出内容&quot;</span>)?;<br>    out.<span class="hljs-title function_ invoke__">flush</span>()?;<br><br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-string">[warn]</span> 这是一条警告信息<br>正常输出内容<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-2-线程安全与-lock"><a href="#4-2-线程安全与-lock" class="headerlink" title="4.2 线程安全与 lock()"></a>4.2 线程安全与 lock()</h3><p><code>Stdin</code>、<code>Stdout</code>、<code>Stderr</code> 内部都持有 <code>Mutex</code>，多线程并发访问是安全的，但每次操作都需要加锁解锁。在同一线程中需要连续读写多行时，应先调用 <code>lock()</code> 一次性获取锁句柄，在持有期间省去反复加解锁的开销。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">impl</span> <span class="hljs-title class_">Stdin</span>  &#123; <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">lock</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> StdinLock&lt;<span class="hljs-symbol">&#x27;static</span>&gt;; &#125;<br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">Stdout</span> &#123; <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">lock</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> StdoutLock&lt;<span class="hljs-symbol">&#x27;static</span>&gt;; &#125;<br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">Stderr</span> &#123; <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">lock</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> StderrLock&lt;<span class="hljs-symbol">&#x27;static</span>&gt;; &#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>StdinLock</code> 实现了 <code>BufRead</code>，可直接调用 <code>.lines()</code>；<code>StdoutLock</code> &#x2F; <code>StderrLock</code> 实现了 <code>Write</code>。实际交互式使用示例如下（下面用 <code>Cursor</code> 模拟 <code>stdin</code> 使代码可运行）：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::io::&#123;<span class="hljs-keyword">self</span>, BufRead, BufReader, Cursor, Write&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-comment">// 用 Cursor 模拟 stdin 输入（实际使用时替换为 io::stdin().lock()）</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">fake_stdin</span> = Cursor::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;hello\nworld\nquit\n&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">out_buf</span> = <span class="hljs-type">Vec</span>::<span class="hljs-title function_ invoke__">new</span>();<br><br>    &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">out</span> = Cursor::<span class="hljs-title function_ invoke__">new</span>(&amp;<span class="hljs-keyword">mut</span> out_buf);<br>        <span class="hljs-built_in">write!</span>(out, <span class="hljs-string">&quot;echo 模式（输入 quit 退出）:\n&quot;</span>)?;<br>        <span class="hljs-keyword">for</span> <span class="hljs-variable">line</span> <span class="hljs-keyword">in</span> BufReader::<span class="hljs-title function_ invoke__">new</span>(fake_stdin).<span class="hljs-title function_ invoke__">lines</span>() &#123;<br>            <span class="hljs-keyword">let</span> <span class="hljs-variable">line</span> = line?;<br>            <span class="hljs-keyword">if</span> line == <span class="hljs-string">&quot;quit&quot;</span> &#123; <span class="hljs-keyword">break</span>; &#125;<br>            <span class="hljs-built_in">writeln!</span>(out, <span class="hljs-string">&quot;&gt; &#123;line&#125;&quot;</span>)?;<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-built_in">print!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from_utf8</span>(out_buf).<span class="hljs-title function_ invoke__">unwrap</span>());<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight node-repl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs node-repl">echo 模式（输入 quit 退出）:<br><span class="hljs-meta prompt_">&gt;</span> <span class="language-javascript">hello</span><br><span class="hljs-meta prompt_">&gt;</span> <span class="language-javascript">world</span><br></code></pre></td></tr></table></figure>
+
+
+<h2 id="五、错误处理"><a href="#五、错误处理" class="headerlink" title="五、错误处理"></a>五、错误处理</h2><h3 id="5-1-io-Error-与-ErrorKind"><a href="#5-1-io-Error-与-ErrorKind" class="headerlink" title="5.1 io::Error 与 ErrorKind"></a>5.1 io::Error 与 ErrorKind</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">Error</span> &#123; &#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">Error</span> &#123;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">new</span>&lt;E: <span class="hljs-built_in">Into</span>&lt;<span class="hljs-type">Box</span>&lt;<span class="hljs-keyword">dyn</span> error::Error + <span class="hljs-built_in">Send</span> + <span class="hljs-built_in">Sync</span>&gt;&gt;&gt;(<br>        kind: ErrorKind,<br>        error: E,<br>    ) <span class="hljs-punctuation">-&gt;</span> Error;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">from_raw_os_error</span>(code: <span class="hljs-type">i32</span>) <span class="hljs-punctuation">-&gt;</span> Error;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">last_os_error</span>() <span class="hljs-punctuation">-&gt;</span> Error;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">kind</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> ErrorKind;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">raw_os_error</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Option</span>&lt;<span class="hljs-type">i32</span>&gt;;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">get_ref</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Option</span>&lt;&amp;(<span class="hljs-keyword">dyn</span> error::Error + <span class="hljs-built_in">Send</span> + <span class="hljs-built_in">Sync</span> + <span class="hljs-symbol">&#x27;static</span>)&gt;;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">into_inner</span>(<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Option</span>&lt;<span class="hljs-type">Box</span>&lt;<span class="hljs-keyword">dyn</span> error::Error + <span class="hljs-built_in">Send</span> + <span class="hljs-built_in">Sync</span> + <span class="hljs-symbol">&#x27;static</span>&gt;&gt;;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>new(kind, error)</code></td>
+<td>创建自定义 <code>io::Error</code>，<code>kind</code> 决定类别，<code>error</code> 提供描述消息</td>
+</tr>
+<tr>
+<td><code>from_raw_os_error(code)</code></td>
+<td>从操作系统错误码（如 <code>ENOENT=2</code>）创建，<code>kind()</code> 自动推导</td>
+</tr>
+<tr>
+<td><code>last_os_error()</code></td>
+<td>读取当前线程的 <code>errno</code> 值并创建错误，适合包装 <code>unsafe</code> 系统调用</td>
+</tr>
+<tr>
+<td><code>kind()</code></td>
+<td>返回 <code>ErrorKind</code>，用于模式匹配，是跨平台区分错误类别的标准方式</td>
+</tr>
+<tr>
+<td><code>raw_os_error()</code></td>
+<td>返回底层 OS 错误码；自定义错误（通过 <code>new</code> 创建）返回 <code>None</code></td>
+</tr>
+</tbody></table>
+<p><strong>常用 <code>ErrorKind</code> 变体：</strong></p>
+<table>
+<thead>
+<tr>
+<th>变体</th>
+<th>典型触发场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>NotFound</code></td>
+<td>文件或目录不存在（<code>ENOENT</code>）</td>
+</tr>
+<tr>
+<td><code>PermissionDenied</code></td>
+<td>权限不足（<code>EACCES</code>）</td>
+</tr>
+<tr>
+<td><code>AlreadyExists</code></td>
+<td>创建时目标已存在（<code>EEXIST</code>）</td>
+</tr>
+<tr>
+<td><code>WouldBlock</code></td>
+<td>非阻塞操作暂时无法完成（<code>EAGAIN</code> &#x2F; <code>EWOULDBLOCK</code>）</td>
+</tr>
+<tr>
+<td><code>InvalidInput</code></td>
+<td>参数无效，如向只读文件写入</td>
+</tr>
+<tr>
+<td><code>InvalidData</code></td>
+<td>数据格式错误，如非 <code>UTF-8</code> 字节传给 <code>read_to_string</code></td>
+</tr>
+<tr>
+<td><code>TimedOut</code></td>
+<td>操作超时</td>
+</tr>
+<tr>
+<td><code>WriteZero</code></td>
+<td><code>write_all</code> 中 <code>write</code> 返回 <code>Ok(0)</code>，writer 拒绝写入</td>
+</tr>
+<tr>
+<td><code>Interrupted</code></td>
+<td>操作被信号中断（<code>EINTR</code>），通常应重试</td>
+</tr>
+<tr>
+<td><code>UnexpectedEof</code></td>
+<td><code>read_exact</code> 在填满缓冲区前遇到 <code>EOF</code></td>
+</tr>
+<tr>
+<td><code>OutOfMemory</code></td>
+<td>内存分配失败（<code>Rust 1.54.0</code> 起）</td>
+</tr>
+<tr>
+<td><code>BrokenPipe</code></td>
+<td>向已关闭的管道写入（<code>EPIPE</code>）</td>
+</tr>
+<tr>
+<td><code>ConnectionRefused</code></td>
+<td><code>TCP</code> 连接被拒绝（<code>ECONNREFUSED</code>）</td>
+</tr>
+<tr>
+<td><code>ConnectionReset</code></td>
+<td>连接被对端重置（<code>ECONNRESET</code>）</td>
+</tr>
+<tr>
+<td><code>Other</code></td>
+<td>不属于以上类别的其他系统错误</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io::&#123;<span class="hljs-keyword">self</span>, ErrorKind&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">open_and_handle</span>(path: &amp;<span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">String</span>&gt; &#123;<br>    fs::<span class="hljs-title function_ invoke__">read_to_string</span>(path).<span class="hljs-title function_ invoke__">map_err</span>(|e| &#123;<br>        <span class="hljs-keyword">if</span> e.<span class="hljs-title function_ invoke__">kind</span>() == ErrorKind::NotFound &#123;<br>            io::Error::<span class="hljs-title function_ invoke__">new</span>(ErrorKind::NotFound, <span class="hljs-built_in">format!</span>(<span class="hljs-string">&quot;配置文件 &#123;path&#125; 不存在&quot;</span>))<br>        &#125; <span class="hljs-keyword">else</span> &#123;<br>            e<br>        &#125;<br>    &#125;)<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">err</span> = fs::File::<span class="hljs-title function_ invoke__">open</span>(<span class="hljs-string">&quot;/tmp/nonexistent_xyz.txt&quot;</span>).<span class="hljs-title function_ invoke__">unwrap_err</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;ErrorKind: &#123;:?&#125;&quot;</span>, err.<span class="hljs-title function_ invoke__">kind</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;OS 错误码: &#123;:?&#125;&quot;</span>, err.<span class="hljs-title function_ invoke__">raw_os_error</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">custom</span> = io::Error::<span class="hljs-title function_ invoke__">new</span>(ErrorKind::InvalidData, <span class="hljs-string">&quot;解析失败：第3行格式错误&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;自定义错误: &#123;custom&#125;&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;自定义 kind: &#123;:?&#125;&quot;</span>, custom.<span class="hljs-title function_ invoke__">kind</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;自定义 OS 码: &#123;:?&#125;&quot;</span>, custom.<span class="hljs-title function_ invoke__">raw_os_error</span>());<br><br>    <span class="hljs-keyword">match</span> err.<span class="hljs-title function_ invoke__">kind</span>() &#123;<br>        ErrorKind::NotFound         =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文件不存在，请检查路径&quot;</span>),<br>        ErrorKind::PermissionDenied =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;权限不足&quot;</span>),<br>        ErrorKind::InvalidData      =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;数据损坏&quot;</span>),<br>        other                       =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;其他错误: &#123;other:?&#125;&quot;</span>),<br>    &#125;<br><br>    <span class="hljs-keyword">match</span> <span class="hljs-title function_ invoke__">open_and_handle</span>(<span class="hljs-string">&quot;/tmp/missing_config.toml&quot;</span>) &#123;<br>        <span class="hljs-title function_ invoke__">Err</span>(e) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;错误: &#123;e&#125;&quot;</span>),<br>        <span class="hljs-title function_ invoke__">Ok</span>(s)  =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;内容: &#123;s&#125;&quot;</span>),<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">ErrorKind</span><span class="hljs-punctuation">:</span> <span class="hljs-string">NotFound</span><br><span class="hljs-attribute">OS 错误码</span><span class="hljs-punctuation">:</span> <span class="hljs-string">Some(2)</span><br><span class="hljs-attribute">自定义错误</span><span class="hljs-punctuation">:</span> <span class="hljs-string">解析失败：第3行格式错误</span><br><span class="hljs-attribute">自定义 kind</span><span class="hljs-punctuation">:</span> <span class="hljs-string">InvalidData</span><br><span class="hljs-attribute">自定义 OS 码</span><span class="hljs-punctuation">:</span> <span class="hljs-string">None</span><br><span class="hljs-attribute">文件不存在，请检查路径</span><br><span class="hljs-attribute">错误</span><span class="hljs-punctuation">:</span> <span class="hljs-string">配置文件 /tmp/missing_config.toml 不存在</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="六、实用函数"><a href="#六、实用函数" class="headerlink" title="六、实用函数"></a>六、实用函数</h2><h3 id="6-1-io-copy"><a href="#6-1-io-copy" class="headerlink" title="6.1 io::copy"></a>6.1 io::copy</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">copy</span>&lt;R: ?<span class="hljs-built_in">Sized</span>, W: ?<span class="hljs-built_in">Sized</span>&gt;(reader: &amp;<span class="hljs-keyword">mut</span> R, writer: &amp;<span class="hljs-keyword">mut</span> W) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">u64</span>&gt;<br><span class="hljs-keyword">where</span><br>    R: Read,<br>    W: Write,<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>reader</code></td>
+<td>数据源，实现 <code>Read</code></td>
+</tr>
+<tr>
+<td><code>writer</code></td>
+<td>写目标，实现 <code>Write</code></td>
+</tr>
+</tbody></table>
+<p>返回复制的总字节数。在 <code>Linux</code> 上，当 <code>reader</code> 和 <code>writer</code> 都是 <code>File</code> 时，<code>io::copy</code> 内部会尝试使用 <code>copy_file_range(2)</code> 系统调用，数据在内核态直接传输而无需经过用户空间缓冲区；当源或目标是套接字时，退而使用 <code>sendfile(2)</code>。这两种优化均对调用方透明。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io::&#123;<span class="hljs-keyword">self</span>, Cursor&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">src</span> = <span class="hljs-string">&quot;/tmp/copy_src.txt&quot;</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">dst</span> = <span class="hljs-string">&quot;/tmp/copy_dst.txt&quot;</span>;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(src, <span class="hljs-string">&quot;io::copy demo content&quot;</span>)?;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">reader</span> = fs::File::<span class="hljs-title function_ invoke__">open</span>(src)?;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">writer</span> = fs::File::<span class="hljs-title function_ invoke__">create</span>(dst)?;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">n</span> = io::<span class="hljs-title function_ invoke__">copy</span>(&amp;<span class="hljs-keyword">mut</span> reader, &amp;<span class="hljs-keyword">mut</span> writer)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;复制了 &#123;n&#125; 字节&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;目标内容: &#123;&#125;&quot;</span>, fs::<span class="hljs-title function_ invoke__">read_to_string</span>(dst)?);<br><br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(src)?;<br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(dst)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight maxima"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs maxima">复制了 <span class="hljs-number">21</span> 字节<br>目标内容: io::<span class="hljs-built_in">copy</span> <span class="hljs-built_in">demo</span> <span class="hljs-built_in">content</span><br></code></pre></td></tr></table></figure>
+
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%AD%97%E8%8A%82%E6%B5%81/" class="print-no-link">#字节流</a>
+      
+        <a href="/tags/%E6%A0%87%E5%87%86%E8%BE%93%E5%85%A5%E8%BE%93%E5%87%BA/" class="print-no-link">#标准输入输出</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/rust/std-net.html" title="[标准库] std::net 网络通信介绍与实战">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">[标准库] std::net 网络通信介绍与实战</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/std-fs.html" title="[标准库] std::fs 文件系统操作介绍与实战">
+                        <span class="hidden-mobile">[标准库] std::fs 文件系统操作介绍与实战</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,1416 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="每次写 Box::new(val) 或 Vec::with_capacity(n)，背后都隐藏着一次内存分配请求——它们通过 Rust 的全局分配器（global allocator）完成。std::alloc 模块正是这套机制的公开接口，提供了描述内存布局的 Layout、定义分配行为的 GlobalAlloc trait、以及直接调用全局分配器的裸函数。理解它，既能写出正确的 unsafe 内">
+  
+  
+  
+  <title>[标准库] std::alloc 内存分配模块介绍 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="[标准库] std::alloc 内存分配模块介绍"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-11 10:30" pubdate>
+          2026年5月11日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          17k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          146 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">[标准库] std::alloc 内存分配模块介绍</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>每次写 <code>Box::new(val)</code> 或 <code>Vec::with_capacity(n)</code>，背后都隐藏着一次内存分配请求——它们通过 Rust 的<strong>全局分配器</strong>（<code>global allocator</code>）完成。<code>std::alloc</code> 模块正是这套机制的公开接口，提供了描述内存布局的 <code>Layout</code>、定义分配行为的 <code>GlobalAlloc</code> trait、以及直接调用全局分配器的裸函数。理解它，既能写出正确的 <code>unsafe</code> 内存操作，也能为嵌入式系统或性能敏感场景定制专属分配器。</p>
+<h2 id="一、模块概述"><a href="#一、模块概述" class="headerlink" title="一、模块概述"></a>一、模块概述</h2><p><code>std::alloc</code> 于 <code>Rust 1.28.0</code> 稳定，核心职责是管理程序中唯一的<strong>全局内存分配器</strong>。标准库的所有堆分配类型——<code>Box&lt;T&gt;</code>、<code>Vec&lt;T&gt;</code>、<code>String</code>、<code>HashMap</code> 等——最终都通过该模块的接口申请和释放内存。</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Layout</code></td>
+<td><code>struct</code></td>
+<td>描述内存块的大小与对齐要求</td>
+</tr>
+<tr>
+<td><code>LayoutError</code></td>
+<td><code>struct</code></td>
+<td><code>Layout</code> 构造失败时返回的错误类型</td>
+</tr>
+<tr>
+<td><code>System</code></td>
+<td><code>struct</code></td>
+<td>委托操作系统 <code>malloc</code>&#x2F;<code>free</code> 的默认分配器</td>
+</tr>
+<tr>
+<td><code>GlobalAlloc</code></td>
+<td><code>trait</code></td>
+<td>自定义全局分配器必须实现的接口</td>
+</tr>
+<tr>
+<td><code>alloc</code></td>
+<td><code>fn</code></td>
+<td>申请内存，不初始化；<code>unsafe</code></td>
+</tr>
+<tr>
+<td><code>alloc_zeroed</code></td>
+<td><code>fn</code></td>
+<td>申请内存并清零；<code>unsafe</code></td>
+</tr>
+<tr>
+<td><code>dealloc</code></td>
+<td><code>fn</code></td>
+<td>释放内存；<code>unsafe</code></td>
+</tr>
+<tr>
+<td><code>realloc</code></td>
+<td><code>fn</code></td>
+<td>调整已分配内存大小；<code>unsafe</code></td>
+</tr>
+<tr>
+<td><code>handle_alloc_error</code></td>
+<td><code>fn</code></td>
+<td>分配失败时触发 <code>abort</code> 并输出诊断信息</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>Rust 保证：对于 <code>cdylib</code> 和 <code>staticlib</code> 目标，默认全局分配器为 <code>System</code>；对于 <code>bin</code> 目标，标准库会提供一个平台相关的默认实现，但可通过 <code>#[global_allocator]</code> 替换。</p>
+</blockquote>
+<h2 id="二、Layout：内存布局描述符"><a href="#二、Layout：内存布局描述符" class="headerlink" title="二、Layout：内存布局描述符"></a>二、Layout：内存布局描述符</h2><p><code>Layout</code> 描述一块内存的两个核心属性：<strong>大小</strong>（字节数）和<strong>对齐</strong>（地址对齐要求）。所有分配&#x2F;释放操作都需要配套的 <code>Layout</code>，分配器依赖它返回满足要求的指针。</p>
+<h3 id="2-1-构造方法"><a href="#2-1-构造方法" class="headerlink" title="2.1 构造方法"></a>2.1 构造方法</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// 根据类型自动推导</span><br>Layout::new::&lt;T&gt;() <span class="hljs-punctuation">-&gt;</span> Layout<br><br><span class="hljs-comment">// 手动指定大小和对齐</span><br>Layout::<span class="hljs-title function_ invoke__">from_size_align</span>(size: <span class="hljs-type">usize</span>, align: <span class="hljs-type">usize</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;Layout, LayoutError&gt;<br><br><span class="hljs-comment">// 数组布局（n 个 T 连续排列）</span><br>Layout::array::&lt;T&gt;(n: <span class="hljs-type">usize</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;Layout, LayoutError&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>size</code></td>
+<td>-</td>
+<td>内存块的字节数；必须满足 <code>size ≤ isize::MAX</code></td>
+</tr>
+<tr>
+<td><code>align</code></td>
+<td>-</td>
+<td>对齐字节数；<strong>必须是 2 的幂</strong>（<code>1</code>、<code>2</code>、<code>4</code>、<code>8</code>…），否则返回 <code>LayoutError</code></td>
+</tr>
+<tr>
+<td><code>n(array)</code></td>
+<td>-</td>
+<td>元素个数；<code>size_of::&lt;T&gt;() * n</code> 不能溢出 <code>usize</code></td>
+</tr>
+</tbody></table>
+<p><code>Layout::new::&lt;T&gt;()</code> 等价于 <code>from_size_align(size_of::&lt;T&gt;(), align_of::&lt;T&gt;()).unwrap()</code>，零大小类型（<code>ZST</code>）的 <code>size</code> 为 0，合法。</p>
+<hr>
+<h4 id="align-的本质：CPU-格子模型"><a href="#align-的本质：CPU-格子模型" class="headerlink" title="align 的本质：CPU 格子模型"></a>align 的本质：CPU 格子模型</h4><p><code>align</code> 规定分配器返回的指针地址必须是 <code>align</code> 的整数倍，本质上是硬件读取内存的方式决定的。</p>
+<p>64-bit <code>CPU</code> 每次从内存总线读取数据时，以 <strong>8 字节为一格</strong>，且只能从 8 的倍数地址开始：</p>
+<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs gherkin">地址:   0        8        16       24<br>        |<span class="hljs-string">--------</span>|<span class="hljs-string">--------</span>|<span class="hljs-string">--------</span>|<br>        [ 格子0  ][ 格子1  ][ 格子2  ]<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><strong><code>u64</code>（8 字节）放在地址 0</strong>：恰好在格子 0 内，一次读取完成 ✓</li>
+<li><strong><code>u64</code> 放在地址 3</strong>：横跨格子 0 和格子 1，<code>CPU</code> 须读两次再拼接——<code>x86</code> 上变慢，<code>ARM</code> 上直接触发对齐异常 ✗</li>
+</ul>
+<figure class="highlight gherkin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs gherkin">地址:   0    3              11<br>        |<span class="hljs-string">----</span>|<span class="hljs-string">[=====u64=====]---</span>|<br>             ↑ 跨越格子边界，需两次读取<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><strong><code>u8</code>（1 字节）放在任意地址</strong>：1 字节不会跨格，<code>CPU</code> 读取整格后取出对应字节即可 ✓</li>
+</ul>
+<p>因此对齐的下限由<strong>数据类型本身</strong>决定，不是优化选项——<code>u64</code> 必须 <code>align=8</code>，<code>u8</code> 只需 <code>align=1</code>。</p>
+<blockquote>
+<p><code>align</code> 的最小合法值 &#x3D; 结构体中<strong>对齐要求最大字段</strong>的 <code>align_of</code>。不能为省内存碎片而随意降低，否则是未定义行为。</p>
+</blockquote>
+<hr>
+<h4 id="size-与-align-的关系"><a href="#size-与-align-的关系" class="headerlink" title="size 与 align 的关系"></a><code>size</code> 与 <code>align</code> 的关系</h4><p>两者相互独立——<code>size</code> 不必是 <code>align</code> 的倍数。<code>size</code> 是实际需要的字节数，<code>align</code> 只约束起始地址。</p>
+<table>
+<thead>
+<tr>
+<th>情形</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>单次分配</td>
+<td>申请 <code>size</code> 字节，起始地址满足 <code>align</code> 即可</td>
+</tr>
+<tr>
+<td>数组元素</td>
+<td>每个元素的起始地址也须满足 <code>align</code>，实际步长（<code>stride</code>）&#x3D; <code>pad_to_align().size()</code></td>
+</tr>
+<tr>
+<td><code>C</code> 兼容结构体</td>
+<td>末尾须调用 <code>pad_to_align()</code> 补尾部填充，否则相邻实例地址计算错误</td>
+</tr>
+</tbody></table>
+<p>以 <code>size=10, align=8</code> 为例：单次分配占 10 字节，作数组元素时 <code>stride</code>&#x3D;16（补 6 字节填充）。</p>
+<hr>
+<h4 id="分配器如何查找对齐地址"><a href="#分配器如何查找对齐地址" class="headerlink" title="分配器如何查找对齐地址"></a>分配器如何查找对齐地址</h4><p>分配器在堆上找到空闲区域后，若起始地址不满足 <code>align</code>，会向后跳过若干字节直到找到第一个对齐地址，跳过的字节成为<strong>内部碎片</strong>，调用方不可见：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs routeros">申请 <span class="hljs-attribute">size</span>=20, <span class="hljs-attribute">align</span>=2（空闲区从地址 1001 开始）：<br><br>地址:  1001  1002                      1022<br>        |     |                         |<br>     跳过1B  |&lt;===== 20 字节数据 =======&gt;|<br>              ↑ addr%<span class="hljs-attribute">2</span>==0 ✓<br><br>申请 <span class="hljs-attribute">size</span>=20, <span class="hljs-attribute">align</span>=4（空闲区从地址 1001 开始）：<br><br>地址:  1001        1004                      1024<br>        |           |                         |<br>     跳过3B        |&lt;===== 20 字节数据 =======&gt;|<br>                    ↑ addr%<span class="hljs-attribute">4</span>==0 ✓<br></code></pre></td></tr></table></figure>
+
+<p>内部碎片上限 &#x3D; <code>align - 1</code>，<code>align</code> 越大，潜在浪费越多。</p>
+<hr>
+<h4 id="超对齐（align-大于类型最小要求）"><a href="#超对齐（align-大于类型最小要求）" class="headerlink" title="超对齐（align 大于类型最小要求）"></a>超对齐（<code>align</code> 大于类型最小要求）</h4><p><code>align</code> 可以设为大于 <code>align_of::&lt;T&gt;()</code> 的值，这称为<strong>超对齐</strong>（<code>over-alignment</code>）。</p>
+<table>
+<thead>
+<tr>
+<th><code>align</code>（以 <code>u64</code> 为例）</th>
+<th>用途</th>
+<th>数组 <code>stride</code></th>
+<th>内存代价</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>8（最小）</td>
+<td>普通读写</td>
+<td>8 字节</td>
+<td>无浪费</td>
+</tr>
+<tr>
+<td>16</td>
+<td><code>SSE</code> 批量加载两个 <code>u64</code></td>
+<td>16 字节</td>
+<td>每元素多 8 字节</td>
+</tr>
+<tr>
+<td>32</td>
+<td><code>AVX</code> 批量加载四个 <code>u64</code></td>
+<td>32 字节</td>
+<td>每元素多 24 字节</td>
+</tr>
+<tr>
+<td>64</td>
+<td>独占缓存行，避免 <code>false sharing</code></td>
+<td>64 字节</td>
+<td>每元素多 56 字节</td>
+</tr>
+</tbody></table>
+<p>数组分配时 <code>stride</code> 增大，总占用确实增多。<code>repeat(n)</code> 末尾元素不补填充，公式为：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">total</span> = stride × (n-<span class="hljs-number">1</span>) + size<br></code></pre></td></tr></table></figure>
+
+<p>以 <code>size=8, align=16</code> 的 4 元素数组为例：<code>total = 16×3 + 8 = 56</code>（而非 <code>16×4 = 64</code>）。</p>
+<blockquote>
+<p>超对齐是为满足 <code>SIMD</code> 指令或缓存行隔离等上层需求，而非正确性要求。若无性能测试支撑，不要随意超对齐。</p>
+</blockquote>
+<hr>
+<h4 id="如何合理设置-align"><a href="#如何合理设置-align" class="headerlink" title="如何合理设置 align"></a>如何合理设置 <code>align</code></h4><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐 <code>align</code></th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>普通类型</td>
+<td><code>align_of::&lt;T&gt;()</code></td>
+<td>用 <code>Layout::new::&lt;T&gt;()</code> 自动推导</td>
+</tr>
+<tr>
+<td><code>SSE</code> &#x2F; <code>__m128</code></td>
+<td>16</td>
+<td>128-bit <code>SIMD</code> 寄存器要求</td>
+</tr>
+<tr>
+<td><code>AVX</code> &#x2F; <code>__m256</code></td>
+<td>32</td>
+<td>256-bit <code>SIMD</code> 寄存器要求</td>
+</tr>
+<tr>
+<td><code>AVX-512</code> &#x2F; <code>__m512</code></td>
+<td>64</td>
+<td>512-bit <code>SIMD</code> 寄存器要求</td>
+</tr>
+<tr>
+<td>多线程热点数据</td>
+<td>64</td>
+<td>独占 <code>CPU</code> 缓存行（<code>cache line</code>），避免 <code>false sharing</code></td>
+</tr>
+<tr>
+<td><code>DMA</code> &#x2F; 页对齐</td>
+<td>4096</td>
+<td>操作系统页大小，<code>mmap</code> 和设备驱动要求</td>
+</tr>
+</tbody></table>
+<p>三条规则：</p>
+<ol>
+<li><strong>不要猜</strong>：优先用 <code>align_of::&lt;T&gt;()</code>，手动值只在有明确文档要求时才覆盖。</li>
+<li><strong>只能放大，不能缩小</strong>：<code>align</code> 必须 ≥ <code>align_of::&lt;T&gt;()</code>，否则是未定义行为。</li>
+<li><strong>必须是 2 的幂</strong>：<code>3</code>、<code>6</code>、<code>12</code> 等会被 <code>from_size_align</code> 直接拒绝并返回 <code>LayoutError</code>。</li>
+</ol>
+<hr>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::alloc::Layout;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">layout_u64</span> = Layout::new::&lt;<span class="hljs-type">u64</span>&gt;();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;u64:    size=&#123;&#125;, align=&#123;&#125;&quot;</span>, layout_u64.<span class="hljs-title function_ invoke__">size</span>(), layout_u64.<span class="hljs-title function_ invoke__">align</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">layout_u8</span> = Layout::new::&lt;<span class="hljs-type">u8</span>&gt;();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;u8:     size=&#123;&#125;, align=&#123;&#125;&quot;</span>, layout_u8.<span class="hljs-title function_ invoke__">size</span>(), layout_u8.<span class="hljs-title function_ invoke__">align</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">layout</span> = Layout::<span class="hljs-title function_ invoke__">from_size_align</span>(<span class="hljs-number">24</span>, <span class="hljs-number">8</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;custom: size=&#123;&#125;, align=&#123;&#125;&quot;</span>, layout.<span class="hljs-title function_ invoke__">size</span>(), layout.<span class="hljs-title function_ invoke__">align</span>());<br><br>    <span class="hljs-comment">// align 非 2 的幂 → LayoutError</span><br>    <span class="hljs-keyword">match</span> Layout::<span class="hljs-title function_ invoke__">from_size_align</span>(<span class="hljs-number">16</span>, <span class="hljs-number">3</span>) &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(_)  =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;ok&quot;</span>),<br>        <span class="hljs-title function_ invoke__">Err</span>(e) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;align=3 错误: &#123;e&#125;&quot;</span>),<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs routeros">u64:    <span class="hljs-attribute">size</span>=8, <span class="hljs-attribute">align</span>=8<br>u8:     <span class="hljs-attribute">size</span>=1, <span class="hljs-attribute">align</span>=1<br>custom: <span class="hljs-attribute">size</span>=24, <span class="hljs-attribute">align</span>=8<br><span class="hljs-attribute">align</span>=3 错误: invalid parameters <span class="hljs-keyword">to</span> Layout::from_size_align<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-2-关键方法"><a href="#2-2-关键方法" class="headerlink" title="2.2 关键方法"></a>2.2 关键方法</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs rust">layout.<span class="hljs-title function_ invoke__">size</span>()  <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">usize</span><br>layout.<span class="hljs-title function_ invoke__">align</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">usize</span><br><br>layout.<span class="hljs-title function_ invoke__">extend</span>(next: Layout)    <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;(Layout, <span class="hljs-type">usize</span>), LayoutError&gt;<br>layout.<span class="hljs-title function_ invoke__">pad_to_align</span>()          <span class="hljs-punctuation">-&gt;</span> Layout<br>layout.<span class="hljs-title function_ invoke__">repeat</span>(n: <span class="hljs-type">usize</span>)        <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;(Layout, <span class="hljs-type">usize</span>), LayoutError&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>extend</code></td>
+<td><code>next: Layout</code></td>
+<td>将 <code>next</code> 紧接在 <code>self</code> 之后排列（自动对齐填充）；返回 <code>(新布局, next字段的字节偏移)</code></td>
+</tr>
+<tr>
+<td><code>pad_to_align</code></td>
+<td>无</td>
+<td>在 <code>size</code> 尾部添加填充，使 <code>size</code> 对齐到 <code>align</code> 的倍数；<code>C</code> 兼容结构体必须调用此方法</td>
+</tr>
+<tr>
+<td><code>repeat</code></td>
+<td><code>n: usize</code></td>
+<td>将当前布局重复 <code>n</code> 次（等同于 <code>C</code> 数组）；返回 <code>(数组布局, 单元素步长 stride)</code></td>
+</tr>
+</tbody></table>
+<p><code>extend</code> 在计算组合布局时会自动在 <code>self</code> 末尾插入对齐填充，使 <code>next</code> 的起始地址满足其对齐要求；<code>repeat(n)</code> 在内部调用 <code>pad_to_align</code> 后乘以 <code>n</code>，因此步长 &#x3D; 对齐后的单元素大小。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::alloc::Layout;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-comment">// extend — 组合 u32 + u64</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">a</span> = Layout::new::&lt;<span class="hljs-type">u32</span>&gt;(); <span class="hljs-comment">// size=4, align=4</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">b</span> = Layout::new::&lt;<span class="hljs-type">u64</span>&gt;(); <span class="hljs-comment">// size=8, align=8</span><br>    <span class="hljs-keyword">let</span> (combined, offset) = a.<span class="hljs-title function_ invoke__">extend</span>(b).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;extend u32+u64: combined_size=&#123;&#125;, offset_of_b=&#123;&#125;&quot;</span>, combined.<span class="hljs-title function_ invoke__">size</span>(), offset);<br><br>    <span class="hljs-comment">// pad_to_align — size=10 对齐到 align=8 的倍数</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">unpadded</span> = Layout::<span class="hljs-title function_ invoke__">from_size_align</span>(<span class="hljs-number">10</span>, <span class="hljs-number">8</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">padded</span> = unpadded.<span class="hljs-title function_ invoke__">pad_to_align</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;pad_to_align(size=10,align=8): &#123;&#125; -&gt; &#123;&#125;&quot;</span>, unpadded.<span class="hljs-title function_ invoke__">size</span>(), padded.<span class="hljs-title function_ invoke__">size</span>());<br><br>    <span class="hljs-comment">// repeat — u32 数组 × 4</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">elem</span> = Layout::new::&lt;<span class="hljs-type">u32</span>&gt;();<br>    <span class="hljs-keyword">let</span> (arr_layout, stride) = elem.<span class="hljs-title function_ invoke__">repeat</span>(<span class="hljs-number">4</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;repeat u32×4: total_size=&#123;&#125;, stride=&#123;&#125;&quot;</span>, arr_layout.<span class="hljs-title function_ invoke__">size</span>(), stride);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs routeros">extend u32+u64: <span class="hljs-attribute">combined_size</span>=16, <span class="hljs-attribute">offset_of_b</span>=8<br>pad_to_align(<span class="hljs-attribute">size</span>=10,align=8): 10 -&gt; 16<br>repeat u32×4: <span class="hljs-attribute">total_size</span>=16, <span class="hljs-attribute">stride</span>=4<br></code></pre></td></tr></table></figure>
+
+<p><strong><code>extend</code> 的顺序影响结果</strong></p>
+<p><code>extend</code> 只在两个字段之间插入”让第二个字段满足其 <code>align</code> 所需的最少填充”，因此 <code>a.extend(b)</code> 与 <code>b.extend(a)</code> 结果不同：</p>
+<p><code>a.extend(b)</code>：<code>u32</code>（4 字节）在前，<code>u64</code>（8 字节）在后</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs tap">偏移: <span class="hljs-number"> 0 </span>  <span class="hljs-number"> 4 </span>  <span class="hljs-number"> 8 </span>             16<br>       |----|----|--------------|<br>       [u32 ]    [    u64       ]<br>              ↑<br>         <span class="hljs-number"> 4 </span>字节填充<br>          (u32 结束于 4，u64 需要<span class="hljs-number"> 8 </span>对齐，下一个<span class="hljs-number"> 8 </span>的倍数 = 8)<br><br>combined_size=16, offset=8<br></code></pre></td></tr></table></figure>
+
+<p><code>b.extend(a)</code>：<code>u64</code>（8 字节）在前，<code>u32</code>（4 字节）在后</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs routeros">偏移:  0              8    12<br>       |--------------|-----|<br>       [    u64       ][u32 ]<br>                      ↑<br>                  无需填充<br>                  (u64 结束于 8，u32 只需 4 对齐，8 已是 4 的倍数)<br><br><span class="hljs-attribute">combined_size</span>=12, <span class="hljs-attribute">offset</span>=8<br></code></pre></td></tr></table></figure>
+
+<p>这正是 Rust &#x2F; <code>C</code> 结构体字段排列的实践建议——<strong>把对齐要求大的字段放前面</strong>，可减少内部填充：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Bad</span>  &#123; a: <span class="hljs-type">u32</span>, b: <span class="hljs-type">u64</span> &#125;  <span class="hljs-comment">// size=16（中间 4 字节填充）</span><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Good</span> &#123; b: <span class="hljs-type">u64</span>, a: <span class="hljs-type">u32</span> &#125;  <span class="hljs-comment">// size=12（无填充）</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>extend</code> 不会调用 <code>pad_to_align</code>，返回的组合布局末尾可能没有尾部填充。如需 <code>C</code> 兼容结构体的完整布局，在最后一次 <code>extend</code> 后调用 <code>pad_to_align()</code>。</p>
+</blockquote>
+<h3 id="2-3-LayoutError"><a href="#2-3-LayoutError" class="headerlink" title="2.3 LayoutError"></a>2.3 LayoutError</h3><p><code>LayoutError</code> 在以下情况由构造方法返回：</p>
+<table>
+<thead>
+<tr>
+<th>触发条件</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>align</code> 不是 2 的幂</td>
+<td>如 <code>align=3</code>、<code>align=0</code></td>
+</tr>
+<tr>
+<td><code>size &gt; isize::MAX</code></td>
+<td>超出地址空间安全范围</td>
+</tr>
+<tr>
+<td><code>repeat</code>&#x2F;<code>array</code> 溢出</td>
+<td><code>size * n</code> 超出 <code>usize::MAX</code></td>
+</tr>
+</tbody></table>
+<p><code>LayoutError</code> 仅实现了 <code>Debug</code> 和 <code>Display</code>，不携带额外字段，错误信息固定为 <code>&quot;invalid parameters to Layout::from_size_align&quot;</code>。</p>
+<h2 id="三、GlobalAlloc-Trait"><a href="#三、GlobalAlloc-Trait" class="headerlink" title="三、GlobalAlloc Trait"></a>三、GlobalAlloc Trait</h2><p><code>GlobalAlloc</code> 是实现自定义全局分配器的核心 <code>trait</code>，声明为 <code>unsafe trait</code>。实现方必须手动保证所有 <code>safety invariant</code>。</p>
+<h3 id="3-1-必需方法：alloc-dealloc"><a href="#3-1-必需方法：alloc-dealloc" class="headerlink" title="3.1 必需方法：alloc &#x2F; dealloc"></a>3.1 必需方法：alloc &#x2F; dealloc</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">alloc</span>(&amp;<span class="hljs-keyword">self</span>, layout: Layout) <span class="hljs-punctuation">-&gt;</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span><br><span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">dealloc</span>(&amp;<span class="hljs-keyword">self</span>, ptr: *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span>, layout: Layout)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>layout(alloc)</code></td>
+<td>必须满足 <code>size &gt; 0</code>（零大小分配行为未定义）</td>
+</tr>
+<tr>
+<td><code>ptr(dealloc)</code></td>
+<td>必须是同一分配器用相同 <code>layout</code> 分配的指针，且尚未释放</td>
+</tr>
+<tr>
+<td><code>layout(dealloc)</code></td>
+<td>必须与分配时完全相同（<code>size</code> 和 <code>align</code> 均须匹配）</td>
+</tr>
+</tbody></table>
+<p><strong>Safety 约束（实现方必须遵守）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>约束</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>不能 <code>panic</code> &#x2F; <code>unwind</code></td>
+<td><code>alloc</code> 或 <code>dealloc</code> 内部 <code>panic</code> 会导致未定义行为</td>
+</tr>
+<tr>
+<td>返回对齐指针或 <code>null</code></td>
+<td><code>alloc</code> 成功时返回的指针地址必须是 <code>layout.align()</code> 的倍数</td>
+</tr>
+<tr>
+<td><code>null</code> 表示失败</td>
+<td>分配失败返回 <code>null</code>，调用方通过 <code>handle_alloc_error</code> 处理</td>
+</tr>
+<tr>
+<td>不依赖分配发生</td>
+<td>编译器可消除看似必要的分配；不可依赖分配次数做逻辑判断</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::alloc::&#123;GlobalAlloc, Layout, System&#125;;<br><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">SimpleAllocator</span>;<br><br><span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">impl</span> <span class="hljs-title class_">GlobalAlloc</span> <span class="hljs-keyword">for</span> <span class="hljs-title class_">SimpleAllocator</span> &#123;<br>    <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">alloc</span>(&amp;<span class="hljs-keyword">self</span>, layout: Layout) <span class="hljs-punctuation">-&gt;</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">ptr</span> = <span class="hljs-keyword">unsafe</span> &#123; System.<span class="hljs-title function_ invoke__">alloc</span>(layout) &#125;;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[alloc]   size=&#123;&#125;, align=&#123;&#125;, success=&#123;&#125;&quot;</span>, layout.<span class="hljs-title function_ invoke__">size</span>(), layout.<span class="hljs-title function_ invoke__">align</span>(), !ptr.<span class="hljs-title function_ invoke__">is_null</span>());<br>        ptr<br>    &#125;<br>    <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">dealloc</span>(&amp;<span class="hljs-keyword">self</span>, ptr: *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span>, layout: Layout) &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[dealloc] size=&#123;&#125;, align=&#123;&#125;&quot;</span>, layout.<span class="hljs-title function_ invoke__">size</span>(), layout.<span class="hljs-title function_ invoke__">align</span>());<br>        <span class="hljs-keyword">unsafe</span> &#123; System.<span class="hljs-title function_ invoke__">dealloc</span>(ptr, layout) &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">allocator</span> = SimpleAllocator;<br>    <span class="hljs-keyword">unsafe</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">layout</span> = Layout::<span class="hljs-title function_ invoke__">from_size_align</span>(<span class="hljs-number">16</span>, <span class="hljs-number">8</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">ptr</span> = allocator.<span class="hljs-title function_ invoke__">alloc</span>(layout);<br>        <span class="hljs-built_in">assert!</span>(!ptr.<span class="hljs-title function_ invoke__">is_null</span>());<br>        *(ptr <span class="hljs-keyword">as</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u64</span>) = <span class="hljs-number">42</span>;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;写入值: &#123;&#125;&quot;</span>, *(ptr <span class="hljs-keyword">as</span> *<span class="hljs-keyword">const</span> <span class="hljs-type">u64</span>));<br>        allocator.<span class="hljs-title function_ invoke__">dealloc</span>(ptr, layout);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs routeros">[alloc]   <span class="hljs-attribute">size</span>=16, <span class="hljs-attribute">align</span>=8, <span class="hljs-attribute">success</span>=<span class="hljs-literal">true</span><br>写入值: 42<br>[dealloc] <span class="hljs-attribute">size</span>=16, <span class="hljs-attribute">align</span>=8<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-2-可选方法：realloc-alloc-zeroed"><a href="#3-2-可选方法：realloc-alloc-zeroed" class="headerlink" title="3.2 可选方法：realloc &#x2F; alloc_zeroed"></a>3.2 可选方法：realloc &#x2F; alloc_zeroed</h3><p>这两个方法有默认实现（基于 <code>alloc</code>&#x2F;<code>dealloc</code> 实现），可按需覆盖以提升性能。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">realloc</span>(&amp;<span class="hljs-keyword">self</span>, ptr: *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span>, layout: Layout, new_size: <span class="hljs-type">usize</span>) <span class="hljs-punctuation">-&gt;</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span><br><span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">alloc_zeroed</span>(&amp;<span class="hljs-keyword">self</span>, layout: Layout) <span class="hljs-punctuation">-&gt;</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ptr</code></td>
+<td>-</td>
+<td>原分配指针，必须与 <code>layout</code> 匹配</td>
+</tr>
+<tr>
+<td><code>layout</code></td>
+<td>-</td>
+<td>原始分配的布局</td>
+</tr>
+<tr>
+<td><code>new_size</code></td>
+<td>-</td>
+<td>新的字节大小；必须 <code>&gt; 0</code></td>
+</tr>
+</tbody></table>
+<p><code>realloc</code> 保证在范围 <code>0..min(layout.size(), new_size)</code> 内的字节内容不变；返回 <code>null</code> 时原 <code>ptr</code> 仍然有效（调用方负责继续使用或释放原指针）。<code>alloc_zeroed</code> 分配后将所有字节初始化为 0，等价于 <code>C</code> 的 <code>calloc</code>。</p>
+<p>以下 <code>SimpleAllocator</code> 仅实现 <code>alloc</code>&#x2F;<code>dealloc</code>（静默），覆盖 <code>realloc</code> 和 <code>alloc_zeroed</code> 以添加日志，演示两个可选方法的行为：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::alloc::&#123;GlobalAlloc, Layout, System&#125;;<br><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">SimpleAllocator</span>;<br><br><span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">impl</span> <span class="hljs-title class_">GlobalAlloc</span> <span class="hljs-keyword">for</span> <span class="hljs-title class_">SimpleAllocator</span> &#123;<br>    <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">alloc</span>(&amp;<span class="hljs-keyword">self</span>, layout: Layout) <span class="hljs-punctuation">-&gt;</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span> &#123;<br>        <span class="hljs-keyword">unsafe</span> &#123; System.<span class="hljs-title function_ invoke__">alloc</span>(layout) &#125;<br>    &#125;<br>    <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">dealloc</span>(&amp;<span class="hljs-keyword">self</span>, ptr: *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span>, layout: Layout) &#123;<br>        <span class="hljs-keyword">unsafe</span> &#123; System.<span class="hljs-title function_ invoke__">dealloc</span>(ptr, layout) &#125;<br>    &#125;<br>    <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">realloc</span>(&amp;<span class="hljs-keyword">self</span>, ptr: *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span>, layout: Layout, new_size: <span class="hljs-type">usize</span>) <span class="hljs-punctuation">-&gt;</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">new_ptr</span> = <span class="hljs-keyword">unsafe</span> &#123; System.<span class="hljs-title function_ invoke__">realloc</span>(ptr, layout, new_size) &#125;;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[realloc]      &#123;&#125; -&gt; &#123;&#125; 字节, success=&#123;&#125;&quot;</span>, layout.<span class="hljs-title function_ invoke__">size</span>(), new_size, !new_ptr.<span class="hljs-title function_ invoke__">is_null</span>());<br>        new_ptr<br>    &#125;<br>    <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">alloc_zeroed</span>(&amp;<span class="hljs-keyword">self</span>, layout: Layout) <span class="hljs-punctuation">-&gt;</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">ptr</span> = <span class="hljs-keyword">unsafe</span> &#123; System.<span class="hljs-title function_ invoke__">alloc_zeroed</span>(layout) &#125;;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[alloc_zeroed] size=&#123;&#125;, success=&#123;&#125;&quot;</span>, layout.<span class="hljs-title function_ invoke__">size</span>(), !ptr.<span class="hljs-title function_ invoke__">is_null</span>());<br>        ptr<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">allocator</span> = SimpleAllocator;<br>    <span class="hljs-keyword">unsafe</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">layout</span> = Layout::<span class="hljs-title function_ invoke__">from_size_align</span>(<span class="hljs-number">16</span>, <span class="hljs-number">8</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">ptr</span> = allocator.<span class="hljs-title function_ invoke__">alloc</span>(layout);<br>        <span class="hljs-built_in">assert!</span>(!ptr.<span class="hljs-title function_ invoke__">is_null</span>());<br>        *(ptr <span class="hljs-keyword">as</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u64</span>) = <span class="hljs-number">0xDEAD_BEEF</span>;<br><br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">new_ptr</span> = allocator.<span class="hljs-title function_ invoke__">realloc</span>(ptr, layout, <span class="hljs-number">32</span>);<br>        <span class="hljs-built_in">assert!</span>(!new_ptr.<span class="hljs-title function_ invoke__">is_null</span>());<br>        <span class="hljs-built_in">assert_eq!</span>(*(new_ptr <span class="hljs-keyword">as</span> *<span class="hljs-keyword">const</span> <span class="hljs-type">u64</span>), <span class="hljs-number">0xDEAD_BEEF</span>);<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;realloc 后原值保留: 0x&#123;:X&#125;&quot;</span>, *(new_ptr <span class="hljs-keyword">as</span> *<span class="hljs-keyword">const</span> <span class="hljs-type">u64</span>));<br>        allocator.<span class="hljs-title function_ invoke__">dealloc</span>(new_ptr, Layout::<span class="hljs-title function_ invoke__">from_size_align</span>(<span class="hljs-number">32</span>, <span class="hljs-number">8</span>).<span class="hljs-title function_ invoke__">unwrap</span>());<br><br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">zptr</span> = allocator.<span class="hljs-title function_ invoke__">alloc_zeroed</span>(Layout::<span class="hljs-title function_ invoke__">from_size_align</span>(<span class="hljs-number">8</span>, <span class="hljs-number">8</span>).<span class="hljs-title function_ invoke__">unwrap</span>());<br>        <span class="hljs-built_in">assert!</span>(!zptr.<span class="hljs-title function_ invoke__">is_null</span>());<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">all_zero</span> = (<span class="hljs-number">0</span>..<span class="hljs-number">8usize</span>).<span class="hljs-title function_ invoke__">all</span>(|i| *zptr.<span class="hljs-title function_ invoke__">add</span>(i) == <span class="hljs-number">0</span>);<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;alloc_zeroed 全零: &#123;all_zero&#125;&quot;</span>);<br>        allocator.<span class="hljs-title function_ invoke__">dealloc</span>(zptr, Layout::<span class="hljs-title function_ invoke__">from_size_align</span>(<span class="hljs-number">8</span>, <span class="hljs-number">8</span>).<span class="hljs-title function_ invoke__">unwrap</span>());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs routeros">[realloc]      16 -&gt; 32 字节, <span class="hljs-attribute">success</span>=<span class="hljs-literal">true</span><br>realloc 后原值保留: 0xDEADBEEF<br>[alloc_zeroed] <span class="hljs-attribute">size</span>=8, <span class="hljs-attribute">success</span>=<span class="hljs-literal">true</span><br>alloc_zeroed 全零: <span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>realloc</code> 和 <code>alloc_zeroed</code> 有默认实现（基于 <code>alloc</code>&#x2F;<code>dealloc</code>），但效率较低。此处通过覆盖这两个方法直接委托给 <code>System</code>，可利用平台原生的 <code>realloc</code> 和 <code>calloc</code> 提升性能。</p>
+</blockquote>
+<h2 id="四、System-分配器"><a href="#四、System-分配器" class="headerlink" title="四、System 分配器"></a>四、System 分配器</h2><p><code>System</code> 是 Rust 内置的操作系统分配器实现，始终可用，不依赖任何外部 <code>crate</code>。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::alloc::&#123;GlobalAlloc, Layout, System&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">unsafe</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">layout</span> = Layout::new::&lt;<span class="hljs-type">u64</span>&gt;();<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">ptr</span> = System.<span class="hljs-title function_ invoke__">alloc</span>(layout);<br>        <span class="hljs-built_in">assert!</span>(!ptr.<span class="hljs-title function_ invoke__">is_null</span>());<br>        *(ptr <span class="hljs-keyword">as</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u64</span>) = <span class="hljs-number">42</span>;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;值: &#123;&#125;&quot;</span>, *(ptr <span class="hljs-keyword">as</span> *<span class="hljs-keyword">const</span> <span class="hljs-type">u64</span>));<br>        System.<span class="hljs-title function_ invoke__">dealloc</span>(ptr, layout);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>属性</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>线程安全</td>
+<td>实现了 <code>Send + Sync</code>，可在多线程中使用</td>
+</tr>
+<tr>
+<td>底层实现</td>
+<td><code>Linux</code> → <code>malloc</code>&#x2F;<code>free</code>（<code>glibc</code>&#x2F;<code>musl</code>），<code>macOS</code> → <code>malloc</code>&#x2F;<code>free</code>，<code>Windows</code> → <code>HeapAlloc</code>&#x2F;<code>HeapFree</code></td>
+</tr>
+<tr>
+<td>失败行为</td>
+<td>返回 <code>null</code>，不 <code>abort</code></td>
+</tr>
+<tr>
+<td>大小调整</td>
+<td><code>realloc</code> 委托给平台 <code>realloc</code>，效率优于手动 <code>alloc</code>+<code>dealloc</code></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><code>System</code> 可作为自定义分配器的委托后端，避免从零实现平台适配。</p>
+</blockquote>
+<h2 id="五、模块级函数"><a href="#五、模块级函数" class="headerlink" title="五、模块级函数"></a>五、模块级函数</h2><p>这些函数直接操作<strong>当前程序的全局分配器</strong>，全部为 <code>unsafe</code>。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">alloc</span>(layout: Layout) <span class="hljs-punctuation">-&gt;</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">alloc_zeroed</span>(layout: Layout) <span class="hljs-punctuation">-&gt;</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">dealloc</span>(ptr: *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span>, layout: Layout)<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">realloc</span>(ptr: *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span>, layout: Layout, new_size: <span class="hljs-type">usize</span>) <span class="hljs-punctuation">-&gt;</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">handle_alloc_error</span>(layout: Layout) <span class="hljs-punctuation">-&gt;</span> !<br></code></pre></td></tr></table></figure>
+
+<p><strong>函数速查：</strong></p>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>返回值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>alloc(layout)</code></td>
+<td><code>*mut u8</code> 或 <code>null</code></td>
+<td>向全局分配器申请内存，不初始化</td>
+</tr>
+<tr>
+<td><code>alloc_zeroed(layout)</code></td>
+<td><code>*mut u8</code> 或 <code>null</code></td>
+<td>申请后清零，等价于 <code>calloc</code></td>
+</tr>
+<tr>
+<td><code>dealloc(ptr, layout)</code></td>
+<td><code>()</code></td>
+<td>释放指针；<code>layout</code> 必须与分配时一致</td>
+</tr>
+<tr>
+<td><code>realloc(ptr, layout, new_size)</code></td>
+<td><code>*mut u8</code> 或 <code>null</code></td>
+<td>调整大小；返回 <code>null</code> 时原 <code>ptr</code> 仍有效</td>
+</tr>
+<tr>
+<td><code>handle_alloc_error(layout)</code></td>
+<td><code>!</code>（不返回）</td>
+<td>触发分配失败处理（默认 <code>abort</code>），优于直接 <code>panic</code></td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::alloc::&#123;alloc, alloc_zeroed, dealloc, realloc, Layout&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">unsafe</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">layout</span> = Layout::array::&lt;<span class="hljs-type">u8</span>&gt;(<span class="hljs-number">16</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">ptr</span> = <span class="hljs-title function_ invoke__">alloc</span>(layout);<br>        <span class="hljs-built_in">assert!</span>(!ptr.<span class="hljs-title function_ invoke__">is_null</span>(), <span class="hljs-string">&quot;分配失败&quot;</span>);<br><br>        <span class="hljs-keyword">for</span> <span class="hljs-variable">i</span> <span class="hljs-keyword">in</span> <span class="hljs-number">0</span>..<span class="hljs-number">16usize</span> &#123;<br>            *ptr.<span class="hljs-title function_ invoke__">add</span>(i) = i <span class="hljs-keyword">as</span> <span class="hljs-type">u8</span>;<br>        &#125;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;alloc: 成功分配 &#123;&#125; 字节&quot;</span>, layout.<span class="hljs-title function_ invoke__">size</span>());<br><br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">new_ptr</span> = <span class="hljs-title function_ invoke__">realloc</span>(ptr, layout, <span class="hljs-number">32</span>);<br>        <span class="hljs-built_in">assert!</span>(!new_ptr.<span class="hljs-title function_ invoke__">is_null</span>(), <span class="hljs-string">&quot;realloc 失败&quot;</span>);<br><br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">preserved</span> = (<span class="hljs-number">0</span>..<span class="hljs-number">16usize</span>).<span class="hljs-title function_ invoke__">all</span>(|i| *new_ptr.<span class="hljs-title function_ invoke__">add</span>(i) == i <span class="hljs-keyword">as</span> <span class="hljs-type">u8</span>);<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;realloc: 扩展至 32 字节，原数据保留=&#123;preserved&#125;&quot;</span>);<br><br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">new_layout</span> = Layout::array::&lt;<span class="hljs-type">u8</span>&gt;(<span class="hljs-number">32</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>        <span class="hljs-title function_ invoke__">dealloc</span>(new_ptr, new_layout);<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;dealloc: 释放完毕&quot;</span>);<br><br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">layout2</span> = Layout::array::&lt;<span class="hljs-type">u8</span>&gt;(<span class="hljs-number">8</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">zero_ptr</span> = <span class="hljs-title function_ invoke__">alloc_zeroed</span>(layout2);<br>        <span class="hljs-built_in">assert!</span>(!zero_ptr.<span class="hljs-title function_ invoke__">is_null</span>());<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">all_zero</span> = (<span class="hljs-number">0</span>..<span class="hljs-number">8usize</span>).<span class="hljs-title function_ invoke__">all</span>(|i| *zero_ptr.<span class="hljs-title function_ invoke__">add</span>(i) == <span class="hljs-number">0</span>);<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;alloc_zeroed: 全零=&#123;all_zero&#125;&quot;</span>);<br>        <span class="hljs-title function_ invoke__">dealloc</span>(zero_ptr, layout2);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs nix"><span class="hljs-params">alloc:</span> 成功分配 <span class="hljs-number">16</span> 字节<br><span class="hljs-params">realloc:</span> 扩展至 <span class="hljs-number">32</span> 字节，原数据保留<span class="hljs-operator">=</span><span class="hljs-literal">true</span><br><span class="hljs-params">dealloc:</span> 释放完毕<br><span class="hljs-params">alloc_zeroed:</span> 全零<span class="hljs-operator">=</span><span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>分配失败时<strong>不要</strong> <code>panic</code>，应调用 <code>handle_alloc_error(layout)</code>，它会触发 <code>abort</code> 并输出分配失败的诊断信息。</p>
+</blockquote>
+<h2 id="六、-global-allocator-实战"><a href="#六、-global-allocator-实战" class="headerlink" title="六、#[global_allocator] 实战"></a>六、#[global_allocator] 实战</h2><p><code>#[global_allocator]</code> 属性将一个实现了 <code>GlobalAlloc</code> 的静态变量注册为全局分配器，替换默认的 <code>System</code>。<strong>每个二进制 crate 只能有一个</strong>。</p>
+<h3 id="6-1-委托-System-的基础示例"><a href="#6-1-委托-System-的基础示例" class="headerlink" title="6.1 委托 System 的基础示例"></a>6.1 委托 System 的基础示例</h3><p>最简实现：将所有操作委托给 <code>System</code>，保持默认行为不变，同时为后续扩展留出钩子。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::alloc::&#123;GlobalAlloc, Layout, System&#125;;<br><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">MyAllocator</span>;<br><br><span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">impl</span> <span class="hljs-title class_">GlobalAlloc</span> <span class="hljs-keyword">for</span> <span class="hljs-title class_">MyAllocator</span> &#123;<br>    <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">alloc</span>(&amp;<span class="hljs-keyword">self</span>, layout: Layout) <span class="hljs-punctuation">-&gt;</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span> &#123;<br>        <span class="hljs-keyword">unsafe</span> &#123; System.<span class="hljs-title function_ invoke__">alloc</span>(layout) &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">dealloc</span>(&amp;<span class="hljs-keyword">self</span>, ptr: *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span>, layout: Layout) &#123;<br>        <span class="hljs-keyword">unsafe</span> &#123; System.<span class="hljs-title function_ invoke__">dealloc</span>(ptr, layout) &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-meta">#[global_allocator]</span><br><span class="hljs-keyword">static</span> GLOBAL: MyAllocator = MyAllocator;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-comment">// Box/Vec/String 等都通过 MyAllocator 分配</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">v</span>: <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">i32</span>&gt; = <span class="hljs-built_in">vec!</span>[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>];<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, v);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-string">[1, 2, 3]</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="6-2-带统计的-CountingAllocator"><a href="#6-2-带统计的-CountingAllocator" class="headerlink" title="6.2 带统计的 CountingAllocator"></a>6.2 带统计的 CountingAllocator</h3><p>在 <code>alloc</code> 时用原子操作累加计数，统计程序生命周期内的总分配次数和字节数。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::alloc::&#123;GlobalAlloc, Layout, System&#125;;<br><span class="hljs-keyword">use</span> std::sync::atomic::&#123;AtomicUsize, Ordering&#125;;<br><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">CountingAllocator</span> &#123;<br>    alloc_count: AtomicUsize,<br>    alloc_bytes: AtomicUsize,<br>&#125;<br><br><span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">impl</span> <span class="hljs-title class_">GlobalAlloc</span> <span class="hljs-keyword">for</span> <span class="hljs-title class_">CountingAllocator</span> &#123;<br>    <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">alloc</span>(&amp;<span class="hljs-keyword">self</span>, layout: Layout) <span class="hljs-punctuation">-&gt;</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">ptr</span> = <span class="hljs-keyword">unsafe</span> &#123; System.<span class="hljs-title function_ invoke__">alloc</span>(layout) &#125;;<br>        <span class="hljs-keyword">if</span> !ptr.<span class="hljs-title function_ invoke__">is_null</span>() &#123;<br>            <span class="hljs-keyword">self</span>.alloc_count.<span class="hljs-title function_ invoke__">fetch_add</span>(<span class="hljs-number">1</span>, Ordering::Relaxed);<br>            <span class="hljs-keyword">self</span>.alloc_bytes.<span class="hljs-title function_ invoke__">fetch_add</span>(layout.<span class="hljs-title function_ invoke__">size</span>(), Ordering::Relaxed);<br>        &#125;<br>        ptr<br>    &#125;<br><br>    <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">dealloc</span>(&amp;<span class="hljs-keyword">self</span>, ptr: *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span>, layout: Layout) &#123;<br>        <span class="hljs-keyword">unsafe</span> &#123; System.<span class="hljs-title function_ invoke__">dealloc</span>(ptr, layout) &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-meta">#[global_allocator]</span><br><span class="hljs-keyword">static</span> ALLOCATOR: CountingAllocator = CountingAllocator &#123;<br>    alloc_count: AtomicUsize::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">0</span>),<br>    alloc_bytes: AtomicUsize::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">0</span>),<br>&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">_v</span>: <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">i32</span>&gt; = <span class="hljs-type">Vec</span>::<span class="hljs-title function_ invoke__">with_capacity</span>(<span class="hljs-number">100</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">_s</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello, allocator&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">_b</span> = <span class="hljs-type">Box</span>::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">42u64</span>);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;累计分配次数: &#123;&#125;&quot;</span>, ALLOCATOR.alloc_count.<span class="hljs-title function_ invoke__">load</span>(Ordering::Relaxed));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;累计分配字节: &#123;&#125;&quot;</span>, ALLOCATOR.alloc_bytes.<span class="hljs-title function_ invoke__">load</span>(Ordering::Relaxed));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">累计分配次数: 5</span><br><span class="hljs-section">累计分配字节: 1996</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>计数包含 Rust 运行时启动阶段的内部分配（如 <code>panic handler</code>、标准流初始化等），因此次数和字节数会高于用户代码的直接分配量。</p>
+</blockquote>
+<h3 id="6-3-内存限制-LimitedAllocator"><a href="#6-3-内存限制-LimitedAllocator" class="headerlink" title="6.3 内存限制 LimitedAllocator"></a>6.3 内存限制 LimitedAllocator</h3><p>超过总量上限时返回 <code>null</code>，阻止进一步分配。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::alloc::&#123;GlobalAlloc, Layout, System&#125;;<br><span class="hljs-keyword">use</span> std::sync::atomic::&#123;AtomicUsize, Ordering&#125;;<br><br><span class="hljs-keyword">const</span> MAX_BYTES: <span class="hljs-type">usize</span> = <span class="hljs-number">4</span> * <span class="hljs-number">1024</span>; <span class="hljs-comment">// 4 KB 上限</span><br><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">LimitedAllocator</span> &#123;<br>    used: AtomicUsize,<br>&#125;<br><br><span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">impl</span> <span class="hljs-title class_">GlobalAlloc</span> <span class="hljs-keyword">for</span> <span class="hljs-title class_">LimitedAllocator</span> &#123;<br>    <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">alloc</span>(&amp;<span class="hljs-keyword">self</span>, layout: Layout) <span class="hljs-punctuation">-&gt;</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">size</span> = layout.<span class="hljs-title function_ invoke__">size</span>();<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">prev</span> = <span class="hljs-keyword">self</span>.used.<span class="hljs-title function_ invoke__">fetch_add</span>(size, Ordering::Relaxed);<br>        <span class="hljs-keyword">if</span> prev + size &gt; MAX_BYTES &#123;<br>            <span class="hljs-keyword">self</span>.used.<span class="hljs-title function_ invoke__">fetch_sub</span>(size, Ordering::Relaxed);<br>            <span class="hljs-keyword">return</span> std::ptr::<span class="hljs-title function_ invoke__">null_mut</span>();<br>        &#125;<br>        <span class="hljs-keyword">unsafe</span> &#123; System.<span class="hljs-title function_ invoke__">alloc</span>(layout) &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">dealloc</span>(&amp;<span class="hljs-keyword">self</span>, ptr: *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span>, layout: Layout) &#123;<br>        <span class="hljs-keyword">self</span>.used.<span class="hljs-title function_ invoke__">fetch_sub</span>(layout.<span class="hljs-title function_ invoke__">size</span>(), Ordering::Relaxed);<br>        <span class="hljs-keyword">unsafe</span> &#123; System.<span class="hljs-title function_ invoke__">dealloc</span>(ptr, layout) &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-meta">#[global_allocator]</span><br><span class="hljs-keyword">static</span> ALLOCATOR: LimitedAllocator = LimitedAllocator &#123;<br>    used: AtomicUsize::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">0</span>),<br>&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">small</span>: <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">u8</span>&gt; = <span class="hljs-type">Vec</span>::<span class="hljs-title function_ invoke__">with_capacity</span>(<span class="hljs-number">100</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;100 字节分配成功，当前用量: &#123;&#125;&quot;</span>, ALLOCATOR.used.<span class="hljs-title function_ invoke__">load</span>(Ordering::Relaxed));<br>    <span class="hljs-title function_ invoke__">drop</span>(small);<br><br>    <span class="hljs-comment">// 直接调用 alloc 以检测 null，避免 handle_alloc_error abort</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">layout</span> = Layout::array::&lt;<span class="hljs-type">u8</span>&gt;(<span class="hljs-number">5</span> * <span class="hljs-number">1024</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">ptr</span> = <span class="hljs-keyword">unsafe</span> &#123; std::alloc::<span class="hljs-title function_ invoke__">alloc</span>(layout) &#125;;<br>    <span class="hljs-keyword">if</span> ptr.<span class="hljs-title function_ invoke__">is_null</span>() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;5 KB 分配被拒绝（超出 4 KB 限制）&quot;</span>);<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-keyword">unsafe</span> &#123; std::alloc::<span class="hljs-title function_ invoke__">dealloc</span>(ptr, layout) &#125;;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight basic"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs basic"><span class="hljs-symbol">100 </span>字节分配成功，当前用量: <span class="hljs-number">648</span><br><span class="hljs-symbol">5 </span>KB 分配被拒绝（超出 <span class="hljs-number">4</span> KB 限制）<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>LimitedAllocator</code> 使用 <code>Relaxed</code> 内存序是有意为之：分配器本身不建立 <code>happens-before</code> 关系，仅计数；在多线程场景下可能存在少量超量分配（<code>TOCTOU</code>），若需严格限制应改用 <code>SeqCst</code> 或将检查+更新用 <code>compare_exchange</code> 原子化。</p>
+</blockquote>
+<h2 id="七、常见陷阱与最佳实践"><a href="#七、常见陷阱与最佳实践" class="headerlink" title="七、常见陷阱与最佳实践"></a>七、常见陷阱与最佳实践</h2><h3 id="7-1-优化器可能消除分配"><a href="#7-1-优化器可能消除分配" class="headerlink" title="7.1 优化器可能消除分配"></a>7.1 优化器可能消除分配</h3><p>Rust 编译器允许消除”未使用结果”的分配。不能通过计数分配次数来做业务逻辑判断：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// 错误示范：编译器可能优化掉 Box 的分配</span><br><span class="hljs-keyword">let</span> <span class="hljs-variable">_b</span> = <span class="hljs-type">Box</span>::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">42</span>); <span class="hljs-comment">// 若结果未使用，分配可能被消除</span><br></code></pre></td></tr></table></figure>
+
+<p>如需阻止消除，通过 <code>std::hint::black_box</code> 或真实使用该值。</p>
+<h3 id="7-2-GlobalAlloc-实现中禁止-panic"><a href="#7-2-GlobalAlloc-实现中禁止-panic" class="headerlink" title="7.2 GlobalAlloc 实现中禁止 panic"></a>7.2 <code>GlobalAlloc</code> 实现中禁止 <code>panic</code></h3><p><code>alloc</code>&#x2F;<code>dealloc</code> 内部 <code>panic</code> 会触发 <code>double-panic</code>，导致 <code>abort</code> 或未定义行为。需要错误处理时，应返回 <code>null</code>（分配失败）或静默忽略。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// 错误示范</span><br><span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">alloc</span>(&amp;<span class="hljs-keyword">self</span>, layout: Layout) <span class="hljs-punctuation">-&gt;</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span> &#123;<br>    <span class="hljs-built_in">assert!</span>(layout.<span class="hljs-title function_ invoke__">size</span>() &gt; <span class="hljs-number">0</span>); <span class="hljs-comment">// ← 禁止！panic 在分配器中是 UB</span><br>    <span class="hljs-keyword">unsafe</span> &#123; System.<span class="hljs-title function_ invoke__">alloc</span>(layout) &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="7-3-零大小-Layout-的处理"><a href="#7-3-零大小-Layout-的处理" class="headerlink" title="7.3 零大小 Layout 的处理"></a>7.3 零大小 Layout 的处理</h3><p><code>GlobalAlloc::alloc</code> 的 safety 要求 <code>layout.size() &gt; 0</code>，传入零大小布局是未定义行为。Rust 高层类型（<code>ZST</code>）不会触发实际分配，但手动调用 <code>alloc</code> 时需自行检查：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">if</span> layout.<span class="hljs-title function_ invoke__">size</span>() == <span class="hljs-number">0</span> &#123;<br>    <span class="hljs-keyword">return</span> layout.<span class="hljs-title function_ invoke__">align</span>() <span class="hljs-keyword">as</span> *<span class="hljs-keyword">mut</span> <span class="hljs-type">u8</span>; <span class="hljs-comment">// 返回对齐的非 null 哨兵指针</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="7-4-何时需要自定义分配器"><a href="#7-4-何时需要自定义分配器" class="headerlink" title="7.4 何时需要自定义分配器"></a>7.4 何时需要自定义分配器</h3><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐方案</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>性能分析 &#x2F; 内存泄漏排查</td>
+<td><code>CountingAllocator</code> + 统计日志</td>
+</tr>
+<tr>
+<td>嵌入式 &#x2F; <code>no_std</code></td>
+<td>静态内存池分配器，替换 <code>System</code></td>
+</tr>
+<tr>
+<td>内存用量限制（沙箱）</td>
+<td><code>LimitedAllocator</code>，返回 null 触发 <code>handle_alloc_error</code></td>
+</tr>
+<tr>
+<td>内存对齐有特殊要求</td>
+<td>覆盖 <code>alloc</code>，强制 <code>posix_memalign</code> &#x2F; <code>aligned_alloc</code></td>
+</tr>
+<tr>
+<td>调试：检测双重释放</td>
+<td>维护已分配地址集合，<code>dealloc</code> 时断言</td>
+</tr>
+</tbody></table>
+<h2 id="八、Layout-方法参数速查表"><a href="#八、Layout-方法参数速查表" class="headerlink" title="八、Layout 方法参数速查表"></a>八、Layout 方法参数速查表</h2><h3 id="构造方法"><a href="#构造方法" class="headerlink" title="构造方法"></a>构造方法</h3><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数</th>
+<th>返回值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Layout::new::&lt;T&gt;()</code></td>
+<td>无（泛型）</td>
+<td><code>Layout</code></td>
+<td>从类型推导 size 和 align</td>
+</tr>
+<tr>
+<td><code>Layout::from_size_align(size, align)</code></td>
+<td><code>size: usize</code>，<code>align: usize</code></td>
+<td><code>Result&lt;Layout, LayoutError&gt;</code></td>
+<td>align 须为 2 的幂；size ≤ isize::MAX</td>
+</tr>
+<tr>
+<td><code>Layout::array::&lt;T&gt;(n)</code></td>
+<td><code>n: usize</code></td>
+<td><code>Result&lt;Layout, LayoutError&gt;</code></td>
+<td>等价于 <code>new::&lt;T&gt;().repeat(n)</code></td>
+</tr>
+</tbody></table>
+<h3 id="访问方法"><a href="#访问方法" class="headerlink" title="访问方法"></a>访问方法</h3><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数</th>
+<th>返回值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>layout.size()</code></td>
+<td>无</td>
+<td><code>usize</code></td>
+<td>内存块字节数</td>
+</tr>
+<tr>
+<td><code>layout.align()</code></td>
+<td>无</td>
+<td><code>usize</code></td>
+<td>对齐要求（2 的幂）</td>
+</tr>
+</tbody></table>
+<h3 id="组合方法"><a href="#组合方法" class="headerlink" title="组合方法"></a>组合方法</h3><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>参数</th>
+<th>返回值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>layout.extend(next)</code></td>
+<td><code>next: Layout</code></td>
+<td><code>Result&lt;(Layout, usize), LayoutError&gt;</code></td>
+<td>组合两布局；返回 <code>(合并布局, next的偏移)</code></td>
+</tr>
+<tr>
+<td><code>layout.pad_to_align()</code></td>
+<td>无</td>
+<td><code>Layout</code></td>
+<td>补尾部填充，使 size 为 align 的倍数</td>
+</tr>
+<tr>
+<td><code>layout.repeat(n)</code></td>
+<td><code>n: usize</code></td>
+<td><code>Result&lt;(Layout, usize), LayoutError&gt;</code></td>
+<td>重复 n 次；返回 <code>(数组布局, 步长stride)</code></td>
+</tr>
+</tbody></table>
+<h3 id="GlobalAlloc-方法"><a href="#GlobalAlloc-方法" class="headerlink" title="GlobalAlloc 方法"></a>GlobalAlloc 方法</h3><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>必需</th>
+<th>参数</th>
+<th>返回值</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>alloc(layout)</code></td>
+<td>是</td>
+<td><code>layout: Layout</code>（size&gt;0）</td>
+<td><code>*mut u8</code>（null&#x3D;失败）</td>
+</tr>
+<tr>
+<td><code>dealloc(ptr, layout)</code></td>
+<td>是</td>
+<td><code>ptr: *mut u8</code>，<code>layout: Layout</code></td>
+<td><code>()</code></td>
+</tr>
+<tr>
+<td><code>realloc(ptr, layout, new_size)</code></td>
+<td>否（有默认）</td>
+<td><code>ptr</code>，<code>layout</code>，<code>new_size: usize</code></td>
+<td><code>*mut u8</code>（null&#x3D;失败，原ptr仍有效）</td>
+</tr>
+<tr>
+<td><code>alloc_zeroed(layout)</code></td>
+<td>否（有默认）</td>
+<td><code>layout: Layout</code>（size&gt;0）</td>
+<td><code>*mut u8</code>（null&#x3D;失败）</td>
+</tr>
+</tbody></table>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Rust/" class="print-no-link">#Rust</a>
+      
+        <a href="/tags/%E5%86%85%E5%AD%98%E7%AE%A1%E7%90%86/" class="print-no-link">#内存管理</a>
+      
+        <a href="/tags/alloc/" class="print-no-link">#alloc</a>
+      
+        <a href="/tags/GlobalAlloc/" class="print-no-link">#GlobalAlloc</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/rust/std-any.html" title="[标准库] std::any 模块介绍">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">[标准库] std::any 模块介绍</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/python/asyncio.html" title="Python asyncio 从入门到实践">
+                        <span class="hidden-mobile">Python asyncio 从入门到实践</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

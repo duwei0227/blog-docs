@@ -1,0 +1,1180 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Rust 是静态强类型语言，编译期类型信息通常已全部确定。但现实工程中——插件系统、事件总线、日志框架——往往需要在运行时询问”这个值究竟是什么类型？”。std::any 模块正是为此而生：它提供 Any trait、TypeId 结构体以及若干辅助函数，让你在保持 Rust 类型安全的前提下实现运行时类型反射（runtime type reflection）。 一、模块概述std::any 自">
+  
+  
+  
+  <title>[标准库] std::any 模块介绍 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="[标准库] std::any 模块介绍"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-12 14:00" pubdate>
+          2026年5月12日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          9.9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          83 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">[标准库] std::any 模块介绍</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>Rust 是静态强类型语言，编译期类型信息通常已全部确定。但现实工程中——插件系统、事件总线、日志框架——往往需要在运行时询问”这个值究竟是什么类型？”。<code>std::any</code> 模块正是为此而生：它提供 <code>Any</code> <code>trait</code>、<code>TypeId</code> 结构体以及若干辅助函数，让你在保持 Rust 类型安全的前提下实现运行时类型反射（<code>runtime type reflection</code>）。</p>
+<h2 id="一、模块概述"><a href="#一、模块概述" class="headerlink" title="一、模块概述"></a>一、模块概述</h2><p><code>std::any</code> 自 <code>Rust 1.0.0</code> 起稳定，核心组件如下：</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Any</code></td>
+<td><code>trait</code></td>
+<td>为所有 <code>&#39;static</code> 类型自动实现，是运行时类型检查的基础</td>
+</tr>
+<tr>
+<td><code>TypeId</code></td>
+<td><code>struct</code></td>
+<td>每个类型唯一的不透明标识符</td>
+</tr>
+<tr>
+<td><code>type_name::&lt;T&gt;()</code></td>
+<td><code>fn</code></td>
+<td>返回类型的可读名称字符串</td>
+</tr>
+<tr>
+<td><code>type_name_of_val(&amp;val)</code></td>
+<td><code>fn</code></td>
+<td>返回值所属类型的可读名称</td>
+</tr>
+</tbody></table>
+<h2 id="二、TypeId-与类型唯一标识"><a href="#二、TypeId-与类型唯一标识" class="headerlink" title="二、TypeId 与类型唯一标识"></a>二、TypeId 与类型唯一标识</h2><h3 id="2-1-基本用法"><a href="#2-1-基本用法" class="headerlink" title="2.1 基本用法"></a>2.1 基本用法</h3><p><code>TypeId</code> 是一个不透明（<code>opaque</code>）的结构体，每个具体类型在同一编译产物中对应唯一的 <code>TypeId</code>。两个 <code>TypeId</code> 相等，当且仅当它们代表同一类型。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust">TypeId::of::&lt;T&gt;() <span class="hljs-punctuation">-&gt;</span> TypeId<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>T</code></td>
+<td>-</td>
+<td>目标类型（<code>type parameter</code>），需满足 <code>&#39;static</code> 约束</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::any::TypeId;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">demo_typeid</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">id_i32</span> = TypeId::of::&lt;<span class="hljs-type">i32</span>&gt;();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">id_i64</span> = TypeId::of::&lt;<span class="hljs-type">i64</span>&gt;();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">id_str</span> = TypeId::of::&lt;&amp;<span class="hljs-type">str</span>&gt;();<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;i32 == i32: &#123;&#125;&quot;</span>, id_i32 == TypeId::of::&lt;<span class="hljs-type">i32</span>&gt;());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;i32 == i64: &#123;&#125;&quot;</span>, id_i32 == id_i64);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;i32 == &amp;str: &#123;&#125;&quot;</span>, id_i32 == id_str);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;TypeId of i32: &#123;:?&#125;&quot;</span>, id_i32);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-type">i32</span> == <span class="hljs-type">i32</span>: <span class="hljs-literal">true</span><br><span class="hljs-type">i32</span> == <span class="hljs-type">i64</span>: <span class="hljs-literal">false</span><br><span class="hljs-type">i32</span> == &amp;<span class="hljs-type">str</span>: <span class="hljs-literal">false</span><br>TypeId of <span class="hljs-type">i32</span>: <span class="hljs-title function_ invoke__">TypeId</span>(<span class="hljs-number">0x56ced5e4a15bd89050bb9674fa2df013</span>)<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>TypeId</code> 的 <code>Debug</code> 输出包含一个内部哈希值，该值是实现细节，不同编译器版本或优化等级下可能不同，不应依赖其具体数值。</p>
+</blockquote>
+<h3 id="2-2-TypeId-的限制"><a href="#2-2-TypeId-的限制" class="headerlink" title="2.2 TypeId 的限制"></a>2.2 TypeId 的限制</h3><p><code>TypeId::of::&lt;T&gt;()</code> 要求 <code>T: &#39;static</code>，即类型不能包含非 <code>&#39;static</code> 的生命周期引用。例如 <code>TypeId::of::&lt;&amp;&#39;a str&gt;()</code>（<code>&#39;a</code> 非 <code>&#39;static</code>）无法编译。</p>
+<h2 id="三、Any-trait-与-static-约束"><a href="#三、Any-trait-与-static-约束" class="headerlink" title="三、Any trait 与 &#39;static 约束"></a>三、Any trait 与 <code>&#39;static</code> 约束</h2><h3 id="3-1-定义"><a href="#3-1-定义" class="headerlink" title="3.1 定义"></a>3.1 定义</h3><p><code>Any</code> <code>trait</code> 定义极为简单：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">trait</span> <span class="hljs-title class_">Any</span>: <span class="hljs-symbol">&#x27;static</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">type_id</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> TypeId;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>Rust 编译器为所有满足 <code>&#39;static</code> 的类型自动实现 <code>Any</code>，无需手动编写。换句话说，只要一个类型不包含非 <code>&#39;static</code> 引用，它就自动具备 <code>Any</code> 的能力。</p>
+<h3 id="3-2-static-约束的含义"><a href="#3-2-static-约束的含义" class="headerlink" title="3.2 &#39;static 约束的含义"></a>3.2 <code>&#39;static</code> 约束的含义</h3><p><code>&#39;static</code> 并不意味着值必须活到程序结束，而是说该类型<strong>自身</strong>不携带任何短命引用。以下类型满足 <code>&#39;static</code>：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th align="center">满足 <code>&#39;static</code>？</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>i32</code>, <code>u64</code>, <code>bool</code></td>
+<td align="center">✅</td>
+<td>基本类型，无引用</td>
+</tr>
+<tr>
+<td><code>String</code>, <code>Vec&lt;T&gt;</code></td>
+<td align="center">✅</td>
+<td>拥有所有权，无借用</td>
+</tr>
+<tr>
+<td><code>Box&lt;T&gt;</code> where <code>T: &#39;static</code></td>
+<td align="center">✅</td>
+<td>传递性满足</td>
+</tr>
+<tr>
+<td><code>&amp;&#39;static str</code></td>
+<td align="center">✅</td>
+<td>引用生命周期为 <code>&#39;static</code></td>
+</tr>
+<tr>
+<td><code>&amp;&#39;a str</code>（<code>&#39;a</code> 非 <code>&#39;static</code>）</td>
+<td align="center">❌</td>
+<td>携带短命引用</td>
+</tr>
+<tr>
+<td>含 <code>&amp;&#39;a T</code> 字段的结构体</td>
+<td align="center">❌</td>
+<td>生命周期参数传染</td>
+</tr>
+</tbody></table>
+<h2 id="四、dyn-Any-的三种形式"><a href="#四、dyn-Any-的三种形式" class="headerlink" title="四、dyn Any 的三种形式"></a>四、dyn Any 的三种形式</h2><p><code>Any</code> 真正发挥作用时，几乎总以 <code>dyn Any</code> <code>trait object</code> 的形式出现。根据指针类型不同，可用方法也不同。</p>
+<h3 id="4-1-方法总览"><a href="#4-1-方法总览" class="headerlink" title="4.1 方法总览"></a>4.1 方法总览</h3><table>
+<thead>
+<tr>
+<th>指针形式</th>
+<th>可用方法</th>
+<th>返回值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&amp;dyn Any</code></td>
+<td><code>.is::&lt;T&gt;()</code></td>
+<td><code>bool</code></td>
+<td>判断内部值是否为类型 <code>T</code></td>
+</tr>
+<tr>
+<td><code>&amp;dyn Any</code></td>
+<td><code>.downcast_ref::&lt;T&gt;()</code></td>
+<td><code>Option&lt;&amp;T&gt;</code></td>
+<td>不可变借用转型</td>
+</tr>
+<tr>
+<td><code>&amp;dyn Any</code></td>
+<td><code>.type_id()</code></td>
+<td><code>TypeId</code></td>
+<td>获取内部值的类型 ID</td>
+</tr>
+<tr>
+<td><code>&amp;mut dyn Any</code></td>
+<td><code>.downcast_mut::&lt;T&gt;()</code></td>
+<td><code>Option&lt;&amp;mut T&gt;</code></td>
+<td>可变借用转型</td>
+</tr>
+<tr>
+<td><code>Box&lt;dyn Any&gt;</code></td>
+<td><code>.downcast::&lt;T&gt;()</code></td>
+<td><code>Result&lt;Box&lt;T&gt;, Box&lt;dyn Any&gt;&gt;</code></td>
+<td>消费 <code>Box</code>，转型为具体类型</td>
+</tr>
+</tbody></table>
+<h3 id="4-2-dyn-Any-—-is-与-downcast-ref"><a href="#4-2-dyn-Any-—-is-与-downcast-ref" class="headerlink" title="4.2 &amp;dyn Any — is 与 downcast_ref"></a>4.2 <code>&amp;dyn Any</code> — <code>is</code> 与 <code>downcast_ref</code></h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust">val.is::&lt;T&gt;() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">bool</span><br>val.downcast_ref::&lt;T&gt;() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Option</span>&lt;&amp;T&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>T</code></td>
+<td>-</td>
+<td>目标具体类型，需 <code>&#39;static</code></td>
+</tr>
+</tbody></table>
+<p><code>.is::&lt;T&gt;()</code> 等价于 <code>val.downcast_ref::&lt;T&gt;().is_some()</code>，实践中直接用 <code>downcast_ref</code> 配合 <code>if let</code> 更惯用。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::any::Any;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">describe</span>(val: &amp;<span class="hljs-keyword">dyn</span> Any) &#123;<br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(s) = val.downcast_ref::&lt;<span class="hljs-type">String</span>&gt;() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;String (len=&#123;&#125;): &#123;&#125;&quot;</span>, s.<span class="hljs-title function_ invoke__">len</span>(), s);<br>    &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(n) = val.downcast_ref::&lt;<span class="hljs-type">i32</span>&gt;() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;i32: &#123;&#125;&quot;</span>, n);<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;other type&quot;</span>);<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">x</span>: <span class="hljs-type">i32</span> = <span class="hljs-number">42</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello world&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">f</span>: <span class="hljs-type">f64</span> = <span class="hljs-number">3.14</span>;<br><br>    <span class="hljs-title function_ invoke__">describe</span>(&amp;x);<br>    <span class="hljs-title function_ invoke__">describe</span>(&amp;s);<br>    <span class="hljs-title function_ invoke__">describe</span>(&amp;f);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">i32</span>: <span class="hljs-number">42</span><br><span class="hljs-attribute">String</span> (len=<span class="hljs-number">11</span>): hello world<br><span class="hljs-attribute">other</span> type<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-3-mut-dyn-Any-—-downcast-mut"><a href="#4-3-mut-dyn-Any-—-downcast-mut" class="headerlink" title="4.3 &amp;mut dyn Any — downcast_mut"></a>4.3 <code>&amp;mut dyn Any</code> — <code>downcast_mut</code></h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust">val.downcast_mut::&lt;T&gt;() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Option</span>&lt;&amp;<span class="hljs-keyword">mut</span> T&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>T</code></td>
+<td>-</td>
+<td>目标具体类型</td>
+</tr>
+</tbody></table>
+<p>转型成功后可直接修改原始值，无需任何 <code>unsafe</code>。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::any::Any;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">double_if_i32</span>(val: &amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">dyn</span> Any) &#123;<br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(n) = val.downcast_mut::&lt;<span class="hljs-type">i32</span>&gt;() &#123;<br>        *n *= <span class="hljs-number">2</span>;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">x</span>: <span class="hljs-type">i32</span> = <span class="hljs-number">21</span>;<br>    <span class="hljs-title function_ invoke__">double_if_i32</span>(&amp;<span class="hljs-keyword">mut</span> x);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;x after double: &#123;&#125;&quot;</span>, x);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">s</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br>    <span class="hljs-title function_ invoke__">double_if_i32</span>(&amp;<span class="hljs-keyword">mut</span> s);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;s unchanged: &#123;&#125;&quot;</span>, s);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight coq"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs coq">x <span class="hljs-built_in">after</span> <span class="hljs-built_in">double</span>: <span class="hljs-number">42</span><br>s unchanged: hello<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-4-Box-—-downcast"><a href="#4-4-Box-—-downcast" class="headerlink" title="4.4 Box&lt;dyn Any&gt; — downcast"></a>4.4 <code>Box&lt;dyn Any&gt;</code> — <code>downcast</code></h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust">boxed.downcast::&lt;T&gt;() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;<span class="hljs-type">Box</span>&lt;T&gt;, <span class="hljs-type">Box</span>&lt;<span class="hljs-keyword">dyn</span> Any&gt;&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>T</code></td>
+<td>-</td>
+<td>目标具体类型</td>
+</tr>
+</tbody></table>
+<p>转型失败时，<code>Err</code> 变体返回原始 <code>Box&lt;dyn Any&gt;</code>，所有权不会丢失，可继续尝试其他类型。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::any::Any;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">boxed</span>: <span class="hljs-type">Box</span>&lt;<span class="hljs-keyword">dyn</span> Any&gt; = <span class="hljs-type">Box</span>::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">42i32</span>);<br>    <span class="hljs-keyword">match</span> boxed.downcast::&lt;<span class="hljs-type">i32</span>&gt;() &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(n) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;downcast OK: &#123;&#125;&quot;</span>, n),<br>        <span class="hljs-title function_ invoke__">Err</span>(_) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;downcast failed&quot;</span>),<br>    &#125;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">boxed2</span>: <span class="hljs-type">Box</span>&lt;<span class="hljs-keyword">dyn</span> Any&gt; = <span class="hljs-type">Box</span>::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br>    <span class="hljs-keyword">match</span> boxed2.downcast::&lt;<span class="hljs-type">i32</span>&gt;() &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(n) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;downcast OK: &#123;&#125;&quot;</span>, n),<br>        <span class="hljs-title function_ invoke__">Err</span>(_) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;downcast to i32 failed&quot;</span>),<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight fsharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs fsharp"><span class="hljs-keyword">downcast</span> OK<span class="hljs-operator">:</span> 42<br><span class="hljs-keyword">downcast</span> <span class="hljs-keyword">to</span> i32 failed<br></code></pre></td></tr></table></figure>
+
+<h2 id="五、智能指针中的-type-id-陷阱"><a href="#五、智能指针中的-type-id-陷阱" class="headerlink" title="五、智能指针中的 type_id() 陷阱"></a>五、智能指针中的 <code>type_id()</code> 陷阱</h2><p>直接在 <code>Box&lt;dyn Any&gt;</code> 上调用 <code>.type_id()</code> 会返回<strong>容器</strong>的 <code>TypeId</code>，而非内部值的 <code>TypeId</code>，这是一个常见误区。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::any::&#123;Any, TypeId&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">boxed</span>: <span class="hljs-type">Box</span>&lt;<span class="hljs-keyword">dyn</span> Any&gt; = <span class="hljs-type">Box</span>::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">3i32</span>);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">actual_id</span> = (&amp;*boxed).<span class="hljs-title function_ invoke__">type_id</span>();  <span class="hljs-comment">// 解引用后取 &amp;dyn Any</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">boxed_id</span>  = boxed.<span class="hljs-title function_ invoke__">type_id</span>();      <span class="hljs-comment">// 直接调用，得到 Box 的 TypeId</span><br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;actual == i32: &#123;&#125;&quot;</span>, actual_id == TypeId::of::&lt;<span class="hljs-type">i32</span>&gt;());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;boxed  == i32: &#123;&#125;&quot;</span>, boxed_id == TypeId::of::&lt;<span class="hljs-type">i32</span>&gt;());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;boxed  == Box&lt;dyn Any&gt;: &#123;&#125;&quot;</span>, boxed_id == TypeId::of::&lt;<span class="hljs-type">Box</span>&lt;<span class="hljs-keyword">dyn</span> Any&gt;&gt;());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">actual</span> == i32: <span class="hljs-literal">true</span><br><span class="hljs-attr">boxed</span>  == i32: <span class="hljs-literal">false</span><br><span class="hljs-attr">boxed</span>  == Box&lt;dyn Any&gt;: <span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>规则：要获取 <code>Box&lt;dyn Any&gt;</code> 或 <code>Arc&lt;dyn Any&gt;</code> 内部值的 <code>TypeId</code>，必须先解引用为 <code>&amp;dyn Any</code>，再调用 <code>.type_id()</code>：<code>(&amp;*smart_ptr).type_id()</code>。</p>
+</blockquote>
+<h2 id="六、type-name-与-type-name-of-val"><a href="#六、type-name-与-type-name-of-val" class="headerlink" title="六、type_name 与 type_name_of_val"></a>六、<code>type_name</code> 与 <code>type_name_of_val</code></h2><p>这两个函数用于调试和日志，返回人类可读的类型名称字符串。</p>
+<h3 id="6-1-type-name"><a href="#6-1-type-name" class="headerlink" title="6.1 type_name::&lt;T&gt;()"></a>6.1 <code>type_name::&lt;T&gt;()</code></h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust">type_name::&lt;T&gt;() <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>T</code></td>
+<td>-</td>
+<td>目标类型（编译期已知）</td>
+</tr>
+</tbody></table>
+<h3 id="6-2-type-name-of-val-val"><a href="#6-2-type-name-of-val-val" class="headerlink" title="6.2 type_name_of_val(&amp;val)"></a>6.2 <code>type_name_of_val(&amp;val)</code></h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-title function_ invoke__">type_name_of_val</span>(val: &amp;T) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>val</code></td>
+<td>-</td>
+<td>任意值的不可变引用，类型由编译器推断</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::any::&#123;type_name, type_name_of_val&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, type_name::&lt;<span class="hljs-type">i32</span>&gt;());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, type_name::&lt;<span class="hljs-type">Vec</span>&lt;<span class="hljs-type">String</span>&gt;&gt;());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, type_name::&lt;<span class="hljs-type">Option</span>&lt;&amp;<span class="hljs-type">str</span>&gt;&gt;());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">x</span> = <span class="hljs-number">42u64</span>;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">type_name_of_val</span>(&amp;x));<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">v</span>: <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">i32</span>&gt; = <span class="hljs-built_in">vec!</span>[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>];<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">type_name_of_val</span>(&amp;v));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-type">i32</span><br>alloc::vec::<span class="hljs-type">Vec</span>&lt;alloc::string::<span class="hljs-type">String</span>&gt;<br>core::option::<span class="hljs-type">Option</span>&lt;&amp;<span class="hljs-type">str</span>&gt;<br><span class="hljs-type">u64</span><br>alloc::vec::<span class="hljs-type">Vec</span>&lt;<span class="hljs-type">i32</span>&gt;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>type_name</code> 返回的是<strong>完整限定路径</strong>（<code>fully qualified path</code>），如 <code>alloc::vec::Vec&lt;alloc::string::String&gt;</code>，而非简写 <code>Vec&lt;String&gt;</code>。仅适合调试用途，不应在程序逻辑中依赖其格式，因为 Rust 保留随版本变化的权利。</p>
+</blockquote>
+<h2 id="七、综合实战：日志分发与插件系统"><a href="#七、综合实战：日志分发与插件系统" class="headerlink" title="七、综合实战：日志分发与插件系统"></a>七、综合实战：日志分发与插件系统</h2><h3 id="7-1-类型感知日志"><a href="#7-1-类型感知日志" class="headerlink" title="7.1 类型感知日志"></a>7.1 类型感知日志</h3><p>官方文档中的经典示例：对 <code>String</code> 类型额外打印长度，对其他类型直接 <code>Debug</code> 输出。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fmt::<span class="hljs-built_in">Debug</span>;<br><span class="hljs-keyword">use</span> std::any::Any;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">log</span>&lt;T: Any + <span class="hljs-built_in">Debug</span>&gt;(value: &amp;T) &#123;<br>    <span class="hljs-comment">// 把&quot;编译期已知的 &amp;T&quot;转成&quot;运行时动态分发的 &amp;dyn Any&quot;</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">value_any</span> = value <span class="hljs-keyword">as</span> &amp;<span class="hljs-keyword">dyn</span> Any;<br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(s) = value_any.downcast_ref::&lt;<span class="hljs-type">String</span>&gt;() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[String len=&#123;&#125;] &#123;&#125;&quot;</span>, s.<span class="hljs-title function_ invoke__">len</span>(), s);<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[&#123;:?&#125;]&quot;</span>, value);<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-title function_ invoke__">log</span>(&amp;<span class="hljs-number">42i32</span>);<br>    <span class="hljs-title function_ invoke__">log</span>(&amp;<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello world&quot;</span>));<br>    <span class="hljs-title function_ invoke__">log</span>(&amp;<span class="hljs-built_in">vec!</span>[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]);<br>    <span class="hljs-title function_ invoke__">log</span>(&amp;<span class="hljs-literal">true</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs lua">[<span class="hljs-number">42</span>]<br>[String <span class="hljs-built_in">len</span>=<span class="hljs-number">11</span>] hello world<br><span class="hljs-string">[[1, 2, 3]]</span><br>[<span class="hljs-literal">true</span>]<br></code></pre></td></tr></table></figure>
+
+<h3 id="7-2-插件系统中的动态分发"><a href="#7-2-插件系统中的动态分发" class="headerlink" title="7.2 插件系统中的动态分发"></a>7.2 插件系统中的动态分发</h3><p>插件系统通常用 <code>trait object</code> 统一管理插件，同时需要向下转型访问插件的具体字段。惯用做法是在插件 <code>trait</code> 中暴露 <code>as_any()</code> 方法。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::any::Any;<br><br><span class="hljs-keyword">trait</span> <span class="hljs-title class_">Plugin</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">execute</span>(&amp;<span class="hljs-keyword">self</span>);<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">as_any</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-keyword">dyn</span> Any;<br>&#125;<br><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Logger</span> &#123; prefix: <span class="hljs-type">String</span> &#125;<br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Counter</span> &#123; count: <span class="hljs-type">u32</span> &#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">Plugin</span> <span class="hljs-keyword">for</span> <span class="hljs-title class_">Logger</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">execute</span>(&amp;<span class="hljs-keyword">self</span>) &#123; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[&#123;&#125;] plugin running&quot;</span>, <span class="hljs-keyword">self</span>.prefix); &#125;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">as_any</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-keyword">dyn</span> Any &#123; <span class="hljs-keyword">self</span> &#125;<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">Plugin</span> <span class="hljs-keyword">for</span> <span class="hljs-title class_">Counter</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">execute</span>(&amp;<span class="hljs-keyword">self</span>) &#123; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;count = &#123;&#125;&quot;</span>, <span class="hljs-keyword">self</span>.count); &#125;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">as_any</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-keyword">dyn</span> Any &#123; <span class="hljs-keyword">self</span> &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">plugins</span>: <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">Box</span>&lt;<span class="hljs-keyword">dyn</span> Plugin&gt;&gt; = <span class="hljs-built_in">vec!</span>[<br>        <span class="hljs-type">Box</span>::<span class="hljs-title function_ invoke__">new</span>(Logger &#123; prefix: <span class="hljs-string">&quot;INFO&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>() &#125;),<br>        <span class="hljs-type">Box</span>::<span class="hljs-title function_ invoke__">new</span>(Counter &#123; count: <span class="hljs-number">42</span> &#125;),<br>    ];<br><br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">p</span> <span class="hljs-keyword">in</span> &amp;plugins &#123;<br>        p.<span class="hljs-title function_ invoke__">execute</span>();<br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(l) = p.<span class="hljs-title function_ invoke__">as_any</span>().downcast_ref::&lt;Logger&gt;() &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  -&gt; Logger prefix: &#123;&#125;&quot;</span>, l.prefix);<br>        &#125;<br>        <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(c) = p.<span class="hljs-title function_ invoke__">as_any</span>().downcast_ref::&lt;Counter&gt;() &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  -&gt; Counter value: &#123;&#125;&quot;</span>, c.count);<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs routeros">[<span class="hljs-built_in">INFO</span>] plugin running<br>  -&gt; Logger prefix: <span class="hljs-built_in">INFO</span><br>count = 42<br>  -&gt; Counter value: 42<br></code></pre></td></tr></table></figure>
+
+<h2 id="八、使用限制与注意事项"><a href="#八、使用限制与注意事项" class="headerlink" title="八、使用限制与注意事项"></a>八、使用限制与注意事项</h2><table>
+<thead>
+<tr>
+<th>限制</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>仅支持 <code>&#39;static</code> 类型</td>
+<td>含生命周期参数的类型无法实现 <code>Any</code></td>
+</tr>
+<tr>
+<td>无法检测 <code>trait</code> 实现</td>
+<td><code>&amp;dyn Any</code> 只能判断具体类型，不能判断”是否实现了某 <code>trait</code>“</td>
+</tr>
+<tr>
+<td><code>type_name</code> 输出不稳定</td>
+<td>返回完整路径，格式随版本可能变化，不可作为序列化键</td>
+</tr>
+<tr>
+<td>不能替代枚举</td>
+<td>若类型集合有限且已知，优先用 <code>enum</code>，比 <code>dyn Any</code> + <code>downcast</code> 更安全、更高效</td>
+</tr>
+<tr>
+<td>运行时开销</td>
+<td><code>downcast</code> 每次需一次 <code>TypeId</code> 比较；热路径中大量使用需评估影响</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><code>std::any</code> 适合”类型集合在编译期未知”的场景，例如第三方插件、通用事件系统。如果类型集合固定，<code>enum</code> 始终是更地道的 Rust 解法。</p>
+</blockquote>
+<h2 id="九、泛型-vs-dyn-Any：如何选择"><a href="#九、泛型-vs-dyn-Any：如何选择" class="headerlink" title="九、泛型 vs dyn Any：如何选择"></a>九、泛型 vs <code>dyn Any</code>：如何选择</h2><h3 id="9-1-核心差异"><a href="#9-1-核心差异" class="headerlink" title="9.1 核心差异"></a>9.1 核心差异</h3><p>泛型与 <code>dyn Any</code> 都能处理”多种类型”，但出发点完全不同：</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>泛型 <code>&lt;T: Trait&gt;</code></th>
+<th><code>dyn Any</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>类型确定时机</td>
+<td>编译期</td>
+<td>运行时</td>
+</tr>
+<tr>
+<td>代码膨胀</td>
+<td>每个具体类型生成一份</td>
+<td>只有一份</td>
+</tr>
+<tr>
+<td>调用开销</td>
+<td>零（内联&#x2F;直接调用）</td>
+<td><code>vtable</code> 间接跳转 + <code>TypeId</code> 比较</td>
+</tr>
+<tr>
+<td>类型安全保障</td>
+<td>编译器</td>
+<td>程序员（<code>downcast</code> 失败返回 <code>None</code>）</td>
+</tr>
+<tr>
+<td>可存入异构集合</td>
+<td>❌</td>
+<td>✅ <code>Vec&lt;Box&lt;dyn Any&gt;&gt;</code></td>
+</tr>
+<tr>
+<td>适用类型集合</td>
+<td>编译期已知</td>
+<td>运行时才确定</td>
+</tr>
+</tbody></table>
+<h3 id="9-2-同一问题的两种写法"><a href="#9-2-同一问题的两种写法" class="headerlink" title="9.2 同一问题的两种写法"></a>9.2 同一问题的两种写法</h3><p>以”打印不同类型的值”为例，对比两种实现：</p>
+<p><strong>泛型版本：调用处类型已知，零开销</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fmt::<span class="hljs-built_in">Debug</span>;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">print_value</span>&lt;T: <span class="hljs-built_in">Debug</span>&gt;(value: &amp;T) &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, value);<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-title function_ invoke__">print_value</span>(&amp;<span class="hljs-number">42i32</span>);<br>    <span class="hljs-title function_ invoke__">print_value</span>(&amp;<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>));<br>    <span class="hljs-title function_ invoke__">print_value</span>(&amp;<span class="hljs-number">3.14f64</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs 1c"><span class="hljs-number">42</span><br><span class="hljs-string">&quot;hello&quot;</span><br><span class="hljs-number">3.14</span><br></code></pre></td></tr></table></figure>
+
+<p>编译器为 <code>i32</code>、<code>String</code>、<code>f64</code> 各生成一份 <code>print_value</code>，调用时直接跳转，无运行时开销。</p>
+<p><strong><code>dyn Any</code> 版本：需要根据类型做不同处理</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::any::Any;<br><span class="hljs-keyword">use</span> std::fmt::<span class="hljs-built_in">Debug</span>;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">print_value</span>(value: &amp;<span class="hljs-keyword">dyn</span> Any) &#123;<br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(s) = value.downcast_ref::&lt;<span class="hljs-type">String</span>&gt;() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[String len=&#123;&#125;] &#123;&#125;&quot;</span>, s.<span class="hljs-title function_ invoke__">len</span>(), s);<br>    &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(n) = value.downcast_ref::&lt;<span class="hljs-type">i32</span>&gt;() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[i32] &#123;&#125;&quot;</span>, n);<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[unknown type]&quot;</span>);<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-title function_ invoke__">print_value</span>(&amp;<span class="hljs-number">42i32</span>);<br>    <span class="hljs-title function_ invoke__">print_value</span>(&amp;<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>));<br>    <span class="hljs-title function_ invoke__">print_value</span>(&amp;<span class="hljs-number">3.14f64</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-string">[i32]</span> <span class="hljs-number">42</span><br><span class="hljs-string">[String len=5]</span> hello<br><span class="hljs-string">[unknown type]</span><br></code></pre></td></tr></table></figure>
+
+<p><code>dyn Any</code> 版本能对不同类型执行不同逻辑，但每次 <code>downcast_ref</code> 都有一次 <code>TypeId</code> 比较，且新增类型时需要手动扩展 <code>if let</code> 分支，编译器不会提示遗漏。</p>
+<h3 id="9-3-选择决策树"><a href="#9-3-选择决策树" class="headerlink" title="9.3 选择决策树"></a>9.3 选择决策树</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs rust">需要处理<span class="hljs-string">&quot;不确定类型&quot;</span>的值？<br>│<br>├─ 否，类型在调用处已知<br>│   └─ 泛型 &lt;T: Trait&gt;（零开销，编译期保障）<br>│<br>└─ 是，类型运行时才确定<br>    │<br>    ├─ 类型集合有限且固定？<br>    │   └─ <span class="hljs-keyword">enum</span>（穷举检查，模式匹配，最地道）<br>    │<br>    └─ 类型集合开放或第三方扩展<br>        │<br>        ├─ 只需统一调用接口，不需还原具体类型？<br>        │   └─ <span class="hljs-keyword">dyn</span> Trait（Plugin 模式）<br>        │<br>        └─ 需要在运行时判断 / 还原具体类型？<br>            └─ <span class="hljs-keyword">dyn</span> Any<br></code></pre></td></tr></table></figure>
+
+<h3 id="9-4-实际工程中的分布"><a href="#9-4-实际工程中的分布" class="headerlink" title="9.4 实际工程中的分布"></a>9.4 实际工程中的分布</h3><p>绝大多数业务代码用不到 <code>dyn Any</code>，因为替代方案几乎覆盖了所有场景：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐方案</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>函数对多种类型通用</td>
+<td>泛型</td>
+<td>零开销，编译器保障正确性</td>
+</tr>
+<tr>
+<td>业务数据有几种变体</td>
+<td><code>enum</code></td>
+<td>穷举检查，<code>match</code> 更安全</td>
+</tr>
+<tr>
+<td>插件&#x2F;回调统一接口</td>
+<td><code>dyn Trait</code></td>
+<td>不需要知道具体类型</td>
+</tr>
+<tr>
+<td>配置&#x2F;数据解析</td>
+<td><code>serde</code> + 强类型结构体</td>
+<td>序列化层已处理类型映射</td>
+</tr>
+<tr>
+<td>框架层存储任意用户数据</td>
+<td><code>dyn Any</code></td>
+<td>类型集合真正开放</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>如果你发现自己想用 <code>dyn Any</code>，先问一句”能不能改成 <code>enum</code>？”——九成情况答案是可以，且结果更安全。<code>dyn Any</code> 是最后的手段，主要出现在测试框架、依赖注入容器、通用事件总线等基础设施层。</p>
+</blockquote>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Rust/" class="print-no-link">#Rust</a>
+      
+        <a href="/tags/%E7%B1%BB%E5%9E%8B%E7%B3%BB%E7%BB%9F/" class="print-no-link">#类型系统</a>
+      
+        <a href="/tags/Any/" class="print-no-link">#Any</a>
+      
+        <a href="/tags/TypeId/" class="print-no-link">#TypeId</a>
+      
+        <a href="/tags/%E5%8A%A8%E6%80%81%E7%B1%BB%E5%9E%8B/" class="print-no-link">#动态类型</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/rust/struct.html" title="struct 结构体介绍与实战">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">struct 结构体介绍与实战</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/std-alloc.html" title="[标准库] std::alloc 内存分配模块介绍">
+                        <span class="hidden-mobile">[标准库] std::alloc 内存分配模块介绍</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

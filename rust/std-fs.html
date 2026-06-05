@@ -1,0 +1,1275 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="文件系统是应用程序持久化数据的主要通道。std::fs 提供了 Rust 跨平台的文件系统操作接口：从读写单个文件、遍历目录树，到查询元数据、管理权限和创建链接，所有常见操作都在这一模块中完成。与直接调用系统调用相比，std::fs 在 io::Result 的包装下统一了 Linux、macOS、Windows 的行为差异，同时通过 OpenOptions 提供了对文件打开模式的精确控制。文件系">
+  
+  
+  
+  <title>[标准库] std::fs 文件系统操作介绍与实战 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="[标准库] std::fs 文件系统操作介绍与实战"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-28 11:00" pubdate>
+          2026年5月28日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          15k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          129 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">[标准库] std::fs 文件系统操作介绍与实战</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>文件系统是应用程序持久化数据的主要通道。<code>std::fs</code> 提供了 Rust 跨平台的文件系统操作接口：从读写单个文件、遍历目录树，到查询元数据、管理权限和创建链接，所有常见操作都在这一模块中完成。与直接调用系统调用相比，<code>std::fs</code> 在 <code>io::Result</code> 的包装下统一了 <code>Linux</code>、<code>macOS</code>、<code>Windows</code> 的行为差异，同时通过 <code>OpenOptions</code> 提供了对文件打开模式的精确控制。文件系统操作天然存在 <code>TOCTOU</code>（<code>time-of-check time-of-use</code>）竞态窗口——“检查文件是否存在然后创建”这类两步操作在并发环境下并不安全，<code>std::fs</code> 提供的 <code>File::create_new</code> 等原子操作可规避这一问题。</p>
+<h2 id="一、模块概览"><a href="#一、模块概览" class="headerlink" title="一、模块概览"></a>一、模块概览</h2><p><code>std::fs</code> 的主要组件如下：</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>read</code> &#x2F; <code>read_to_string</code> &#x2F; <code>write</code></td>
+<td><code>fn</code></td>
+<td>单次读写文件的便捷函数</td>
+</tr>
+<tr>
+<td><code>copy</code> &#x2F; <code>rename</code> &#x2F; <code>remove_file</code></td>
+<td><code>fn</code></td>
+<td>文件管理操作</td>
+</tr>
+<tr>
+<td><code>create_dir</code> &#x2F; <code>create_dir_all</code></td>
+<td><code>fn</code></td>
+<td>创建目录</td>
+</tr>
+<tr>
+<td><code>remove_dir</code> &#x2F; <code>remove_dir_all</code></td>
+<td><code>fn</code></td>
+<td>删除目录（后者递归删除）</td>
+</tr>
+<tr>
+<td><code>read_dir</code></td>
+<td><code>fn</code></td>
+<td>返回目录条目迭代器</td>
+</tr>
+<tr>
+<td><code>metadata</code> &#x2F; <code>symlink_metadata</code></td>
+<td><code>fn</code></td>
+<td>查询文件或目录元信息</td>
+</tr>
+<tr>
+<td><code>canonicalize</code> &#x2F; <code>exists</code></td>
+<td><code>fn</code></td>
+<td>路径规范化与存在性检查</td>
+</tr>
+<tr>
+<td><code>hard_link</code> &#x2F; <code>read_link</code></td>
+<td><code>fn</code></td>
+<td>硬链接创建与符号链接目标读取</td>
+</tr>
+<tr>
+<td><code>set_permissions</code></td>
+<td><code>fn</code></td>
+<td>修改文件或目录权限</td>
+</tr>
+<tr>
+<td><code>File</code></td>
+<td><code>struct</code></td>
+<td>已打开文件的句柄，实现 <code>Read</code> &#x2F; <code>Write</code> &#x2F; <code>Seek</code></td>
+</tr>
+<tr>
+<td><code>OpenOptions</code></td>
+<td><code>struct</code></td>
+<td>文件打开模式构建器</td>
+</tr>
+<tr>
+<td><code>Metadata</code></td>
+<td><code>struct</code></td>
+<td>文件元数据（大小、类型、时间戳等）</td>
+</tr>
+<tr>
+<td><code>FileType</code></td>
+<td><code>struct</code></td>
+<td>文件类型（普通文件 &#x2F; 目录 &#x2F; 符号链接）</td>
+</tr>
+<tr>
+<td><code>Permissions</code></td>
+<td><code>struct</code></td>
+<td>文件权限表示</td>
+</tr>
+<tr>
+<td><code>DirEntry</code></td>
+<td><code>struct</code></td>
+<td><code>ReadDir</code> 迭代器的单条目类型</td>
+</tr>
+<tr>
+<td><code>ReadDir</code></td>
+<td><code>struct</code></td>
+<td>目录条目迭代器</td>
+</tr>
+<tr>
+<td><code>FileTimes</code></td>
+<td><code>struct</code></td>
+<td>文件时间戳修改构建器</td>
+</tr>
+<tr>
+<td><code>DirBuilder</code></td>
+<td><code>struct</code></td>
+<td>带选项的目录创建构建器</td>
+</tr>
+</tbody></table>
+<h2 id="二、便捷读写函数"><a href="#二、便捷读写函数" class="headerlink" title="二、便捷读写函数"></a>二、便捷读写函数</h2><p><code>std::fs</code> 提供三个不需要手动管理文件句柄的便捷函数，适合一次性读写小文件。</p>
+<h3 id="2-1-write"><a href="#2-1-write" class="headerlink" title="2.1 write"></a>2.1 write</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">write</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;, contents: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;[<span class="hljs-type">u8</span>]&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>path</code></td>
+<td>-</td>
+<td>文件路径；文件不存在时自动创建，已存在时截断清空</td>
+</tr>
+<tr>
+<td><code>contents</code></td>
+<td>-</td>
+<td>写入内容；接受 <code>&amp;str</code>、<code>&amp;[u8]</code>、<code>Vec&lt;u8&gt;</code> 等任意实现 <code>AsRef&lt;[u8]&gt;</code> 的类型</td>
+</tr>
+</tbody></table>
+<p><code>write</code> 等价于 <code>OpenOptions::new().write(true).create(true).truncate(true).open(path)</code> 加 <code>write_all</code>。父目录不存在时返回错误，不会自动创建。</p>
+<h3 id="2-2-read-与-read-to-string"><a href="#2-2-read-与-read-to-string" class="headerlink" title="2.2 read 与 read_to_string"></a>2.2 read 与 read_to_string</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">read</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">Vec</span>&lt;<span class="hljs-type">u8</span>&gt;&gt;<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">read_to_string</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">String</span>&gt;<br></code></pre></td></tr></table></figure>
+
+<p><code>read</code> 返回原始字节 <code>Vec&lt;u8&gt;</code>，适合读取图片、序列化数据等二进制文件；<code>read_to_string</code> 在返回 <code>String</code> 之前对全部字节执行 <code>UTF-8</code> 校验，遇到无效字节时返回 <code>InvalidData</code> 错误。两者均将整个文件一次性加载入内存——对于大文件，应改用 <code>BufReader</code> 逐行或逐块处理。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(<span class="hljs-string">&quot;/tmp/demo.txt&quot;</span>, <span class="hljs-string">&quot;Hello, std::fs!\n第二行内容\n&quot;</span>)?;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">bytes</span> = fs::<span class="hljs-title function_ invoke__">read</span>(<span class="hljs-string">&quot;/tmp/demo.txt&quot;</span>)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;字节数: &#123;&#125;&quot;</span>, bytes.<span class="hljs-title function_ invoke__">len</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">text</span> = fs::<span class="hljs-title function_ invoke__">read_to_string</span>(<span class="hljs-string">&quot;/tmp/demo.txt&quot;</span>)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;内容:\n&#123;text&#125;&quot;</span>);<br><br>    <span class="hljs-comment">// write 对已有文件执行截断覆写</span><br>    fs::<span class="hljs-title function_ invoke__">write</span>(<span class="hljs-string">&quot;/tmp/demo.txt&quot;</span>, <span class="hljs-string">b&quot;overwritten&quot;</span>)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;覆写后: &#123;&#125;&quot;</span>, fs::<span class="hljs-title function_ invoke__">read_to_string</span>(<span class="hljs-string">&quot;/tmp/demo.txt&quot;</span>)?);<br><br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(<span class="hljs-string">&quot;/tmp/demo.txt&quot;</span>)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">字节数: 32</span><br><span class="hljs-section">内容:</span><br>Hello, std::fs!<br>第二行内容<br><br><span class="hljs-section">覆写后: overwritten</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>三个便捷函数在每次调用时都会重新打开和关闭文件。频繁调用（如循环内追加日志）会产生大量系统调用开销，此时应保持 <code>File</code> 句柄打开并复用。</p>
+</blockquote>
+<h2 id="三、File-与-OpenOptions"><a href="#三、File-与-OpenOptions" class="headerlink" title="三、File 与 OpenOptions"></a>三、File 与 OpenOptions</h2><p><code>File::open</code> 和 <code>File::create</code> 是两个最常用的快捷构造函数，<code>OpenOptions</code> 则提供对打开模式的完整控制。</p>
+<h3 id="3-1-File-的三个构造函数"><a href="#3-1-File-的三个构造函数" class="headerlink" title="3.1 File 的三个构造函数"></a>3.1 File 的三个构造函数</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">File</span>::<span class="hljs-title function_ invoke__">open</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;File&gt;<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">File</span>::<span class="hljs-title function_ invoke__">create</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;File&gt;<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">File</span>::<span class="hljs-title function_ invoke__">create_new</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;File&gt;  <span class="hljs-comment">// Rust 1.77.0</span><br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>等效 OpenOptions</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>File::open</code></td>
+<td><code>read(true)</code></td>
+<td>只读打开；文件不存在时返回 <code>NotFound</code></td>
+</tr>
+<tr>
+<td><code>File::create</code></td>
+<td><code>write(true).create(true).truncate(true)</code></td>
+<td>创建或截断；结果始终是空文件</td>
+</tr>
+<tr>
+<td><code>File::create_new</code></td>
+<td><code>write(true).create_new(true)</code></td>
+<td>原子性创建；文件已存在时返回 <code>AlreadyExists</code></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><code>File::create</code> 是危险的：对已有文件调用会<strong>静默清空</strong>其内容。若只想写入新文件而不意外破坏已有文件，应使用 <code>File::create_new</code>（<code>Rust 1.77.0</code> 起稳定）。</p>
+</blockquote>
+<h3 id="3-2-OpenOptions"><a href="#3-2-OpenOptions" class="headerlink" title="3.2 OpenOptions"></a>3.2 OpenOptions</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs rust">OpenOptions::<span class="hljs-title function_ invoke__">new</span>()<br>    .<span class="hljs-title function_ invoke__">read</span>(<span class="hljs-type">bool</span>)<br>    .<span class="hljs-title function_ invoke__">write</span>(<span class="hljs-type">bool</span>)<br>    .<span class="hljs-title function_ invoke__">append</span>(<span class="hljs-type">bool</span>)<br>    .<span class="hljs-title function_ invoke__">truncate</span>(<span class="hljs-type">bool</span>)<br>    .<span class="hljs-title function_ invoke__">create</span>(<span class="hljs-type">bool</span>)<br>    .<span class="hljs-title function_ invoke__">create_new</span>(<span class="hljs-type">bool</span>)<br>    .<span class="hljs-title function_ invoke__">open</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;File&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>选项说明：</strong></p>
+<table>
+<thead>
+<tr>
+<th>选项</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>read(bool)</code></td>
+<td><code>false</code></td>
+<td>允许从文件读取</td>
+</tr>
+<tr>
+<td><code>write(bool)</code></td>
+<td><code>false</code></td>
+<td>允许向文件写入；写指针初始位于文件头</td>
+</tr>
+<tr>
+<td><code>append(bool)</code></td>
+<td><code>false</code></td>
+<td>追加模式；每次写入前内核将写指针原子性地移至末尾</td>
+</tr>
+<tr>
+<td><code>truncate(bool)</code></td>
+<td><code>false</code></td>
+<td>打开时将文件截断为空；需同时启用 <code>write(true)</code></td>
+</tr>
+<tr>
+<td><code>create(bool)</code></td>
+<td><code>false</code></td>
+<td>文件不存在时创建；已存在则直接打开，不截断</td>
+</tr>
+<tr>
+<td><code>create_new(bool)</code></td>
+<td><code>false</code></td>
+<td>原子性创建：文件不存在时创建并独占打开；已存在时返回 <code>AlreadyExists</code></td>
+</tr>
+</tbody></table>
+<p><code>write</code> 与 <code>append</code> 的核心区别：<code>write</code> 打开时写指针在文件头，若不截断会覆盖已有字节；<code>append</code> 由内核保证每次写入追加到末尾，在多进程日志写入场景下比 <code>write + seek_to_end</code> 更安全，因为后者在 <code>seek</code> 和 <code>write</code> 之间存在竞态窗口。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs::&#123;<span class="hljs-keyword">self</span>, OpenOptions&#125;;<br><span class="hljs-keyword">use</span> std::io::&#123;<span class="hljs-keyword">self</span>, BufRead, BufReader, Write&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">path</span> = <span class="hljs-string">&quot;/tmp/opts.txt&quot;</span>;<br><br>    <span class="hljs-comment">// 创建并写入</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">f</span> = OpenOptions::<span class="hljs-title function_ invoke__">new</span>()<br>        .<span class="hljs-title function_ invoke__">write</span>(<span class="hljs-literal">true</span>)<br>        .<span class="hljs-title function_ invoke__">create</span>(<span class="hljs-literal">true</span>)<br>        .<span class="hljs-title function_ invoke__">truncate</span>(<span class="hljs-literal">true</span>)<br>        .<span class="hljs-title function_ invoke__">open</span>(path)?;<br>    <span class="hljs-built_in">writeln!</span>(f, <span class="hljs-string">&quot;line1&quot;</span>)?;<br><br>    <span class="hljs-comment">// 追加两行</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">f</span> = OpenOptions::<span class="hljs-title function_ invoke__">new</span>().<span class="hljs-title function_ invoke__">append</span>(<span class="hljs-literal">true</span>).<span class="hljs-title function_ invoke__">open</span>(path)?;<br>    <span class="hljs-built_in">writeln!</span>(f, <span class="hljs-string">&quot;line2&quot;</span>)?;<br>    <span class="hljs-built_in">writeln!</span>(f, <span class="hljs-string">&quot;line3&quot;</span>)?;<br><br>    <span class="hljs-comment">// 逐行读取</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">f</span> = fs::File::<span class="hljs-title function_ invoke__">open</span>(path)?;<br>    <span class="hljs-keyword">for</span> (i, line) <span class="hljs-keyword">in</span> BufReader::<span class="hljs-title function_ invoke__">new</span>(f).<span class="hljs-title function_ invoke__">lines</span>().<span class="hljs-title function_ invoke__">enumerate</span>() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[&#123;&#125;] &#123;&#125;&quot;</span>, i + <span class="hljs-number">1</span>, line?);<br>    &#125;<br><br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(path)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-string">[1]</span> line1<br><span class="hljs-string">[2]</span> line2<br><span class="hljs-string">[3]</span> line3<br></code></pre></td></tr></table></figure>
+
+<h2 id="四、目录操作"><a href="#四、目录操作" class="headerlink" title="四、目录操作"></a>四、目录操作</h2><h3 id="4-1-create-dir-与-create-dir-all"><a href="#4-1-create-dir-与-create-dir-all" class="headerlink" title="4.1 create_dir 与 create_dir_all"></a>4.1 create_dir 与 create_dir_all</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">create_dir</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">create_dir_all</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>父目录不存在时</th>
+<th>目录已存在时</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>create_dir</code></td>
+<td>返回 <code>NotFound</code> 错误</td>
+<td>返回 <code>AlreadyExists</code> 错误</td>
+</tr>
+<tr>
+<td><code>create_dir_all</code></td>
+<td>递归创建所有缺失的父目录</td>
+<td>静默成功，幂等操作</td>
+</tr>
+</tbody></table>
+<p><code>create_dir_all</code> 的幂等性使它可在启动代码中安全地重复调用，常见于初始化日志目录、缓存目录等场景。</p>
+<h3 id="4-2-read-dir-与-DirEntry"><a href="#4-2-read-dir-与-DirEntry" class="headerlink" title="4.2 read_dir 与 DirEntry"></a>4.2 read_dir 与 DirEntry</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">read_dir</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;ReadDir&gt;<br></code></pre></td></tr></table></figure>
+
+<p><code>ReadDir</code> 实现 <code>Iterator&lt;Item = io::Result&lt;DirEntry&gt;&gt;</code>，每个条目包装在 <code>Result</code> 中——这是因为在迭代过程中，单个条目的读取也可能失败（如权限拒绝）。</p>
+<p><code>DirEntry</code> 的主要方法：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>返回类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>path()</code></td>
+<td><code>PathBuf</code></td>
+<td>条目的完整路径</td>
+</tr>
+<tr>
+<td><code>file_name()</code></td>
+<td><code>OsString</code></td>
+<td>条目名称（不含父目录部分）</td>
+</tr>
+<tr>
+<td><code>file_type()</code></td>
+<td><code>io::Result&lt;FileType&gt;</code></td>
+<td>文件类型；在部分平台上可避免额外的 <code>stat</code> 系统调用</td>
+</tr>
+<tr>
+<td><code>metadata()</code></td>
+<td><code>io::Result&lt;Metadata&gt;</code></td>
+<td>完整元数据</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><code>read_dir</code> 返回的顺序由操作系统决定，不保证字母序。若需排序，必须先 <code>collect</code> 成 <code>Vec</code> 再排序。</p>
+</blockquote>
+<h3 id="4-3-remove-dir-与-remove-dir-all"><a href="#4-3-remove-dir-与-remove-dir-all" class="headerlink" title="4.3 remove_dir 与 remove_dir_all"></a>4.3 remove_dir 与 remove_dir_all</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">remove_dir</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">remove_dir_all</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;<br></code></pre></td></tr></table></figure>
+
+<p><code>remove_dir</code> 只能删除<strong>空目录</strong>，否则返回 <code>DirectoryNotEmpty</code> 错误（<code>Rust 1.83.0</code> 起稳定该变体，此前为 <code>Other</code>）。<code>remove_dir_all</code> 递归删除整个目录树，相当于 <code>rm -rf</code>，操作不可逆，调用前务必确认路径正确。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-comment">// 递归创建目录树</span><br>    fs::<span class="hljs-title function_ invoke__">create_dir_all</span>(<span class="hljs-string">&quot;/tmp/app/data/cache&quot;</span>)?;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(<span class="hljs-string">&quot;/tmp/app/data/a.txt&quot;</span>, <span class="hljs-string">&quot;file a&quot;</span>)?;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(<span class="hljs-string">&quot;/tmp/app/data/b.txt&quot;</span>, <span class="hljs-string">&quot;file b&quot;</span>)?;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(<span class="hljs-string">&quot;/tmp/app/data/cache/c.txt&quot;</span>, <span class="hljs-string">&quot;cached&quot;</span>)?;<br><br>    <span class="hljs-comment">// 遍历 data 目录</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;data 目录内容:&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">entries</span>: <span class="hljs-type">Vec</span>&lt;_&gt; = fs::<span class="hljs-title function_ invoke__">read_dir</span>(<span class="hljs-string">&quot;/tmp/app/data&quot;</span>)?<br>        .<span class="hljs-title function_ invoke__">filter_map</span>(|e| e.<span class="hljs-title function_ invoke__">ok</span>())<br>        .<span class="hljs-title function_ invoke__">collect</span>();<br>    entries.<span class="hljs-title function_ invoke__">sort_by_key</span>(|e| e.<span class="hljs-title function_ invoke__">file_name</span>());<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">e</span> <span class="hljs-keyword">in</span> &amp;entries &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">ft</span> = e.<span class="hljs-title function_ invoke__">file_type</span>()?;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">kind</span> = <span class="hljs-keyword">if</span> ft.<span class="hljs-title function_ invoke__">is_dir</span>() &#123; <span class="hljs-string">&quot;dir &quot;</span> &#125; <span class="hljs-keyword">else</span> &#123; <span class="hljs-string">&quot;file&quot;</span> &#125;;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  [&#123;kind&#125;] &#123;&#125;&quot;</span>, e.<span class="hljs-title function_ invoke__">file_name</span>().<span class="hljs-title function_ invoke__">to_string_lossy</span>());<br>    &#125;<br><br>    <span class="hljs-comment">// remove_dir 拒绝非空目录</span><br>    <span class="hljs-keyword">match</span> fs::<span class="hljs-title function_ invoke__">remove_dir</span>(<span class="hljs-string">&quot;/tmp/app/data&quot;</span>) &#123;<br>        <span class="hljs-title function_ invoke__">Err</span>(e) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;remove_dir 非空目录: &#123;:?&#125;&quot;</span>, e.<span class="hljs-title function_ invoke__">kind</span>()),<br>        <span class="hljs-title function_ invoke__">Ok</span>(()) =&gt; <span class="hljs-built_in">unreachable!</span>(),<br>    &#125;<br><br>    <span class="hljs-comment">// remove_dir_all 递归删除</span><br>    fs::<span class="hljs-title function_ invoke__">remove_dir_all</span>(<span class="hljs-string">&quot;/tmp/app&quot;</span>)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;remove_dir_all 完成&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;目录存在: &#123;&#125;&quot;</span>, fs::<span class="hljs-title function_ invoke__">exists</span>(<span class="hljs-string">&quot;/tmp/app&quot;</span>)?);<br><br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs stylus">data 目录内容:<br>  <span class="hljs-selector-attr">[file]</span> <span class="hljs-selector-tag">a</span><span class="hljs-selector-class">.txt</span><br>  <span class="hljs-selector-attr">[file]</span> <span class="hljs-selector-tag">b</span><span class="hljs-selector-class">.txt</span><br>  <span class="hljs-selector-attr">[dir ]</span> cache<br>remove_dir 非空目录: DirectoryNotEmpty<br>remove_dir_all 完成<br>目录存在: false<br></code></pre></td></tr></table></figure>
+
+<h2 id="五、元数据查询"><a href="#五、元数据查询" class="headerlink" title="五、元数据查询"></a>五、元数据查询</h2><h3 id="5-1-metadata-与-symlink-metadata"><a href="#5-1-metadata-与-symlink-metadata" class="headerlink" title="5.1 metadata 与 symlink_metadata"></a>5.1 metadata 与 symlink_metadata</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">metadata</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;Metadata&gt;<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">symlink_metadata</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;Metadata&gt;<br></code></pre></td></tr></table></figure>
+
+<p>两者的区别在于对符号链接的处理：<code>metadata</code> 跟随符号链接，返回<strong>链接目标</strong>的元数据；<code>symlink_metadata</code> 不跟随，返回<strong>链接文件本身</strong>的元数据（此时 <code>is_symlink()</code> 为 <code>true</code>）。</p>
+<h3 id="5-2-Metadata-方法一览"><a href="#5-2-Metadata-方法一览" class="headerlink" title="5.2 Metadata 方法一览"></a>5.2 Metadata 方法一览</h3><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>返回类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>is_file()</code></td>
+<td><code>bool</code></td>
+<td>是否为普通文件</td>
+</tr>
+<tr>
+<td><code>is_dir()</code></td>
+<td><code>bool</code></td>
+<td>是否为目录</td>
+</tr>
+<tr>
+<td><code>is_symlink()</code></td>
+<td><code>bool</code></td>
+<td>是否为符号链接（需通过 <code>symlink_metadata</code> 获取才有意义）</td>
+</tr>
+<tr>
+<td><code>len()</code></td>
+<td><code>u64</code></td>
+<td>文件字节数；目录大小含义因平台而异</td>
+</tr>
+<tr>
+<td><code>permissions()</code></td>
+<td><code>Permissions</code></td>
+<td>文件权限</td>
+</tr>
+<tr>
+<td><code>file_type()</code></td>
+<td><code>FileType</code></td>
+<td>精确的文件类型信息</td>
+</tr>
+<tr>
+<td><code>modified()</code></td>
+<td><code>io::Result&lt;SystemTime&gt;</code></td>
+<td>最后修改时间；不是所有平台都支持</td>
+</tr>
+<tr>
+<td><code>accessed()</code></td>
+<td><code>io::Result&lt;SystemTime&gt;</code></td>
+<td>最后访问时间；<code>Linux</code> 可通过 <code>noatime</code> 挂载选项禁用更新</td>
+</tr>
+<tr>
+<td><code>created()</code></td>
+<td><code>io::Result&lt;SystemTime&gt;</code></td>
+<td>文件创建时间；大多数 <code>Linux</code> 文件系统不支持，返回 <code>Unsupported</code></td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io;<br><span class="hljs-keyword">use</span> std::time::&#123;SystemTime, UNIX_EPOCH&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">path</span> = <span class="hljs-string">&quot;/tmp/meta.txt&quot;</span>;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(path, <span class="hljs-string">&quot;metadata demo content&quot;</span>)?;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">meta</span> = fs::<span class="hljs-title function_ invoke__">metadata</span>(path)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;是文件:   &#123;&#125;&quot;</span>, meta.<span class="hljs-title function_ invoke__">is_file</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;是目录:   &#123;&#125;&quot;</span>, meta.<span class="hljs-title function_ invoke__">is_dir</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;大小:     &#123;&#125; 字节&quot;</span>, meta.<span class="hljs-title function_ invoke__">len</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;只读:     &#123;&#125;&quot;</span>, meta.<span class="hljs-title function_ invoke__">permissions</span>().<span class="hljs-title function_ invoke__">readonly</span>());<br><br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Ok</span>(t) = meta.<span class="hljs-title function_ invoke__">modified</span>() &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">secs</span> = t.<span class="hljs-title function_ invoke__">duration_since</span>(UNIX_EPOCH).<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">as_secs</span>();<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;修改时间: Unix 时间戳 &#123;secs&#125;&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-comment">// 目录元数据</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">dir_meta</span> = fs::<span class="hljs-title function_ invoke__">metadata</span>(<span class="hljs-string">&quot;/tmp&quot;</span>)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;/tmp 是目录: &#123;&#125;&quot;</span>, dir_meta.<span class="hljs-title function_ invoke__">is_dir</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;/tmp 只读:   &#123;&#125;&quot;</span>, dir_meta.<span class="hljs-title function_ invoke__">permissions</span>().<span class="hljs-title function_ invoke__">readonly</span>());<br><br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(path)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash">是文件:   <span class="hljs-literal">true</span><br>是目录:   <span class="hljs-literal">false</span><br>大小:     21 字节<br>只读:     <span class="hljs-literal">false</span><br>修改时间: Unix 时间戳 1779961294<br>/tmp 是目录: <span class="hljs-literal">true</span><br>/tmp 只读:   <span class="hljs-literal">false</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>修改时间的具体数值在每次运行时不同，此处仅展示格式。</p>
+</blockquote>
+<h2 id="六、文件管理操作"><a href="#六、文件管理操作" class="headerlink" title="六、文件管理操作"></a>六、文件管理操作</h2><h3 id="6-1-copy"><a href="#6-1-copy" class="headerlink" title="6.1 copy"></a>6.1 copy</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">copy</span>(from: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;, to: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">u64</span>&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>from</code></td>
+<td>-</td>
+<td>源文件路径</td>
+</tr>
+<tr>
+<td><code>to</code></td>
+<td>-</td>
+<td>目标文件路径；不存在时创建，已存在时覆写</td>
+</tr>
+</tbody></table>
+<p>返回值为复制的字节数。<code>copy</code> 同时复制文件内容和权限位，但不复制时间戳。在 <code>Linux</code> 上底层使用 <code>copy_file_range</code> 系统调用，可在内核态完成数据传输而无需经过用户空间缓冲区。</p>
+<h3 id="6-2-rename"><a href="#6-2-rename" class="headerlink" title="6.2 rename"></a>6.2 rename</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">rename</span>(from: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;, to: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>from</code></td>
+<td>-</td>
+<td>源路径</td>
+</tr>
+<tr>
+<td><code>to</code></td>
+<td>-</td>
+<td>目标路径；若已存在则原子性替换（同一文件系统内）</td>
+</tr>
+</tbody></table>
+<p><code>rename</code> 在同一文件系统内是原子操作，要么成功要么失败，不会出现”目标文件只写了一半”的中间状态。跨文件系统移动时会退化为复制后删除，不再是原子操作。</p>
+<h3 id="6-3-remove-file、exists-与-canonicalize"><a href="#6-3-remove-file、exists-与-canonicalize" class="headerlink" title="6.3 remove_file、exists 与 canonicalize"></a>6.3 remove_file、exists 与 canonicalize</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">remove_file</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">exists</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">bool</span>&gt;       <span class="hljs-comment">// Rust 1.81.0</span><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">canonicalize</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;PathBuf&gt;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>remove_file</code></td>
+<td>删除文件；路径为目录时返回错误</td>
+</tr>
+<tr>
+<td><code>exists</code></td>
+<td>检查路径是否存在；返回 <code>Ok(false)</code> 而非 <code>Err</code>（路径不存在本身不是错误）</td>
+</tr>
+<tr>
+<td><code>canonicalize</code></td>
+<td>解析所有 <code>..</code>、<code>.</code> 和符号链接，返回绝对路径；路径必须实际存在</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(<span class="hljs-string">&quot;/tmp/src.txt&quot;</span>, <span class="hljs-string">&quot;source content&quot;</span>)?;<br><br>    <span class="hljs-comment">// copy 返回复制的字节数</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">n</span> = fs::<span class="hljs-title function_ invoke__">copy</span>(<span class="hljs-string">&quot;/tmp/src.txt&quot;</span>, <span class="hljs-string">&quot;/tmp/dst.txt&quot;</span>)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;复制了 &#123;n&#125; 字节&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;目标内容: &#123;&#125;&quot;</span>, fs::<span class="hljs-title function_ invoke__">read_to_string</span>(<span class="hljs-string">&quot;/tmp/dst.txt&quot;</span>)?);<br><br>    <span class="hljs-comment">// rename 是原子操作（同一文件系统内）</span><br>    fs::<span class="hljs-title function_ invoke__">rename</span>(<span class="hljs-string">&quot;/tmp/dst.txt&quot;</span>, <span class="hljs-string">&quot;/tmp/renamed.txt&quot;</span>)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;dst.txt 存在:     &#123;&#125;&quot;</span>, fs::<span class="hljs-title function_ invoke__">exists</span>(<span class="hljs-string">&quot;/tmp/dst.txt&quot;</span>)?);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;renamed.txt 存在: &#123;&#125;&quot;</span>, fs::<span class="hljs-title function_ invoke__">exists</span>(<span class="hljs-string">&quot;/tmp/renamed.txt&quot;</span>)?);<br><br>    <span class="hljs-comment">// canonicalize 解析符号链接并返回绝对路径</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">canon</span> = fs::<span class="hljs-title function_ invoke__">canonicalize</span>(<span class="hljs-string">&quot;/tmp/renamed.txt&quot;</span>)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;规范化路径: &#123;&#125;&quot;</span>, canon.<span class="hljs-title function_ invoke__">display</span>());<br><br>    <span class="hljs-comment">// exists 检查路径是否存在（Rust 1.81.0 稳定）</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;不存在的文件: &#123;&#125;&quot;</span>, fs::<span class="hljs-title function_ invoke__">exists</span>(<span class="hljs-string">&quot;/tmp/no_such_file.txt&quot;</span>)?);<br><br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(<span class="hljs-string">&quot;/tmp/src.txt&quot;</span>)?;<br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(<span class="hljs-string">&quot;/tmp/renamed.txt&quot;</span>)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs bash">复制了 14 字节<br>目标内容: <span class="hljs-built_in">source</span> content<br>dst.txt 存在:     <span class="hljs-literal">false</span><br>renamed.txt 存在: <span class="hljs-literal">true</span><br>规范化路径: /tmp/renamed.txt<br>不存在的文件: <span class="hljs-literal">false</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="七、链接操作"><a href="#七、链接操作" class="headerlink" title="七、链接操作"></a>七、链接操作</h2><p><code>Linux</code> 文件系统支持两种链接：硬链接直接指向 <code>inode</code>，符号链接（软链接）存储目标路径字符串。</p>
+<h3 id="7-1-hard-link"><a href="#7-1-hard-link" class="headerlink" title="7.1 hard_link"></a>7.1 hard_link</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">hard_link</span>(original: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;, link: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>original</code></td>
+<td>-</td>
+<td>已存在的文件路径（不能是目录）</td>
+</tr>
+<tr>
+<td><code>link</code></td>
+<td>-</td>
+<td>新硬链接路径；必须与 <code>original</code> 在同一文件系统</td>
+</tr>
+</tbody></table>
+<p>硬链接与原文件共享同一个 <code>inode</code>，因此共享数据、权限和时间戳。删除任意一个目录项不影响数据，直到所有硬链接都被删除（<code>inode</code> 的引用计数归零）时内核才真正释放磁盘块。</p>
+<h3 id="7-2-符号链接的创建与读取"><a href="#7-2-符号链接的创建与读取" class="headerlink" title="7.2 符号链接的创建与读取"></a>7.2 符号链接的创建与读取</h3><p>创建符号链接需要平台特定的扩展，在 <code>std::fs</code> 核心 API 中没有跨平台的 <code>symlink</code> 函数：</p>
+<table>
+<thead>
+<tr>
+<th>平台</th>
+<th>创建符号链接的函数</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Linux</code> &#x2F; <code>macOS</code></td>
+<td><code>std::os::unix::fs::symlink(original, link)</code></td>
+</tr>
+<tr>
+<td><code>Windows</code>（文件）</td>
+<td><code>std::os::windows::fs::symlink_file(original, link)</code></td>
+</tr>
+<tr>
+<td><code>Windows</code>（目录）</td>
+<td><code>std::os::windows::fs::symlink_dir(original, link)</code></td>
+</tr>
+</tbody></table>
+<p><code>read_link</code> 是跨平台的，读取符号链接指向的目标路径（不解析，不跟随）：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">read_link</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;PathBuf&gt;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io;<br><span class="hljs-keyword">use</span> std::os::unix::fs::symlink;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(<span class="hljs-string">&quot;/tmp/original.txt&quot;</span>, <span class="hljs-string">&quot;shared inode content&quot;</span>)?;<br><br>    <span class="hljs-comment">// 硬链接：两个目录项指向同一个 inode</span><br>    fs::<span class="hljs-title function_ invoke__">hard_link</span>(<span class="hljs-string">&quot;/tmp/original.txt&quot;</span>, <span class="hljs-string">&quot;/tmp/hardlink.txt&quot;</span>)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;原文件:   &#123;&#125;&quot;</span>, fs::<span class="hljs-title function_ invoke__">read_to_string</span>(<span class="hljs-string">&quot;/tmp/original.txt&quot;</span>)?);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;硬链接:   &#123;&#125;&quot;</span>, fs::<span class="hljs-title function_ invoke__">read_to_string</span>(<span class="hljs-string">&quot;/tmp/hardlink.txt&quot;</span>)?);<br><br>    <span class="hljs-comment">// 写入原文件，通过硬链接读取也能看到更新</span><br>    fs::<span class="hljs-title function_ invoke__">write</span>(<span class="hljs-string">&quot;/tmp/original.txt&quot;</span>, <span class="hljs-string">&quot;updated content&quot;</span>)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;更新后硬链接: &#123;&#125;&quot;</span>, fs::<span class="hljs-title function_ invoke__">read_to_string</span>(<span class="hljs-string">&quot;/tmp/hardlink.txt&quot;</span>)?);<br><br>    <span class="hljs-comment">// 符号链接：指向路径而非 inode</span><br>    <span class="hljs-title function_ invoke__">symlink</span>(<span class="hljs-string">&quot;/tmp/original.txt&quot;</span>, <span class="hljs-string">&quot;/tmp/symlink.txt&quot;</span>)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;符号链接: &#123;&#125;&quot;</span>, fs::<span class="hljs-title function_ invoke__">read_to_string</span>(<span class="hljs-string">&quot;/tmp/symlink.txt&quot;</span>)?);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;链接目标: &#123;&#125;&quot;</span>, fs::<span class="hljs-title function_ invoke__">read_link</span>(<span class="hljs-string">&quot;/tmp/symlink.txt&quot;</span>)?.<span class="hljs-title function_ invoke__">display</span>());<br><br>    <span class="hljs-comment">// symlink_metadata 返回链接本身的元数据</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">sym_meta</span> = fs::<span class="hljs-title function_ invoke__">symlink_metadata</span>(<span class="hljs-string">&quot;/tmp/symlink.txt&quot;</span>)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;是符号链接: &#123;&#125;&quot;</span>, sym_meta.<span class="hljs-title function_ invoke__">is_symlink</span>());<br><br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(<span class="hljs-string">&quot;/tmp/original.txt&quot;</span>)?;<br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(<span class="hljs-string">&quot;/tmp/hardlink.txt&quot;</span>)?;<br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(<span class="hljs-string">&quot;/tmp/symlink.txt&quot;</span>)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">原文件:   shared inode content</span><br><span class="hljs-section">硬链接:   shared inode content</span><br><span class="hljs-section">更新后硬链接: updated content</span><br><span class="hljs-section">符号链接: updated content</span><br><span class="hljs-section">链接目标: /tmp/original.txt</span><br><span class="hljs-section">是符号链接: true</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>符号链接删除目标文件后变为”悬空链接”（<code>dangling symlink</code>）：<code>fs::read_to_string</code> 会返回 <code>NotFound</code> 错误，而 <code>fs::symlink_metadata</code> 仍能正常返回链接自身的元数据。</p>
+</blockquote>
+<h2 id="八、权限管理"><a href="#八、权限管理" class="headerlink" title="八、权限管理"></a>八、权限管理</h2><h3 id="8-1-Permissions-与-set-permissions"><a href="#8-1-Permissions-与-set-permissions" class="headerlink" title="8.1 Permissions 与 set_permissions"></a>8.1 Permissions 与 set_permissions</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">set_permissions</span>(path: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">AsRef</span>&lt;Path&gt;, perm: Permissions) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;<br></code></pre></td></tr></table></figure>
+
+<p><code>Permissions</code> 通过 <code>metadata().permissions()</code> 获取，然后调用 <code>set_readonly(bool)</code> 修改，再通过 <code>set_permissions</code> 写回。<code>readonly()</code> 在 <code>Unix</code> 上检查所有者的写权限位（<code>S_IWUSR</code>）；<code>set_readonly(true)</code> 会清除所有用户的写权限位（<code>owner</code>、<code>group</code>、<code>others</code>），<code>set_readonly(false)</code> 仅恢复所有者的写权限位。</p>
+<blockquote>
+<p>若需要 <code>Unix</code> 权限的完整控制（<code>chmod</code> 语义），应使用 <code>std::os::unix::fs::PermissionsExt</code>，它提供 <code>mode()</code> 和 <code>set_mode(u32)</code> 方法，可直接操作 <code>rwxrwxrwx</code> 权限位。</p>
+</blockquote>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">path</span> = <span class="hljs-string">&quot;/tmp/perm.txt&quot;</span>;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(path, <span class="hljs-string">&quot;permission test&quot;</span>)?;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">perms</span> = fs::<span class="hljs-title function_ invoke__">metadata</span>(path)?.<span class="hljs-title function_ invoke__">permissions</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;初始只读: &#123;&#125;&quot;</span>, perms.<span class="hljs-title function_ invoke__">readonly</span>());<br><br>    perms.<span class="hljs-title function_ invoke__">set_readonly</span>(<span class="hljs-literal">true</span>);<br>    fs::<span class="hljs-title function_ invoke__">set_permissions</span>(path, perms)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;设为只读后: &#123;&#125;&quot;</span>, fs::<span class="hljs-title function_ invoke__">metadata</span>(path)?.<span class="hljs-title function_ invoke__">permissions</span>().<span class="hljs-title function_ invoke__">readonly</span>());<br><br>    <span class="hljs-comment">// 只读文件无法写入</span><br>    <span class="hljs-keyword">match</span> fs::<span class="hljs-title function_ invoke__">write</span>(path, <span class="hljs-string">&quot;try overwrite&quot;</span>) &#123;<br>        <span class="hljs-title function_ invoke__">Err</span>(e) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;写入只读文件: &#123;:?&#125;&quot;</span>, e.<span class="hljs-title function_ invoke__">kind</span>()),<br>        <span class="hljs-title function_ invoke__">Ok</span>(())  =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;写入成功（意外）&quot;</span>),<br>    &#125;<br><br>    <span class="hljs-comment">// 恢复可写权限</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">perms</span> = fs::<span class="hljs-title function_ invoke__">metadata</span>(path)?.<span class="hljs-title function_ invoke__">permissions</span>();<br>    perms.<span class="hljs-title function_ invoke__">set_readonly</span>(<span class="hljs-literal">false</span>);<br>    fs::<span class="hljs-title function_ invoke__">set_permissions</span>(path, perms)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;恢复可写后: &#123;&#125;&quot;</span>, fs::<span class="hljs-title function_ invoke__">metadata</span>(path)?.<span class="hljs-title function_ invoke__">permissions</span>().<span class="hljs-title function_ invoke__">readonly</span>());<br><br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(path)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">初始只读: false</span><br><span class="hljs-section">设为只读后: true</span><br><span class="hljs-section">写入只读文件: PermissionDenied</span><br><span class="hljs-section">恢复可写后: false</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="九、综合实战：CSV-文件过滤处理"><a href="#九、综合实战：CSV-文件过滤处理" class="headerlink" title="九、综合实战：CSV 文件过滤处理"></a>九、综合实战：<code>CSV</code> 文件过滤处理</h2><p>以下示例综合使用 <code>create_dir_all</code>、<code>OpenOptions</code>、<code>BufReader</code>、<code>metadata</code>、<code>copy</code>、<code>read_dir</code> 和 <code>remove_dir_all</code>，实现一个 <code>CSV</code> 文件过滤流水线：跳过注释行和空行，将有效行转为大写后写入输出文件，最后备份并汇报统计信息。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs::&#123;<span class="hljs-keyword">self</span>, OpenOptions&#125;;<br><span class="hljs-keyword">use</span> std::io::&#123;<span class="hljs-keyword">self</span>, BufRead, BufReader, Write&#125;;<br><span class="hljs-keyword">use</span> std::path::Path;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">filter_csv</span>(input: &amp;Path, output: &amp;Path) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;<span class="hljs-type">u32</span>&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">reader</span> = BufReader::<span class="hljs-title function_ invoke__">new</span>(fs::File::<span class="hljs-title function_ invoke__">open</span>(input)?);<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">out</span> = OpenOptions::<span class="hljs-title function_ invoke__">new</span>()<br>        .<span class="hljs-title function_ invoke__">write</span>(<span class="hljs-literal">true</span>)<br>        .<span class="hljs-title function_ invoke__">create</span>(<span class="hljs-literal">true</span>)<br>        .<span class="hljs-title function_ invoke__">truncate</span>(<span class="hljs-literal">true</span>)<br>        .<span class="hljs-title function_ invoke__">open</span>(output)?;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">count</span> = <span class="hljs-number">0u32</span>;<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">line</span> <span class="hljs-keyword">in</span> reader.<span class="hljs-title function_ invoke__">lines</span>() &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">line</span> = line?;<br>        <span class="hljs-keyword">if</span> line.<span class="hljs-title function_ invoke__">starts_with</span>(<span class="hljs-string">&#x27;#&#x27;</span>) || line.<span class="hljs-title function_ invoke__">trim</span>().<span class="hljs-title function_ invoke__">is_empty</span>() &#123;<br>            <span class="hljs-keyword">continue</span>;<br>        &#125;<br>        <span class="hljs-built_in">writeln!</span>(out, <span class="hljs-string">&quot;&#123;&#125;&quot;</span>, line.<span class="hljs-title function_ invoke__">to_uppercase</span>())?;<br>        count += <span class="hljs-number">1</span>;<br>    &#125;<br>    <span class="hljs-title function_ invoke__">Ok</span>(count)<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">dir</span> = Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/tmp/csv_demo&quot;</span>);<br>    fs::<span class="hljs-title function_ invoke__">create_dir_all</span>(dir)?;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">input</span> = dir.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;input.csv&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">output</span> = dir.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;output.csv&quot;</span>);<br><br>    fs::<span class="hljs-title function_ invoke__">write</span>(&amp;input, <span class="hljs-string">&quot;# comment\nname,age\nalice,30\nbob,25\n\njane,28\n&quot;</span>)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;输入文件大小: &#123;&#125; 字节&quot;</span>, fs::<span class="hljs-title function_ invoke__">metadata</span>(&amp;input)?.<span class="hljs-title function_ invoke__">len</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">count</span> = <span class="hljs-title function_ invoke__">filter_csv</span>(&amp;input, &amp;output)?;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;处理了 &#123;count&#125; 行&quot;</span>);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">result</span> = fs::<span class="hljs-title function_ invoke__">read_to_string</span>(&amp;output)?;<br>    <span class="hljs-built_in">print!</span>(<span class="hljs-string">&quot;输出内容:\n&#123;result&#125;&quot;</span>);<br><br>    <span class="hljs-comment">// 备份输出文件</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">backup</span> = dir.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;output.csv.bak&quot;</span>);<br>    fs::<span class="hljs-title function_ invoke__">copy</span>(&amp;output, &amp;backup)?;<br><br>    <span class="hljs-comment">// 列出目录内容</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;目录内容:&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">entries</span>: <span class="hljs-type">Vec</span>&lt;_&gt; = fs::<span class="hljs-title function_ invoke__">read_dir</span>(dir)?.<span class="hljs-title function_ invoke__">filter_map</span>(|e| e.<span class="hljs-title function_ invoke__">ok</span>()).<span class="hljs-title function_ invoke__">collect</span>();<br>    entries.<span class="hljs-title function_ invoke__">sort_by_key</span>(|e| e.<span class="hljs-title function_ invoke__">file_name</span>());<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">e</span> <span class="hljs-keyword">in</span> &amp;entries &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  &#123;&#125; (&#123;&#125; 字节)&quot;</span>, e.<span class="hljs-title function_ invoke__">file_name</span>().<span class="hljs-title function_ invoke__">to_string_lossy</span>(), e.<span class="hljs-title function_ invoke__">metadata</span>()?.<span class="hljs-title function_ invoke__">len</span>());<br>    &#125;<br><br>    fs::<span class="hljs-title function_ invoke__">remove_dir_all</span>(dir)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs stylus">输入文件大小: <span class="hljs-number">44</span> 字节<br>处理了 <span class="hljs-number">4</span> 行<br>输出内容:<br>NAME,AGE<br>ALICE,<span class="hljs-number">30</span><br>BOB,<span class="hljs-number">25</span><br>JANE,<span class="hljs-number">28</span><br>目录内容:<br>  <span class="hljs-selector-tag">input</span><span class="hljs-selector-class">.csv</span> (<span class="hljs-number">44</span> 字节)<br>  output<span class="hljs-selector-class">.csv</span> (<span class="hljs-number">33</span> 字节)<br>  output<span class="hljs-selector-class">.csv</span><span class="hljs-selector-class">.bak</span> (<span class="hljs-number">33</span> 字节)<br></code></pre></td></tr></table></figure>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%96%87%E4%BB%B6%E8%AF%BB%E5%86%99/" class="print-no-link">#文件读写</a>
+      
+        <a href="/tags/%E7%9B%AE%E5%BD%95%E9%81%8D%E5%8E%86/" class="print-no-link">#目录遍历</a>
+      
+        <a href="/tags/%E5%85%83%E6%95%B0%E6%8D%AE%E6%9F%A5%E8%AF%A2/" class="print-no-link">#元数据查询</a>
+      
+        <a href="/tags/%E6%9D%83%E9%99%90%E7%AE%A1%E7%90%86/" class="print-no-link">#权限管理</a>
+      
+        <a href="/tags/%E7%AC%A6%E5%8F%B7%E9%93%BE%E6%8E%A5/" class="print-no-link">#符号链接</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/rust/std-io.html" title="[标准库] std::io 输入输出模块介绍与实战">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">[标准库] std::io 输入输出模块介绍与实战</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/std-env.html" title="[标准库] std::env 环境变量与进程信息介绍与实战">
+                        <span class="hidden-mobile">[标准库] std::env 环境变量与进程信息介绍与实战</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

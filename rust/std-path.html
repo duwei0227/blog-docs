@@ -1,0 +1,1211 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="文件系统操作中，路径是程序与磁盘之间沟通的语言。std::path 提供了两个核心类型——不可变借用切片 Path 和拥有所有权的 PathBuf——它们的关系与 str 和 String 完全对称。与直接拼接字符串相比，std::path 能正确处理平台分隔符差异、.. 和 . 组件、以及非 UTF-8 字节序列；components() 迭代器会自动规范化路径而不访问文件系统，canonica">
+  
+  
+  
+  <title>[标准库] std::path 路径处理介绍与实战 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="[标准库] std::path 路径处理介绍与实战"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-29 10:00" pubdate>
+          2026年5月29日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          16k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          132 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">[标准库] std::path 路径处理介绍与实战</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>文件系统操作中，路径是程序与磁盘之间沟通的语言。<code>std::path</code> 提供了两个核心类型——不可变借用切片 <code>Path</code> 和拥有所有权的 <code>PathBuf</code>——它们的关系与 <code>str</code> 和 <code>String</code> 完全对称。与直接拼接字符串相比，<code>std::path</code> 能正确处理平台分隔符差异、<code>..</code> 和 <code>.</code> 组件、以及非 <code>UTF-8</code> 字节序列；<code>components()</code> 迭代器会自动规范化路径而不访问文件系统，<code>canonicalize()</code> 则在需要时解析符号链接并返回绝对路径。</p>
+<h2 id="一、模块概览"><a href="#一、模块概览" class="headerlink" title="一、模块概览"></a>一、模块概览</h2><p><code>std::path</code> 的主要组件如下：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>分类</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Path</code></td>
+<td><code>struct</code>（unsized）</td>
+<td>不可变路径切片，类似 <code>str</code>；始终通过引用 <code>&amp;Path</code> 使用</td>
+</tr>
+<tr>
+<td><code>PathBuf</code></td>
+<td><code>struct</code></td>
+<td>拥有所有权的可变路径，类似 <code>String</code></td>
+</tr>
+<tr>
+<td><code>Component</code></td>
+<td><code>enum</code></td>
+<td>路径中的单个组件，见下节</td>
+</tr>
+<tr>
+<td><code>Components</code></td>
+<td><code>struct</code></td>
+<td><code>Path::components()</code> 返回的迭代器</td>
+</tr>
+<tr>
+<td><code>Ancestors</code></td>
+<td><code>struct</code></td>
+<td><code>Path::ancestors()</code> 返回的迭代器</td>
+</tr>
+<tr>
+<td><code>Iter</code></td>
+<td><code>struct</code></td>
+<td><code>Path::iter()</code> 返回的迭代器，产出 <code>&amp;OsStr</code></td>
+</tr>
+<tr>
+<td><code>PrefixComponent</code></td>
+<td><code>struct</code></td>
+<td><code>Windows</code> 路径前缀（如 <code>C:</code>, <code>\\server\share</code>）的包装</td>
+</tr>
+<tr>
+<td><code>Prefix</code></td>
+<td><code>enum</code></td>
+<td><code>Windows</code> 路径前缀的各种变体</td>
+</tr>
+<tr>
+<td><code>Display</code></td>
+<td><code>struct</code></td>
+<td><code>Path::display()</code> 返回的辅助类型，实现 <code>fmt::Display</code></td>
+</tr>
+<tr>
+<td><code>StripPrefixError</code></td>
+<td><code>struct</code></td>
+<td><code>Path::strip_prefix()</code> 前缀不匹配时返回的错误类型</td>
+</tr>
+<tr>
+<td><code>MAIN_SEPARATOR</code></td>
+<td><code>char</code></td>
+<td>当前平台的主路径分隔符（<code>Unix</code> 为 <code>/</code>，<code>Windows</code> 为 <code>\</code>）</td>
+</tr>
+<tr>
+<td><code>MAIN_SEPARATOR_STR</code></td>
+<td><code>&amp;str</code></td>
+<td><code>MAIN_SEPARATOR</code> 的字符串形式</td>
+</tr>
+</tbody></table>
+<h2 id="二、Path-与-PathBuf：借用与拥有"><a href="#二、Path-与-PathBuf：借用与拥有" class="headerlink" title="二、Path 与 PathBuf：借用与拥有"></a>二、Path 与 PathBuf：借用与拥有</h2><p><code>Path</code> 是无大小类型（<code>unsized</code>），无法直接持有，只能通过 <code>&amp;Path</code> 借用；<code>PathBuf</code> 在堆上分配，可以移动和修改。两者之间的转换是零成本或低成本的，与 <code>str</code>&#x2F;<code>String</code> 的转换规律一致。</p>
+<h3 id="2-1-创建与转换"><a href="#2-1-创建与转换" class="headerlink" title="2.1 创建与转换"></a>2.1 创建与转换</h3><p><strong>路径创建：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Path::new(s)</code></td>
+<td>从 <code>&amp;str</code> 或 <code>&amp;OsStr</code> 创建 <code>&amp;Path</code>，零拷贝</td>
+</tr>
+<tr>
+<td><code>PathBuf::from(s)</code></td>
+<td>从字符串或 <code>OsString</code> 创建 <code>PathBuf</code></td>
+</tr>
+<tr>
+<td><code>path.to_path_buf()</code></td>
+<td><code>&amp;Path</code> 克隆为 <code>PathBuf</code></td>
+</tr>
+<tr>
+<td><code>[...].iter().collect::&lt;PathBuf&gt;()</code></td>
+<td>从组件迭代器收集成 <code>PathBuf</code></td>
+</tr>
+</tbody></table>
+<p><strong>路径转字符串：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>返回类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>to_str()</code></td>
+<td><code>Option&lt;&amp;str&gt;</code></td>
+<td>仅当路径是合法 <code>UTF-8</code> 时返回 <code>Some</code>；存在非 <code>UTF-8</code> 字节时返回 <code>None</code></td>
+</tr>
+<tr>
+<td><code>to_string_lossy()</code></td>
+<td><code>Cow&lt;&#39;_, str&gt;</code></td>
+<td>始终成功；非 <code>UTF-8</code> 字节替换为 <code>U+FFFD</code>（<code>REPLACEMENT CHARACTER</code>）</td>
+</tr>
+<tr>
+<td><code>display()</code></td>
+<td><code>Display</code></td>
+<td>返回实现了 <code>fmt::Display</code> 的辅助结构体，底层使用 <code>to_string_lossy</code> 的语义</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>在 <code>Unix</code> 上，文件名可以包含任意字节（除 <code>\0</code> 和 <code>/</code>），因此 <code>to_str()</code> 返回 <code>None</code> 是真实存在的情况，不能随意 <code>.unwrap()</code>。需要展示路径时，优先使用 <code>display()</code> 或 <code>to_string_lossy()</code>。</p>
+</blockquote>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::path::&#123;Path, PathBuf&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">path</span> = Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/tmp/project/src/main.rs&quot;</span>);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;parent: &#123;:?&#125;&quot;</span>, path.<span class="hljs-title function_ invoke__">parent</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;file_name: &#123;:?&#125;&quot;</span>, path.<span class="hljs-title function_ invoke__">file_name</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;file_stem: &#123;:?&#125;&quot;</span>, path.<span class="hljs-title function_ invoke__">file_stem</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;extension: &#123;:?&#125;&quot;</span>, path.<span class="hljs-title function_ invoke__">extension</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;is_absolute: &#123;&#125;&quot;</span>, path.<span class="hljs-title function_ invoke__">is_absolute</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;is_relative: &#123;&#125;&quot;</span>, Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;foo/bar&quot;</span>).<span class="hljs-title function_ invoke__">is_relative</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;has_root: &#123;&#125;&quot;</span>, path.<span class="hljs-title function_ invoke__">has_root</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;to_str: &#123;:?&#125;&quot;</span>, path.<span class="hljs-title function_ invoke__">to_str</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;to_string_lossy: &#123;&#125;&quot;</span>, path.<span class="hljs-title function_ invoke__">to_string_lossy</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">gz</span> = Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;archive.tar.gz&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;tar.gz file_stem: &#123;:?&#125;&quot;</span>, gz.<span class="hljs-title function_ invoke__">file_stem</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;tar.gz extension: &#123;:?&#125;&quot;</span>, gz.<span class="hljs-title function_ invoke__">extension</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight isbl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs isbl"><span class="hljs-variable">parent</span>: <span class="hljs-function"><span class="hljs-title">Some</span>(<span class="hljs-string">&quot;/tmp/project/src&quot;</span>)</span><br><span class="hljs-variable">file_name</span>: <span class="hljs-function"><span class="hljs-title">Some</span>(<span class="hljs-string">&quot;main.rs&quot;</span>)</span><br><span class="hljs-variable">file_stem</span>: <span class="hljs-function"><span class="hljs-title">Some</span>(<span class="hljs-string">&quot;main&quot;</span>)</span><br><span class="hljs-variable">extension</span>: <span class="hljs-function"><span class="hljs-title">Some</span>(<span class="hljs-string">&quot;rs&quot;</span>)</span><br><span class="hljs-variable">is_absolute</span>: <span class="hljs-variable"><span class="hljs-literal">true</span></span><br><span class="hljs-variable">is_relative</span>: <span class="hljs-variable"><span class="hljs-literal">true</span></span><br><span class="hljs-variable">has_root</span>: <span class="hljs-variable"><span class="hljs-literal">true</span></span><br><span class="hljs-variable">to_str</span>: <span class="hljs-function"><span class="hljs-title">Some</span>(<span class="hljs-string">&quot;/tmp/project/src/main.rs&quot;</span>)</span><br><span class="hljs-variable">to_string_lossy</span>: /<span class="hljs-variable">tmp</span>/<span class="hljs-variable">project</span>/<span class="hljs-variable">src</span>/<span class="hljs-variable">main.rs</span><br><span class="hljs-variable">tar.gz</span> <span class="hljs-variable">file_stem</span>: <span class="hljs-function"><span class="hljs-title">Some</span>(<span class="hljs-string">&quot;archive.tar&quot;</span>)</span><br><span class="hljs-variable">tar.gz</span> <span class="hljs-variable">extension</span>: <span class="hljs-function"><span class="hljs-title">Some</span>(<span class="hljs-string">&quot;gz&quot;</span>)</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>file_stem()</code> 只去除<strong>最后一个点</strong>之后的扩展名，所以 <code>archive.tar.gz</code> 的 <code>file_stem</code> 是 <code>&quot;archive.tar&quot;</code>，而非 <code>&quot;archive&quot;</code>。若需要去除第一个点之前的部分，使用 <code>Rust 1.91.0</code> 稳定的 <code>file_prefix()</code>。</p>
+</blockquote>
+<h3 id="2-2-PathBuf-的修改操作"><a href="#2-2-PathBuf-的修改操作" class="headerlink" title="2.2 PathBuf 的修改操作"></a>2.2 PathBuf 的修改操作</h3><p><code>PathBuf</code> 提供就地修改和返回新值两类方法：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>修改方式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>push(p)</code></td>
+<td>就地</td>
+<td>追加路径组件；若 <code>p</code> 是绝对路径则完全替换</td>
+</tr>
+<tr>
+<td><code>pop()</code></td>
+<td>就地，返回 <code>bool</code></td>
+<td>移除最后一个组件；路径为空或只有根时返回 <code>false</code></td>
+</tr>
+<tr>
+<td><code>set_extension(ext)</code></td>
+<td>就地，返回 <code>bool</code></td>
+<td>修改最后的扩展名；<code>ext</code> 为空字符串时删除扩展名</td>
+</tr>
+<tr>
+<td><code>set_file_name(name)</code></td>
+<td>就地</td>
+<td>替换最后的文件名部分</td>
+</tr>
+<tr>
+<td><code>join(p)</code></td>
+<td>返回新 <code>PathBuf</code></td>
+<td>追加组件；若 <code>p</code> 为绝对路径则替换</td>
+</tr>
+<tr>
+<td><code>with_file_name(name)</code></td>
+<td>返回新 <code>PathBuf</code></td>
+<td>替换最后的文件名部分</td>
+</tr>
+<tr>
+<td><code>with_extension(ext)</code></td>
+<td>返回新 <code>PathBuf</code></td>
+<td>替换最后的扩展名</td>
+</tr>
+</tbody></table>
+<p><code>push</code> 的”绝对路径替换”行为与 <code>join</code> 完全对称，是有意设计：它允许在路径构建逻辑中，用某个绝对配置覆盖已有的前缀路径。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::path::PathBuf;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">buf</span> = PathBuf::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;/home/user&quot;</span>);<br><br>    buf.<span class="hljs-title function_ invoke__">push</span>(<span class="hljs-string">&quot;projects&quot;</span>);<br>    buf.<span class="hljs-title function_ invoke__">push</span>(<span class="hljs-string">&quot;demo&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;after push: &#123;&#125;&quot;</span>, buf.<span class="hljs-title function_ invoke__">display</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">popped</span> = buf.<span class="hljs-title function_ invoke__">pop</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;after pop (&#123;&#125;): &#123;&#125;&quot;</span>, popped, buf.<span class="hljs-title function_ invoke__">display</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">f</span> = PathBuf::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;/tmp/notes.txt&quot;</span>);<br>    f.<span class="hljs-title function_ invoke__">set_extension</span>(<span class="hljs-string">&quot;bak&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;set_extension: &#123;&#125;&quot;</span>, f.<span class="hljs-title function_ invoke__">display</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">renamed</span> = f.<span class="hljs-title function_ invoke__">with_file_name</span>(<span class="hljs-string">&quot;config.toml&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;with_file_name: &#123;&#125;&quot;</span>, renamed.<span class="hljs-title function_ invoke__">display</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">orig</span> = PathBuf::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;report.tar.gz&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;with_extension: &#123;&#125;&quot;</span>, orig.<span class="hljs-title function_ invoke__">with_extension</span>(<span class="hljs-string">&quot;xz&quot;</span>).<span class="hljs-title function_ invoke__">display</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">base</span> = PathBuf::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;/etc&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;join: &#123;&#125;&quot;</span>, base.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;nginx/nginx.conf&quot;</span>).<span class="hljs-title function_ invoke__">display</span>());<br><br>    <span class="hljs-comment">// 追加绝对路径时完全替换</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;join absolute: &#123;&#125;&quot;</span>, base.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;/bin/sh&quot;</span>).<span class="hljs-title function_ invoke__">display</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">collected</span>: PathBuf = [<span class="hljs-string">&quot;/usr&quot;</span>, <span class="hljs-string">&quot;local&quot;</span>, <span class="hljs-string">&quot;bin&quot;</span>].<span class="hljs-title function_ invoke__">iter</span>().<span class="hljs-title function_ invoke__">collect</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;collected: &#123;&#125;&quot;</span>, collected.<span class="hljs-title function_ invoke__">display</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs nix">after <span class="hljs-params">push:</span> <span class="hljs-symbol">/home/user/projects/demo</span><br>after pop (<span class="hljs-literal">true</span>): <span class="hljs-symbol">/home/user/projects</span><br><span class="hljs-params">set_extension:</span> <span class="hljs-symbol">/tmp/notes.bak</span><br><span class="hljs-params">with_file_name:</span> <span class="hljs-symbol">/tmp/config.toml</span><br><span class="hljs-params">with_extension:</span> report.tar.xz<br><span class="hljs-params">join:</span> <span class="hljs-symbol">/etc/nginx/nginx.conf</span><br>join <span class="hljs-params">absolute:</span> <span class="hljs-symbol">/bin/sh</span><br><span class="hljs-params">collected:</span> <span class="hljs-operator">/</span>usr<span class="hljs-operator">/</span>local<span class="hljs-operator">/</span>bin<br></code></pre></td></tr></table></figure>
+
+<h2 id="三、路径组件与祖先迭代"><a href="#三、路径组件与祖先迭代" class="headerlink" title="三、路径组件与祖先迭代"></a>三、路径组件与祖先迭代</h2><h3 id="3-1-Component-枚举"><a href="#3-1-Component-枚举" class="headerlink" title="3.1 Component 枚举"></a>3.1 Component 枚举</h3><p><code>components()</code> 迭代器产出的每个元素类型为 <code>Component</code>，覆盖了所有可能的路径片段：</p>
+<table>
+<thead>
+<tr>
+<th>变体</th>
+<th>说明</th>
+<th>示例（Unix）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>RootDir</code></td>
+<td>根目录分隔符</td>
+<td><code>/</code></td>
+</tr>
+<tr>
+<td><code>Normal(OsStr)</code></td>
+<td>普通目录或文件名</td>
+<td><code>usr</code>, <code>bin</code>, <code>main.rs</code></td>
+</tr>
+<tr>
+<td><code>CurDir</code></td>
+<td>当前目录 <code>.</code></td>
+<td><code>.</code>（仅在路径开头时保留）</td>
+</tr>
+<tr>
+<td><code>ParentDir</code></td>
+<td>父目录 <code>..</code></td>
+<td><code>..</code>（保留，不做语义解析）</td>
+</tr>
+<tr>
+<td><code>Prefix(PrefixComponent)</code></td>
+<td><code>Windows</code> 路径前缀</td>
+<td><code>C:</code>, <code>\\server\share</code></td>
+</tr>
+</tbody></table>
+<p><code>Component</code> 的作用是把路径拆成有语义的片段，而不是简单按 <code>/</code> 或 <code>\</code> 做字符串切分。这样做有三个好处：</p>
+<ul>
+<li>可以区分根目录、普通文件名、当前目录、父目录和 <code>Windows</code> 前缀</li>
+<li>可以保留非 <code>UTF-8</code> 文件名，因为 <code>Normal</code> 内部保存的是 <code>OsStr</code>，不是 <code>str</code></li>
+<li>可以避免跨平台分隔符差异，尤其是 <code>Windows</code> 同时接受 <code>/</code> 和 <code>\</code></li>
+</ul>
+<p>例如在 <code>Unix</code> 上，路径 <code>/tmp/./a//../b.txt</code> 经过 <code>components()</code> 后，会得到如下组件：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::path::&#123;Component, Path&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">path</span> = Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/tmp/./a//../b.txt&quot;</span>);<br><br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">component</span> <span class="hljs-keyword">in</span> path.<span class="hljs-title function_ invoke__">components</span>() &#123;<br>        <span class="hljs-keyword">match</span> component &#123;<br>            Component::RootDir =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;RootDir&quot;</span>),<br>            Component::<span class="hljs-title function_ invoke__">Normal</span>(name) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Normal(&#123;:?&#125;)&quot;</span>, name),<br>            Component::CurDir =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;CurDir&quot;</span>),<br>            Component::ParentDir =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;ParentDir&quot;</span>),<br>            Component::<span class="hljs-title function_ invoke__">Prefix</span>(prefix) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Prefix(&#123;:?&#125;)&quot;</span>, prefix),<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs text">RootDir<br>Normal(&quot;tmp&quot;)<br>Normal(&quot;a&quot;)<br>ParentDir<br>Normal(&quot;b.txt&quot;)<br></code></pre></td></tr></table></figure>
+
+<p>这里没有出现 <code>CurDir</code>，也没有出现空组件，因为中间的 <code>.</code> 和重复分隔符会在迭代时被规范化掉；但 <code>ParentDir</code> 仍然保留，因为 <code>components()</code> 不知道 <code>a</code> 是否为符号链接，不能在纯词法层面把 <code>a/..</code> 简化掉。</p>
+<blockquote>
+<p><code>Prefix</code> 只在 <code>Windows</code> 路径中出现。对于 <code>C:\Windows\System32</code> 这类路径，组件通常先出现 <code>Prefix(C:)</code>，再出现 <code>RootDir</code>，然后才是普通目录名。编写跨平台路径分析代码时，不要假设第一个组件一定是 <code>RootDir</code> 或 <code>Normal</code>。</p>
+</blockquote>
+<h3 id="3-2-components-与规范化规则"><a href="#3-2-components-与规范化规则" class="headerlink" title="3.2 components() 与规范化规则"></a>3.2 components() 与规范化规则</h3><p><code>components()</code> 在迭代时对路径做<strong>纯词法规范化</strong>，不访问文件系统，也不解析符号链接：</p>
+<ul>
+<li>连续多个分隔符合并为一个</li>
+<li>中间位置的 <code>.</code>（<code>CurDir</code>）被丢弃，开头的 <code>.</code> 保留</li>
+<li><code>..</code>（<code>ParentDir</code>）<strong>不</strong>折叠——路径 <code>a/b/../c</code> 与 <code>a/c</code> 仍是不同路径，因为 <code>b</code> 可能是一个符号链接</li>
+</ul>
+<blockquote>
+<p>若需要将 <code>..</code> 也折叠掉，必须调用 <code>canonicalize()</code>，它会访问文件系统并解析所有符号链接后再规范化。</p>
+</blockquote>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::path::&#123;Path, Component&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">path</span> = Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/usr/local/../bin/./cargo&quot;</span>);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;components:&quot;</span>);<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">comp</span> <span class="hljs-keyword">in</span> path.<span class="hljs-title function_ invoke__">components</span>() &#123;<br>        <span class="hljs-keyword">match</span> comp &#123;<br>            Component::RootDir   =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  RootDir&quot;</span>),<br>            Component::<span class="hljs-title function_ invoke__">Normal</span>(s) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  Normal(&#123;:?&#125;)&quot;</span>, s),<br>            Component::ParentDir =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  ParentDir&quot;</span>),<br>            Component::CurDir    =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  CurDir&quot;</span>),<br>            Component::<span class="hljs-title function_ invoke__">Prefix</span>(_) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  Prefix&quot;</span>),<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight isbl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs isbl"><span class="hljs-variable">components</span>:<br>  <span class="hljs-variable">RootDir</span><br>  <span class="hljs-function"><span class="hljs-title">Normal</span>(<span class="hljs-string">&quot;usr&quot;</span>)</span><br>  <span class="hljs-function"><span class="hljs-title">Normal</span>(<span class="hljs-string">&quot;local&quot;</span>)</span><br>  <span class="hljs-variable">ParentDir</span><br>  <span class="hljs-function"><span class="hljs-title">Normal</span>(<span class="hljs-string">&quot;bin&quot;</span>)</span><br>  <span class="hljs-function"><span class="hljs-title">Normal</span>(<span class="hljs-string">&quot;cargo&quot;</span>)</span><br></code></pre></td></tr></table></figure>
+
+<p>从输出可见，中间的 <code>.</code>（<code>CurDir</code>）被规范化掉，不出现在 <code>components()</code> 结果中；而 <code>..</code>（<code>ParentDir</code>）仍然保留。也就是说，<code>components()</code> 适合分析路径的词法结构，但不能替代真实文件系统上的路径解析。</p>
+<h3 id="3-3-ancestors-详解"><a href="#3-3-ancestors-详解" class="headerlink" title="3.3 ancestors() 详解"></a>3.3 ancestors() 详解</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">ancestors</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> Ancestors&lt;<span class="hljs-symbol">&#x27;_</span>&gt;<br></code></pre></td></tr></table></figure>
+
+<p><code>ancestors()</code> 返回一个从当前路径开始、逐级向父路径移动的迭代器。它的产出项类型是 <code>&amp;Path</code>，不会分配新的 <code>PathBuf</code>，也不会访问文件系统；每一步的效果等价于反复调用 <code>parent()</code>。</p>
+<table>
+<thead>
+<tr>
+<th>输入路径</th>
+<th>ancestors() 产出顺序</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>/usr/local/bin</code></td>
+<td><code>/usr/local/bin</code> -&gt; <code>/usr/local</code> -&gt; <code>/usr</code> -&gt; <code>/</code></td>
+</tr>
+<tr>
+<td><code>foo/bar</code></td>
+<td><code>foo/bar</code> -&gt; <code>foo</code> -&gt; &#96;&#96;（空路径）</td>
+</tr>
+<tr>
+<td><code>foo</code></td>
+<td><code>foo</code> -&gt; &#96;&#96;（空路径）</td>
+</tr>
+<tr>
+<td><code>/</code></td>
+<td><code>/</code></td>
+</tr>
+<tr>
+<td>&#96;&#96;（空路径）</td>
+<td>&#96;&#96;（空路径）</td>
+</tr>
+</tbody></table>
+<p>需要特别注意相对路径：当最后一个普通组件被移除后，<code>parent()</code> 会返回空路径 <code>&quot;&quot;</code>，因此 <code>ancestors()</code> 也会把空路径作为最后一项产出。空路径在 <code>std::path</code> 中表示”没有路径组件”，不是当前目录 <code>.</code>。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::path::Path;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">raw</span> <span class="hljs-keyword">in</span> [<span class="hljs-string">&quot;/usr/local/bin&quot;</span>, <span class="hljs-string">&quot;foo/bar&quot;</span>, <span class="hljs-string">&quot;foo&quot;</span>, <span class="hljs-string">&quot;/&quot;</span>, <span class="hljs-string">&quot;&quot;</span>] &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;path = &#123;:?&#125;&quot;</span>, raw);<br><br>        <span class="hljs-keyword">for</span> <span class="hljs-variable">ancestor</span> <span class="hljs-keyword">in</span> Path::<span class="hljs-title function_ invoke__">new</span>(raw).<span class="hljs-title function_ invoke__">ancestors</span>() &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  &#123;:?&#125;&quot;</span>, ancestor);<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs text">path = &quot;/usr/local/bin&quot;<br>  &quot;/usr/local/bin&quot;<br>  &quot;/usr/local&quot;<br>  &quot;/usr&quot;<br>  &quot;/&quot;<br>path = &quot;foo/bar&quot;<br>  &quot;foo/bar&quot;<br>  &quot;foo&quot;<br>  &quot;&quot;<br>path = &quot;foo&quot;<br>  &quot;foo&quot;<br>  &quot;&quot;<br>path = &quot;/&quot;<br>  &quot;/&quot;<br>path = &quot;&quot;<br>  &quot;&quot;<br></code></pre></td></tr></table></figure>
+
+<p><code>ancestors()</code> 常用于从某个文件路径向上查找配置文件、项目根目录或标记文件。例如向上查找 <code>Cargo.toml</code>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::io;<br><span class="hljs-keyword">use</span> std::path::&#123;Path, PathBuf&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">find_project_root</span>(start: &amp;Path) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Option</span>&lt;PathBuf&gt; &#123;<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">dir</span> <span class="hljs-keyword">in</span> start.<span class="hljs-title function_ invoke__">ancestors</span>() &#123;<br>        <span class="hljs-keyword">if</span> dir.<span class="hljs-title function_ invoke__">as_os_str</span>().<span class="hljs-title function_ invoke__">is_empty</span>() &#123;<br>            <span class="hljs-keyword">continue</span>;<br>        &#125;<br><br>        <span class="hljs-keyword">if</span> dir.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;Cargo.toml&quot;</span>).<span class="hljs-title function_ invoke__">is_file</span>() &#123;<br>            <span class="hljs-keyword">return</span> <span class="hljs-title function_ invoke__">Some</span>(dir.<span class="hljs-title function_ invoke__">to_path_buf</span>());<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-literal">None</span><br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">root</span> = Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/tmp/path_demo_project&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">src</span> = root.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;src&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">file</span> = src.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;main.rs&quot;</span>);<br><br>    fs::<span class="hljs-title function_ invoke__">create_dir_all</span>(&amp;src)?;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(root.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;Cargo.toml&quot;</span>), <span class="hljs-string">&quot;[package]\nname = \&quot;demo\&quot;\n&quot;</span>)?;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(&amp;file, <span class="hljs-string">&quot;fn main() &#123;&#125;\n&quot;</span>)?;<br><br>    <span class="hljs-keyword">match</span> <span class="hljs-title function_ invoke__">find_project_root</span>(&amp;file) &#123;<br>        <span class="hljs-title function_ invoke__">Some</span>(root) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;project root: &#123;&#125;&quot;</span>, root.<span class="hljs-title function_ invoke__">display</span>()),<br>        <span class="hljs-literal">None</span> =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;not found&quot;</span>),<br>    &#125;<br><br>    fs::<span class="hljs-title function_ invoke__">remove_dir_all</span>(root)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">project root: /tmp/path_demo_project<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意：<code>ancestors()</code> 只是词法层面的父路径迭代，不会判断目录是否存在，也不会解析符号链接。若路径中包含 <code>..</code>，它会按照路径组件直接向上迭代，而不会先把 <code>a/b/..</code> 合并成 <code>a</code>。</p>
+</blockquote>
+<h2 id="四、路径比较与前缀操作"><a href="#四、路径比较与前缀操作" class="headerlink" title="四、路径比较与前缀操作"></a>四、路径比较与前缀操作</h2><h3 id="4-1-starts-with-与-ends-with"><a href="#4-1-starts-with-与-ends-with" class="headerlink" title="4.1 starts_with 与 ends_with"></a>4.1 starts_with 与 ends_with</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">starts_with</span>&lt;P: <span class="hljs-built_in">AsRef</span>&lt;Path&gt;&gt;(&amp;<span class="hljs-keyword">self</span>, base: P) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">bool</span><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">ends_with</span>&lt;P: <span class="hljs-built_in">AsRef</span>&lt;Path&gt;&gt;(&amp;<span class="hljs-keyword">self</span>, child: P) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">bool</span><br></code></pre></td></tr></table></figure>
+
+<p>两者匹配的是<strong>完整路径组件</strong>，而非子字符串。这是与 <code>str::starts_with</code> 的关键区别：<code>/etc/passwd</code> 以 <code>/etc</code> 开头，但不以 <code>/e</code> 开头，因为 <code>/e</code> 不是合法的路径组件边界。</p>
+<h3 id="4-2-strip-prefix"><a href="#4-2-strip-prefix" class="headerlink" title="4.2 strip_prefix"></a>4.2 strip_prefix</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">strip_prefix</span>&lt;P: <span class="hljs-built_in">AsRef</span>&lt;Path&gt;&gt;(&amp;<span class="hljs-keyword">self</span>, base: P) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;&amp;Path, StripPrefixError&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>base</code></td>
+<td>-</td>
+<td>要去除的前缀路径；不存在时返回 <code>Err(StripPrefixError)</code></td>
+</tr>
+</tbody></table>
+<p><code>strip_prefix</code> 用于将绝对路径转换为相对路径——先验证 <code>base</code> 确实是前缀，然后返回去掉前缀后的剩余部分。典型用途是在遍历目录树时，将绝对路径转为相对于扫描根目录的相对路径。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::path::Path;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">path</span> = Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/etc/nginx/nginx.conf&quot;</span>);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;starts_with /etc:   &#123;&#125;&quot;</span>, path.<span class="hljs-title function_ invoke__">starts_with</span>(<span class="hljs-string">&quot;/etc&quot;</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;starts_with /e:     &#123;&#125;&quot;</span>, path.<span class="hljs-title function_ invoke__">starts_with</span>(<span class="hljs-string">&quot;/e&quot;</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;ends_with nginx.conf: &#123;&#125;&quot;</span>, path.<span class="hljs-title function_ invoke__">ends_with</span>(<span class="hljs-string">&quot;nginx.conf&quot;</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;ends_with conf:       &#123;&#125;&quot;</span>, path.<span class="hljs-title function_ invoke__">ends_with</span>(<span class="hljs-string">&quot;conf&quot;</span>));<br><br>    <span class="hljs-keyword">match</span> path.<span class="hljs-title function_ invoke__">strip_prefix</span>(<span class="hljs-string">&quot;/etc&quot;</span>) &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(rel) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;strip_prefix: &#123;&#125;&quot;</span>, rel.<span class="hljs-title function_ invoke__">display</span>()),<br>        <span class="hljs-title function_ invoke__">Err</span>(e)  =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;error: &#123;e&#125;&quot;</span>),<br>    &#125;<br><br>    <span class="hljs-keyword">match</span> path.<span class="hljs-title function_ invoke__">strip_prefix</span>(<span class="hljs-string">&quot;/usr&quot;</span>) &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(rel) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;strip_prefix: &#123;&#125;&quot;</span>, rel.<span class="hljs-title function_ invoke__">display</span>()),<br>        <span class="hljs-title function_ invoke__">Err</span>(_)  =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;strip_prefix /usr: not a prefix&quot;</span>),<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs nix">starts_with <span class="hljs-operator">/</span><span class="hljs-params">etc:</span>   <span class="hljs-literal">true</span><br>starts_with <span class="hljs-operator">/</span><span class="hljs-params">e:</span>     <span class="hljs-literal">false</span><br>ends_with nginx.<span class="hljs-params">conf:</span> <span class="hljs-literal">true</span><br>ends_with <span class="hljs-params">conf:</span>       <span class="hljs-literal">false</span><br><span class="hljs-params">strip_prefix:</span> nginx<span class="hljs-symbol">/nginx.conf</span><br>strip_prefix <span class="hljs-operator">/</span><span class="hljs-params">usr:</span> not a prefix<br></code></pre></td></tr></table></figure>
+
+<h2 id="五、文件系统查询"><a href="#五、文件系统查询" class="headerlink" title="五、文件系统查询"></a>五、文件系统查询</h2><p><code>Path</code> 上的文件系统查询方法是 <code>std::fs</code> 对应函数的快捷入口，底层行为完全一致。</p>
+<h3 id="5-1-存在性检查"><a href="#5-1-存在性检查" class="headerlink" title="5.1 存在性检查"></a>5.1 存在性检查</h3><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>返回类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>exists()</code></td>
+<td><code>bool</code></td>
+<td><code>Rust 1.5.0</code>；将所有错误（包括权限拒绝）都静默转换为 <code>false</code></td>
+</tr>
+<tr>
+<td><code>try_exists()</code></td>
+<td><code>io::Result&lt;bool&gt;</code></td>
+<td><code>Rust 1.63.0</code>；区分”不存在”（<code>Ok(false)</code>）和”无法确定”（<code>Err</code>）</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>生产代码中应始终使用 <code>try_exists()</code>，<code>exists()</code> 对权限错误的静默处理可能掩盖真正的 <code>I/O</code> 问题。</p>
+</blockquote>
+<h3 id="5-2-类型检查"><a href="#5-2-类型检查" class="headerlink" title="5.2 类型检查"></a>5.2 类型检查</h3><table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>is_file()</code></td>
+<td>路径存在且为普通文件；<strong>跟随</strong>符号链接</td>
+</tr>
+<tr>
+<td><code>is_dir()</code></td>
+<td>路径存在且为目录；<strong>跟随</strong>符号链接</td>
+</tr>
+<tr>
+<td><code>is_symlink()</code></td>
+<td>路径本身是符号链接；<strong>不</strong>跟随；对悬空链接也返回 <code>true</code></td>
+</tr>
+<tr>
+<td><code>metadata()</code></td>
+<td>等价于 <code>fs::metadata()</code>；<strong>跟随</strong>符号链接</td>
+</tr>
+<tr>
+<td><code>symlink_metadata()</code></td>
+<td>等价于 <code>fs::symlink_metadata()</code>；<strong>不</strong>跟随符号链接</td>
+</tr>
+</tbody></table>
+<h3 id="5-3-路径规范化"><a href="#5-3-路径规范化" class="headerlink" title="5.3 路径规范化"></a>5.3 路径规范化</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">canonicalize</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;PathBuf&gt;<br></code></pre></td></tr></table></figure>
+
+<p>解析所有 <code>.</code>、<code>..</code> 和符号链接，返回绝对路径。路径的每一个组件都必须实际存在于文件系统，否则返回错误。这与 <code>components()</code> 的纯词法规范化形成对比：<code>canonicalize</code> 需要磁盘访问，但能处理符号链接带来的路径歧义。</p>
+<p><code>Rust 1.79.0</code> 起，<code>std::path::absolute()</code> 提供了一个折中方案：不访问文件系统，但也不解析符号链接，仅将相对路径通过当前工作目录转换为绝对路径。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::path::Path;<br><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::os::unix::fs::symlink;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">file_path</span> = <span class="hljs-string">&quot;/tmp/path_demo.txt&quot;</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">link_path</span> = <span class="hljs-string">&quot;/tmp/path_demo_link.txt&quot;</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">dir_path</span>  = <span class="hljs-string">&quot;/tmp/path_demo_dir&quot;</span>;<br><br>    fs::<span class="hljs-title function_ invoke__">write</span>(file_path, <span class="hljs-string">&quot;hello&quot;</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    fs::<span class="hljs-title function_ invoke__">create_dir_all</span>(dir_path).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">_</span> = fs::<span class="hljs-title function_ invoke__">remove_file</span>(link_path);<br>    <span class="hljs-title function_ invoke__">symlink</span>(file_path, link_path).<span class="hljs-title function_ invoke__">unwrap</span>();<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">p</span> = Path::<span class="hljs-title function_ invoke__">new</span>(file_path);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;try_exists file:     &#123;:?&#125;&quot;</span>, p.<span class="hljs-title function_ invoke__">try_exists</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;try_exists missing:  &#123;:?&#125;&quot;</span>, Path::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;/tmp/no_such_99&quot;</span>).<span class="hljs-title function_ invoke__">try_exists</span>());<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;is_file: &#123;&#125;&quot;</span>, p.<span class="hljs-title function_ invoke__">is_file</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;is_dir:  &#123;&#125;&quot;</span>, p.<span class="hljs-title function_ invoke__">is_dir</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;is_dir(dir): &#123;&#125;&quot;</span>, Path::<span class="hljs-title function_ invoke__">new</span>(dir_path).<span class="hljs-title function_ invoke__">is_dir</span>());<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;is_symlink(link):    &#123;&#125;&quot;</span>, Path::<span class="hljs-title function_ invoke__">new</span>(link_path).<span class="hljs-title function_ invoke__">is_symlink</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;is_symlink(file):    &#123;&#125;&quot;</span>, p.<span class="hljs-title function_ invoke__">is_symlink</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">canon</span> = Path::<span class="hljs-title function_ invoke__">new</span>(link_path).<span class="hljs-title function_ invoke__">canonicalize</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;canonicalize link:   &#123;&#125;&quot;</span>, canon.<span class="hljs-title function_ invoke__">display</span>());<br><br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(file_path).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    fs::<span class="hljs-title function_ invoke__">remove_file</span>(link_path).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    fs::<span class="hljs-title function_ invoke__">remove_dir</span>(dir_path).<span class="hljs-title function_ invoke__">unwrap</span>();<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight isbl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs isbl"><span class="hljs-variable">try_exists</span> <span class="hljs-variable">file</span>:     <span class="hljs-function"><span class="hljs-title">Ok</span>(<span class="hljs-variable"><span class="hljs-literal">true</span></span>)</span><br><span class="hljs-variable">try_exists</span> <span class="hljs-variable">missing</span>:  <span class="hljs-function"><span class="hljs-title">Ok</span>(<span class="hljs-variable"><span class="hljs-literal">false</span></span>)</span><br><span class="hljs-variable">is_file</span>: <span class="hljs-variable"><span class="hljs-literal">true</span></span><br><span class="hljs-variable">is_dir</span>:  <span class="hljs-variable"><span class="hljs-literal">false</span></span><br><span class="hljs-function"><span class="hljs-title">is_dir</span>(<span class="hljs-variable">dir</span>): <span class="hljs-variable"><span class="hljs-literal">true</span></span></span><br><span class="hljs-function"><span class="hljs-title">is_symlink</span>(<span class="hljs-variable">link</span>):    <span class="hljs-variable"><span class="hljs-literal">true</span></span></span><br><span class="hljs-function"><span class="hljs-title">is_symlink</span>(<span class="hljs-variable">file</span>):    <span class="hljs-variable"><span class="hljs-literal">false</span></span></span><br><span class="hljs-function"><span class="hljs-variable">canonicalize</span> <span class="hljs-variable">link</span>:   /<span class="hljs-variable">tmp</span>/<span class="hljs-variable">path_demo.txt</span></span><br></code></pre></td></tr></table></figure>
+
+<h2 id="六、跨平台路径差异"><a href="#六、跨平台路径差异" class="headerlink" title="六、跨平台路径差异"></a>六、跨平台路径差异</h2><p><code>std::path</code> 针对 <code>Unix</code> 和 <code>Windows</code> 封装了以下差异：</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>Unix</th>
+<th>Windows</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>主分隔符 <code>MAIN_SEPARATOR</code></td>
+<td><code>/</code></td>
+<td><code>\</code></td>
+</tr>
+<tr>
+<td>也接受的分隔符</td>
+<td>仅 <code>/</code></td>
+<td><code>/</code> 和 <code>\</code></td>
+</tr>
+<tr>
+<td>根路径形式</td>
+<td><code>/</code></td>
+<td><code>C:\</code>、<code>\\server\share</code></td>
+</tr>
+<tr>
+<td>路径前缀 <code>Prefix</code></td>
+<td>无</td>
+<td>盘符（<code>C:</code>）或 <code>UNC</code> 路径</td>
+</tr>
+<tr>
+<td><code>is_absolute()</code> 判定</td>
+<td>以 <code>/</code> 开头即可</td>
+<td>必须同时有前缀和根（<code>c:\foo</code>）；<code>\foo</code> 或 <code>c:foo</code> 均为<strong>非</strong>绝对路径</td>
+</tr>
+<tr>
+<td>大小写敏感</td>
+<td>是</td>
+<td>文件系统层面不区分，但 <code>starts_with</code>&#x2F;<code>ends_with</code> 方法仍区分</td>
+</tr>
+</tbody></table>
+<p><code>is_separator()</code> 函数可在运行时检查某字符是否为当前平台的合法路径分隔符：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::path::is_separator;<br><span class="hljs-comment">// Unix 上只有 &#x27;/&#x27; 返回 true</span><br><span class="hljs-comment">// Windows 上 &#x27;/&#x27; 和 &#x27;\&#x27; 都返回 true</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>在 <code>Windows</code> 上，<code>c:temp</code> 是相对于 <code>C:</code> 盘当前目录的路径，而非绝对路径；<code>\temp</code> 是相对于当前盘符根目录的路径，也非绝对路径。只有 <code>c:\temp</code> 才是真正的绝对路径。这是 <code>Windows</code> 路径最容易踩坑的地方。</p>
+</blockquote>
+<h2 id="七、综合实战：递归文件扫描"><a href="#七、综合实战：递归文件扫描" class="headerlink" title="七、综合实战：递归文件扫描"></a>七、综合实战：递归文件扫描</h2><p>以下示例综合使用 <code>collect_files_by_ext</code>、<code>strip_prefix</code>、<code>file_stem</code>、<code>components</code>、<code>with_extension</code> 和 <code>with_file_name</code>，实现一个递归扫描指定目录、按扩展名过滤并统计路径深度的工具函数。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::path::&#123;Path, PathBuf&#125;;<br><span class="hljs-keyword">use</span> std::fs;<br><br><span class="hljs-comment">/// 递归扫描目录，收集所有给定扩展名的绝对路径</span><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">collect_files_by_ext</span>(dir: &amp;Path, ext: &amp;<span class="hljs-type">str</span>, out: &amp;<span class="hljs-keyword">mut</span> <span class="hljs-type">Vec</span>&lt;PathBuf&gt;) <span class="hljs-punctuation">-&gt;</span> std::io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">entry</span> <span class="hljs-keyword">in</span> fs::<span class="hljs-title function_ invoke__">read_dir</span>(dir)? &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">entry</span> = entry?;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">path</span> = entry.<span class="hljs-title function_ invoke__">path</span>();<br>        <span class="hljs-keyword">if</span> path.<span class="hljs-title function_ invoke__">is_dir</span>() &#123;<br>            <span class="hljs-title function_ invoke__">collect_files_by_ext</span>(&amp;path, ext, out)?;<br>        &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> path.<span class="hljs-title function_ invoke__">extension</span>().<span class="hljs-title function_ invoke__">and_then</span>(|e| e.<span class="hljs-title function_ invoke__">to_str</span>()) == <span class="hljs-title function_ invoke__">Some</span>(ext) &#123;<br>            out.<span class="hljs-title function_ invoke__">push</span>(path);<br>        &#125;<br>    &#125;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> std::io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">root</span> = PathBuf::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;/tmp/scan_demo&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">src</span>  = root.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;src&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">lib</span>  = root.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;src/lib&quot;</span>);<br><br>    fs::<span class="hljs-title function_ invoke__">create_dir_all</span>(&amp;src)?;<br>    fs::<span class="hljs-title function_ invoke__">create_dir_all</span>(&amp;lib)?;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(src.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;main.rs&quot;</span>),   <span class="hljs-string">&quot;fn main() &#123;&#125;&quot;</span>)?;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(src.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;utils.rs&quot;</span>),  <span class="hljs-string">&quot;pub fn add() &#123;&#125;&quot;</span>)?;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(lib.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;parse.rs&quot;</span>),  <span class="hljs-string">&quot;pub fn parse() &#123;&#125;&quot;</span>)?;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(root.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;build.rs&quot;</span>), <span class="hljs-string">&quot;fn main() &#123;&#125;&quot;</span>)?;<br>    fs::<span class="hljs-title function_ invoke__">write</span>(root.<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;README.md&quot;</span>),<span class="hljs-string">&quot;# demo&quot;</span>)?;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">absolutes</span> = <span class="hljs-type">Vec</span>::<span class="hljs-title function_ invoke__">new</span>();<br>    <span class="hljs-title function_ invoke__">collect_files_by_ext</span>(&amp;root, <span class="hljs-string">&quot;rs&quot;</span>, &amp;<span class="hljs-keyword">mut</span> absolutes)?;<br><br>    <span class="hljs-comment">// strip_prefix 统一去掉根目录前缀，转为相对路径</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">files</span>: <span class="hljs-type">Vec</span>&lt;PathBuf&gt; = absolutes<br>        .<span class="hljs-title function_ invoke__">iter</span>()<br>        .<span class="hljs-title function_ invoke__">filter_map</span>(|p| p.<span class="hljs-title function_ invoke__">strip_prefix</span>(&amp;root).<span class="hljs-title function_ invoke__">ok</span>().<span class="hljs-title function_ invoke__">map</span>(|r| r.<span class="hljs-title function_ invoke__">to_path_buf</span>()))<br>        .<span class="hljs-title function_ invoke__">collect</span>();<br>    files.<span class="hljs-title function_ invoke__">sort</span>();<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;找到 &#123;&#125; 个 .rs 文件:&quot;</span>, files.<span class="hljs-title function_ invoke__">len</span>());<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">f</span> <span class="hljs-keyword">in</span> &amp;files &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">stem</span> = f.<span class="hljs-title function_ invoke__">file_stem</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">to_string_lossy</span>();<br>        <span class="hljs-comment">// components().count() 等于路径组件数，减 1 得到相对深度</span><br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">depth</span> = f.<span class="hljs-title function_ invoke__">components</span>().<span class="hljs-title function_ invoke__">count</span>() - <span class="hljs-number">1</span>;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  depth=&#123;depth&#125;  stem=&#123;stem:&lt;10&#125;  path=&#123;&#125;&quot;</span>, f.<span class="hljs-title function_ invoke__">display</span>());<br>    &#125;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">first_abs</span> = root.<span class="hljs-title function_ invoke__">join</span>(&amp;files[<span class="hljs-number">0</span>]);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;\n第一个文件:&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  原路径:   &#123;&#125;&quot;</span>, first_abs.<span class="hljs-title function_ invoke__">display</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  改扩展名: &#123;&#125;&quot;</span>, first_abs.<span class="hljs-title function_ invoke__">with_extension</span>(<span class="hljs-string">&quot;bak&quot;</span>).<span class="hljs-title function_ invoke__">display</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  改文件名: &#123;&#125;&quot;</span>, first_abs.<span class="hljs-title function_ invoke__">with_file_name</span>(<span class="hljs-string">&quot;renamed.rs&quot;</span>).<span class="hljs-title function_ invoke__">display</span>());<br><br>    fs::<span class="hljs-title function_ invoke__">remove_dir_all</span>(&amp;root)?;<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs routeros">找到 4 个 .rs 文件:<br>  <span class="hljs-attribute">depth</span>=0  <span class="hljs-attribute">stem</span>=build       <span class="hljs-attribute">path</span>=build.rs<br>  <span class="hljs-attribute">depth</span>=2  <span class="hljs-attribute">stem</span>=parse       <span class="hljs-attribute">path</span>=src/lib/parse.rs<br>  <span class="hljs-attribute">depth</span>=1  <span class="hljs-attribute">stem</span>=main        <span class="hljs-attribute">path</span>=src/main.rs<br>  <span class="hljs-attribute">depth</span>=1  <span class="hljs-attribute">stem</span>=utils       <span class="hljs-attribute">path</span>=src/utils.rs<br><br>第一个文件:<br>  原路径:   /tmp/scan_demo/build.rs<br>  改扩展名: /tmp/scan_demo/build.bak<br>  改文件名: /tmp/scan_demo/renamed.rs<br></code></pre></td></tr></table></figure>
+
+<p><code>collect_files_by_ext</code> 收集绝对路径，然后在调用层统一 <code>strip_prefix</code> 得到相对路径——这样递归函数只需关心遍历逻辑，无需传递原始根目录。<code>components().count() - 1</code> 将组件数转换为相对深度：顶层文件（如 <code>build.rs</code>）为 <code>depth=0</code>，<code>src/main.rs</code> 为 <code>depth=1</code>，<code>src/lib/parse.rs</code> 为 <code>depth=2</code>。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E8%B7%A8%E5%B9%B3%E5%8F%B0/" class="print-no-link">#跨平台</a>
+      
+        <a href="/tags/%E8%B7%AF%E5%BE%84%E6%93%8D%E4%BD%9C/" class="print-no-link">#路径操作</a>
+      
+        <a href="/tags/%E7%BB%84%E4%BB%B6%E8%BF%AD%E4%BB%A3/" class="print-no-link">#组件迭代</a>
+      
+        <a href="/tags/%E8%B7%AF%E5%BE%84%E8%A7%A3%E6%9E%90/" class="print-no-link">#路径解析</a>
+      
+        <a href="/tags/%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E6%9F%A5%E8%AF%A2/" class="print-no-link">#文件系统查询</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/rust/std-thread.html" title="[标准库] std::thread 线程管理介绍与实战">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">[标准库] std::thread 线程管理介绍与实战</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/std-process.html" title="[标准库] std::process 进程管理介绍与实战">
+                        <span class="hidden-mobile">[标准库] std::process 进程管理介绍与实战</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

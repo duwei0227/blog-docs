@@ -1,0 +1,1117 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="想象工厂流水线上有一道”预处理工序”：原材料进入主生产线之前，先经过打磨、涂层、校准。build.rs 就是 Rust 项目里的这道工序——它在主 crate 编译之前独立运行，负责生成代码、探测系统库、注入版本信息，把”编译环境”准备好。对于刚接触 Rust 的开发者来说，build.rs 往往是第一个让人困惑的概念：它不是普通的源码，却藏在项目根目录；它输出的不是程序，却能改变整个编译结果。本">
+  
+  
+  
+  <title>build.rs 构建脚本介绍与实战 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="build.rs 构建脚本介绍与实战"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-25 10:00" pubdate>
+          2026年5月25日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          9.5k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          79 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">build.rs 构建脚本介绍与实战</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>想象工厂流水线上有一道”预处理工序”：原材料进入主生产线之前，先经过打磨、涂层、校准。<code>build.rs</code> 就是 Rust 项目里的这道工序——它在主 <code>crate</code> 编译之前独立运行，负责生成代码、探测系统库、注入版本信息，把”编译环境”准备好。对于刚接触 Rust 的开发者来说，<code>build.rs</code> 往往是第一个让人困惑的概念：它不是普通的源码，却藏在项目根目录；它输出的不是程序，却能改变整个编译结果。本文从原理到实战，帮你彻底搞清楚它。</p>
+<h2 id="一、build-rs-是什么"><a href="#一、build-rs-是什么" class="headerlink" title="一、build.rs 是什么"></a>一、build.rs 是什么</h2><h3 id="1-1-构建脚本的职责"><a href="#1-1-构建脚本的职责" class="headerlink" title="1.1 构建脚本的职责"></a>1.1 构建脚本的职责</h3><p><code>build.rs</code> 是放在项目根目录（与 <code>Cargo.toml</code> 同级）的一个特殊 Rust 源文件。<code>Cargo</code> 在编译主 <code>crate</code> 之前，会先把它编译成一个独立的可执行程序并运行。它的输出是一系列以 <code>cargo:</code> 开头的 <code>println!</code> 指令，<code>Cargo</code> 读取这些指令并据此影响后续的编译过程。</p>
+<p>常见用途：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>代码生成</td>
+<td>根据配置或外部文件生成 <code>.rs</code> 源码，供主 <code>crate</code> 用 <code>include!</code> 引入</td>
+</tr>
+<tr>
+<td>链接原生库</td>
+<td>探测系统中的 <code>C</code>&#x2F;<code>C++</code> 库，告诉链接器去哪里找</td>
+</tr>
+<tr>
+<td>编译 C 源码</td>
+<td>用 <code>cc</code> 等 <code>crate</code> 将项目自带的 C 文件编译为静态库</td>
+</tr>
+<tr>
+<td>条件编译标志</td>
+<td>根据运行时探测结果动态添加 <code>cfg</code> 标志，比内置 <code>feature</code> 更灵活</td>
+</tr>
+<tr>
+<td>注入环境变量</td>
+<td>将构建时信息（版本号、时间戳、目标平台）注入为编译期常量</td>
+</tr>
+</tbody></table>
+<h3 id="1-2-执行时机"><a href="#1-2-执行时机" class="headerlink" title="1.2 执行时机"></a>1.2 执行时机</h3><p><code>Cargo</code> 的完整构建顺序如下：</p>
+<figure class="highlight n1ql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs n1ql">cargo <span class="hljs-keyword">build</span><br>    │<br>    ├─ <span class="hljs-number">1.</span> 解析 Cargo.toml，下载/编译所有依赖<br>    │<br>    ├─ <span class="hljs-number">2.</span> 编译 <span class="hljs-keyword">build</span>.rs（使用 [<span class="hljs-keyword">build</span>-dependencies]）<br>    │<br>    ├─ <span class="hljs-number">3.</span> 运行 <span class="hljs-keyword">build</span>.rs，读取其输出的 cargo: 指令<br>    │<br>    └─ <span class="hljs-number">4.</span> 编译主 crate（src/main.rs 或 src/lib.rs）<br></code></pre></td></tr></table></figure>
+
+<p><code>build.rs</code> 在一个<strong>隔离的沙箱</strong>中运行：它拥有独立的依赖列表（<code>[build-dependencies]</code>，不会污染主 <code>crate</code> 的依赖图），也有独立的环境变量集合。主 <code>crate</code> 的代码无法直接调用 <code>build.rs</code> 的函数——两者之间唯一的通信渠道就是那些 <code>cargo:</code> 指令。</p>
+<blockquote>
+<p>若项目根目录存在 <code>build.rs</code> 文件，<code>Cargo</code> 默认自动启用它，无需在 <code>Cargo.toml</code> 中声明。也可以显式指定路径：<code>build = &quot;scripts/build.rs&quot;</code>。若要<strong>禁用</strong>自动发现，设置 <code>build = false</code>。</p>
+</blockquote>
+<h2 id="二、第一个构建脚本"><a href="#二、第一个构建脚本" class="headerlink" title="二、第一个构建脚本"></a>二、第一个构建脚本</h2><h3 id="2-1-创建与声明"><a href="#2-1-创建与声明" class="headerlink" title="2.1 创建与声明"></a>2.1 创建与声明</h3><p>最简单的 <code>build.rs</code> 只有一个空 <code>main</code>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;&#125;<br></code></pre></td></tr></table></figure>
+
+<p>更实用的第一个示例——在构建时输出一条警告，验证脚本确实被执行了：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:warning=这是来自 build.rs 的构建警告&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rerun-if-changed=build.rs&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行 <code>cargo build</code> 时，终端会显示：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs apache">   <span class="hljs-attribute">Compiling</span> base-rust v0.<span class="hljs-number">1</span>.<span class="hljs-number">0</span> (/path/to/base-rust)<br><span class="hljs-attribute">warning</span>: base-rust@<span class="hljs-number">0</span>.<span class="hljs-number">1</span>.<span class="hljs-number">0</span>: 这是来自 build.rs 的构建警告<br>    <span class="hljs-attribute">Finished</span> `dev` profile<span class="hljs-meta"> [unoptimized + debuginfo] target(s) in 0.10s</span><br></code></pre></td></tr></table></figure>
+
+<p><code>cargo:warning</code> 是 <code>build.rs</code> 向用户传递信息的标准方式——普通的 <code>println!</code>（不带 <code>cargo:</code> 前缀）默认不显示。</p>
+<h3 id="2-2-Cargo-指令协议"><a href="#2-2-Cargo-指令协议" class="headerlink" title="2.2 Cargo 指令协议"></a>2.2 Cargo 指令协议</h3><p><code>build.rs</code> 通过向标准输出写入 <code>cargo:KEY=VALUE</code> 格式的行来与 <code>Cargo</code> 通信。完整指令一览：</p>
+<table>
+<thead>
+<tr>
+<th>指令</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>cargo:rustc-link-lib=[KIND=]NAME</code></td>
+<td>链接原生库，<code>KIND</code> 可为 <code>static</code>、<code>dylib</code>、<code>framework</code></td>
+</tr>
+<tr>
+<td><code>cargo:rustc-link-search=[KIND=]PATH</code></td>
+<td>添加链接器库搜索路径</td>
+</tr>
+<tr>
+<td><code>cargo:rustc-cfg=KEY[=&quot;VALUE&quot;]</code></td>
+<td>为主 <code>crate</code> 添加自定义 <code>cfg</code> 标志</td>
+</tr>
+<tr>
+<td><code>cargo::rustc-check-cfg=cfg(KEY)</code></td>
+<td>声明某个自定义 <code>cfg</code> 是合法的（<code>Rust 1.80+</code> 必须）</td>
+</tr>
+<tr>
+<td><code>cargo:rustc-env=KEY=VALUE</code></td>
+<td>向主 <code>crate</code> 注入编译期环境变量，可通过 <code>env!(&quot;KEY&quot;)</code> 读取</td>
+</tr>
+<tr>
+<td><code>cargo:rustc-flags=FLAGS</code></td>
+<td>向 <code>rustc</code> 传递额外编译器标志</td>
+</tr>
+<tr>
+<td><code>cargo:rerun-if-changed=PATH</code></td>
+<td>指定文件或目录变化时重新运行 <code>build.rs</code></td>
+</tr>
+<tr>
+<td><code>cargo:rerun-if-env-changed=VAR</code></td>
+<td>指定环境变量变化时重新运行 <code>build.rs</code></td>
+</tr>
+<tr>
+<td><code>cargo:warning=MESSAGE</code></td>
+<td>输出构建警告（只有此前缀的输出才对用户可见）</td>
+</tr>
+<tr>
+<td><code>cargo:metadata=KEY=VALUE</code></td>
+<td>向依赖此 <code>crate</code> 的上层 <code>build.rs</code> 暴露元数据</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>注意 <code>cargo::rustc-check-cfg</code> 使用双冒号（<code>cargo::</code>），是 <code>Cargo 1.80</code> 引入的新格式，用于声明自定义 <code>cfg</code> 的合法性。与此同时，旧格式 <code>cargo:rustc-cfg</code> 仍使用单冒号，两种格式并存。</p>
+</blockquote>
+<h2 id="三、内置环境变量"><a href="#三、内置环境变量" class="headerlink" title="三、内置环境变量"></a>三、内置环境变量</h2><p><code>build.rs</code> 运行时，<code>Cargo</code> 会预先设置一批环境变量，供脚本读取构建上下文信息。</p>
+<table>
+<thead>
+<tr>
+<th>变量</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>OUT_DIR</code></td>
+<td>构建输出目录，生成文件<strong>必须</strong>写入此目录</td>
+</tr>
+<tr>
+<td><code>CARGO_MANIFEST_DIR</code></td>
+<td><code>Cargo.toml</code> 所在的目录（项目根目录）</td>
+</tr>
+<tr>
+<td><code>CARGO_PKG_NAME</code></td>
+<td>当前包名</td>
+</tr>
+<tr>
+<td><code>CARGO_PKG_VERSION</code></td>
+<td>当前包版本号（如 <code>0.1.0</code>）</td>
+</tr>
+<tr>
+<td><code>CARGO_PKG_VERSION_MAJOR</code></td>
+<td>主版本号</td>
+</tr>
+<tr>
+<td><code>CARGO_PKG_VERSION_MINOR</code></td>
+<td>次版本号</td>
+</tr>
+<tr>
+<td><code>CARGO_PKG_VERSION_PATCH</code></td>
+<td>补丁版本号</td>
+</tr>
+<tr>
+<td><code>TARGET</code></td>
+<td>编译目标三元组，如 <code>x86_64-unknown-linux-gnu</code></td>
+</tr>
+<tr>
+<td><code>HOST</code></td>
+<td>构建宿主机三元组（跨编译时与 <code>TARGET</code> 不同）</td>
+</tr>
+<tr>
+<td><code>PROFILE</code></td>
+<td>构建 <code>profile</code>：<code>debug</code> 或 <code>release</code></td>
+</tr>
+<tr>
+<td><code>NUM_JOBS</code></td>
+<td>并行编译任务数</td>
+</tr>
+<tr>
+<td><code>OPT_LEVEL</code></td>
+<td>优化级别：<code>0</code>&#x2F;<code>1</code>&#x2F;<code>2</code>&#x2F;<code>3</code>&#x2F;<code>s</code>&#x2F;<code>z</code></td>
+</tr>
+<tr>
+<td><code>DEBUG</code></td>
+<td>是否包含调试信息：<code>true</code> 或 <code>false</code></td>
+</tr>
+<tr>
+<td><code>CARGO_CFG_TARGET_OS</code></td>
+<td>目标操作系统：<code>linux</code>&#x2F;<code>macos</code>&#x2F;<code>windows</code> 等</td>
+</tr>
+<tr>
+<td><code>CARGO_CFG_TARGET_ARCH</code></td>
+<td>目标架构：<code>x86_64</code>&#x2F;<code>aarch64</code>&#x2F;<code>riscv64gc</code> 等</td>
+</tr>
+<tr>
+<td><code>CARGO_CFG_TARGET_ENV</code></td>
+<td>目标环境：<code>gnu</code>&#x2F;<code>musl</code>&#x2F;<code>msvc</code> 等</td>
+</tr>
+<tr>
+<td><code>CARGO_CFG_TARGET_POINTER_WIDTH</code></td>
+<td>指针宽度：<code>32</code> 或 <code>64</code></td>
+</tr>
+<tr>
+<td><code>CARGO_FEATURE_&lt;NAME&gt;</code></td>
+<td>若 feature <code>NAME</code> 已启用则此变量存在（值为 <code>1</code>）</td>
+</tr>
+</tbody></table>
+<p>读取这些变量的惯用写法：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">out_dir</span> = env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;OUT_DIR&quot;</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">target_os</span> = env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;CARGO_CFG_TARGET_OS&quot;</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">profile</span> = env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;PROFILE&quot;</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:warning=out_dir=&#123;out_dir&#125;&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:warning=target_os=&#123;target_os&#125;&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:warning=profile=&#123;profile&#125;&quot;</span>);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rerun-if-changed=build.rs&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>HOST</code> 与 <code>TARGET</code> 在<strong>交叉编译</strong>（<code>cross-compile</code>）时会不同。例如在 <code>x86_64</code> 的 <code>Linux</code> 上为 ARM 嵌入式设备编译时，<code>HOST=x86_64-unknown-linux-gnu</code>，<code>TARGET=thumbv7em-none-eabi</code>。构建脚本中<strong>绝对不能</strong>用 <code>HOST</code> 的值来判断目标平台特性，必须用 <code>TARGET</code> 或 <code>CARGO_CFG_*</code> 系列变量。</p>
+</blockquote>
+<h2 id="四、代码生成与-OUT-DIR"><a href="#四、代码生成与-OUT-DIR" class="headerlink" title="四、代码生成与 OUT_DIR"></a>四、代码生成与 OUT_DIR</h2><h3 id="4-1-OUT-DIR-机制"><a href="#4-1-OUT-DIR-机制" class="headerlink" title="4.1 OUT_DIR 机制"></a>4.1 OUT_DIR 机制</h3><p><code>Cargo</code> 为每次构建分配一个独立的临时目录作为 <code>OUT_DIR</code>，路径类似 <code>target/debug/build/my-crate-xxxx/out/</code>。<code>build.rs</code> 生成的所有文件都必须写入这个目录——写入其他路径会因沙箱限制失败。</p>
+<p>生成文件后，主 <code>crate</code> 通过 <code>include!</code> 宏将其纳入编译：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// src/main.rs 或 src/lib.rs 中</span><br>include!(<span class="hljs-built_in">concat!</span>(<span class="hljs-built_in">env!</span>(<span class="hljs-string">&quot;OUT_DIR&quot;</span>), <span class="hljs-string">&quot;/generated_file.rs&quot;</span>));<br></code></pre></td></tr></table></figure>
+
+<p><code>env!(&quot;OUT_DIR&quot;)</code> 是一个编译期宏，在 <code>rustc</code> 读取 <code>build.rs</code> 输出之后展开，因此始终指向本次构建的正确目录。</p>
+<h3 id="4-2-实战：注入版本与平台信息"><a href="#4-2-实战：注入版本与平台信息" class="headerlink" title="4.2 实战：注入版本与平台信息"></a>4.2 实战：注入版本与平台信息</h3><p>下面的示例演示如何在构建时生成一个包含包名、版本号、目标平台信息的常量文件，供主程序直接使用。</p>
+<p><strong><code>build.rs</code>：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env;<br><span class="hljs-keyword">use</span> std::fs;<br><span class="hljs-keyword">use</span> std::path::Path;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">out_dir</span> = env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;OUT_DIR&quot;</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">dest</span> = Path::<span class="hljs-title function_ invoke__">new</span>(&amp;out_dir).<span class="hljs-title function_ invoke__">join</span>(<span class="hljs-string">&quot;platform_info.rs&quot;</span>);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">os</span>      = env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;CARGO_CFG_TARGET_OS&quot;</span>).<span class="hljs-title function_ invoke__">unwrap_or_else</span>(|_| <span class="hljs-string">&quot;unknown&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>());<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">arch</span>    = env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;CARGO_CFG_TARGET_ARCH&quot;</span>).<span class="hljs-title function_ invoke__">unwrap_or_else</span>(|_| <span class="hljs-string">&quot;unknown&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>());<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">version</span> = env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;CARGO_PKG_VERSION&quot;</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">name</span>    = env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;CARGO_PKG_NAME&quot;</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">content</span> = <span class="hljs-built_in">format!</span>(<br>        <span class="hljs-string">&quot;pub const PKG_NAME: &amp;str = \&quot;&#123;name&#125;\&quot;;\n\</span><br><span class="hljs-string">         pub const PKG_VERSION: &amp;str = \&quot;&#123;version&#125;\&quot;;\n\</span><br><span class="hljs-string">         pub const TARGET_OS: &amp;str = \&quot;&#123;os&#125;\&quot;;\n\</span><br><span class="hljs-string">         pub const TARGET_ARCH: &amp;str = \&quot;&#123;arch&#125;\&quot;;\n&quot;</span><br>    );<br><br>    fs::<span class="hljs-title function_ invoke__">write</span>(dest, content).<span class="hljs-title function_ invoke__">unwrap</span>();<br><br>    <span class="hljs-comment">// 只有 Cargo.toml 改变（版本号更新）时才重新生成</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rerun-if-changed=Cargo.toml&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong><code>src/main.rs</code>：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs rust">include!(<span class="hljs-built_in">concat!</span>(<span class="hljs-built_in">env!</span>(<span class="hljs-string">&quot;OUT_DIR&quot;</span>), <span class="hljs-string">&quot;/platform_info.rs&quot;</span>));<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Package : &#123;&#125; v&#123;&#125;&quot;</span>, PKG_NAME, PKG_VERSION);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Platform: &#123;&#125;/&#123;&#125;&quot;</span>, TARGET_OS, TARGET_ARCH);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight ada"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs ada"><span class="hljs-keyword">Package</span> <span class="hljs-title">: base-rust v0.1.0</span><br>Platform: linux/x86_64<br></code></pre></td></tr></table></figure>
+
+<p>这种模式的关键优势在于：<code>PKG_NAME</code>、<code>PKG_VERSION</code> 等常量在编译期就已确定，运行时零开销；而且它们与 <code>Cargo.toml</code> 中的声明严格同步，不会出现手动维护版本字符串时的遗漏。</p>
+<h2 id="五、自定义-cfg-标志"><a href="#五、自定义-cfg-标志" class="headerlink" title="五、自定义 cfg 标志"></a>五、自定义 cfg 标志</h2><h3 id="5-1-cargo-rustc-cfg-与-rustc-check-cfg"><a href="#5-1-cargo-rustc-cfg-与-rustc-check-cfg" class="headerlink" title="5.1 cargo:rustc-cfg 与 rustc-check-cfg"></a>5.1 cargo:rustc-cfg 与 rustc-check-cfg</h3><p>内置的 <code>#[cfg(feature = &quot;...&quot;)]</code> 只能在 <code>Cargo.toml</code> 声明 <code>feature</code> 后才能使用，且只能在编译前手动指定。<code>cargo:rustc-cfg</code> 的优势在于可以<strong>在 <code>build.rs</code> 运行期探测任意条件</strong>——查询系统版本、检测库是否存在、读取外部文件——再动态决定是否开启某个标志。</p>
+<p>从 <code>Rust 1.80</code> 起，编译器会对未声明的自定义 <code>cfg</code> 发出警告。因此每个自定义 <code>cfg</code> 都需要配套一条 <code>cargo::rustc-check-cfg</code> 指令，告知编译器该 <code>cfg</code> 是合法的：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// 先声明，再使用</span><br><span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo::rustc-check-cfg=cfg(my_flag)&quot;</span>);<br><span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rustc-cfg=my_flag&quot;</span>);<br></code></pre></td></tr></table></figure>
+
+<h3 id="5-2-实战：按构建模式开关日志"><a href="#5-2-实战：按构建模式开关日志" class="headerlink" title="5.2 实战：按构建模式开关日志"></a>5.2 实战：按构建模式开关日志</h3><p><strong><code>build.rs</code>：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-comment">// 声明 debug_mode 是合法的自定义 cfg（Rust 1.80+ 要求）</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo::rustc-check-cfg=cfg(debug_mode)&quot;</span>);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">profile</span> = env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;PROFILE&quot;</span>).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-keyword">if</span> profile == <span class="hljs-string">&quot;debug&quot;</span> &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rustc-cfg=debug_mode&quot;</span>);<br>    &#125;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rerun-if-changed=build.rs&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong><code>src/main.rs</code>：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-meta">#[cfg(debug_mode)]</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[DEBUG] 当前为 debug 构建，已启用详细日志&quot;</span>);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;程序正常运行&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>cargo run</code>（debug 模式）运行结果：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs routeros">[<span class="hljs-built_in">DEBUG</span>] 当前为 <span class="hljs-built_in">debug</span> 构建，已启用详细日志<br>程序正常运行<br></code></pre></td></tr></table></figure>
+
+<p><code>cargo run --release</code>（release 模式）运行结果：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">程序正常运行<br></code></pre></td></tr></table></figure>
+
+<p><code>#[cfg(debug_mode)]</code> 块在 <code>release</code> 构建中被编译器完全消除，不产生任何运行时开销，也不会影响二进制体积。</p>
+<blockquote>
+<p>与 <code>cfg!(debug_assertions)</code> 相比，自定义 <code>cfg</code> 的优势是名称语义明确，且可以根据任意探测逻辑设置，不局限于 Cargo 内置的 <code>profile</code> 规则。</p>
+</blockquote>
+<h2 id="六、链接原生-C-库"><a href="#六、链接原生-C-库" class="headerlink" title="六、链接原生 C 库"></a>六、链接原生 C 库</h2><h3 id="6-1-手动指定链接参数"><a href="#6-1-手动指定链接参数" class="headerlink" title="6.1 手动指定链接参数"></a>6.1 手动指定链接参数</h3><p>当项目需要调用系统中已有的 C 库时，<code>build.rs</code> 通过两条指令告知链接器：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-comment">// 链接动态库 libm（数学库）</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rustc-link-lib=dylib=m&quot;</span>);<br><br>    <span class="hljs-comment">// 如果库不在默认搜索路径，需要额外指定</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rustc-link-search=native=/usr/local/lib&quot;</span>);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rerun-if-changed=build.rs&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>rustc-link-lib</code> 的 <code>KIND</code> 可选值：</p>
+<table>
+<thead>
+<tr>
+<th><code>KIND</code></th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dylib</code>（默认）</td>
+<td>动态链接库（<code>.so</code> &#x2F; <code>.dll</code> &#x2F; <code>.dylib</code>）</td>
+</tr>
+<tr>
+<td><code>static</code></td>
+<td>静态链接库（<code>.a</code> &#x2F; <code>.lib</code>），链接器将其直接嵌入产物</td>
+</tr>
+<tr>
+<td><code>framework</code></td>
+<td><code>macOS</code> 专用的 <code>.framework</code> 包</td>
+</tr>
+</tbody></table>
+<h3 id="6-2-使用-cc-crate-编译-C-源码"><a href="#6-2-使用-cc-crate-编译-C-源码" class="headerlink" title="6.2 使用 cc crate 编译 C 源码"></a>6.2 使用 cc crate 编译 C 源码</h3><p>更常见的场景是项目自带 C 源文件，需要在构建时编译成静态库并链接到 Rust 产物中。<code>cc</code> 是 Rust 生态中专门处理这类任务的 <code>crate</code>。</p>
+<p><strong><code>Cargo.toml</code>（仅需添加构建依赖）：</strong></p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[build-dependencies]</span><br><span class="hljs-attr">cc</span> = <span class="hljs-string">&quot;1&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p><code>[build-dependencies]</code> 中声明的依赖<strong>只在 <code>build.rs</code> 的编译和运行阶段可用</strong>，不会出现在主 <code>crate</code> 的依赖图中，对最终产物的体积没有影响。</p>
+<p><strong><code>c_src/add.c</code>：</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs c"><span class="hljs-type">int</span> <span class="hljs-title function_">c_add</span><span class="hljs-params">(<span class="hljs-type">int</span> a, <span class="hljs-type">int</span> b)</span> &#123;<br>    <span class="hljs-keyword">return</span> a + b;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong><code>build.rs</code>：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    cc::Build::<span class="hljs-title function_ invoke__">new</span>()<br>        .<span class="hljs-title function_ invoke__">file</span>(<span class="hljs-string">&quot;c_src/add.c&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">compile</span>(<span class="hljs-string">&quot;add&quot;</span>);            <span class="hljs-comment">// 生成 libadd.a 并告知 Cargo 链接它</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rerun-if-changed=c_src/add.c&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><strong><code>src/main.rs</code>（Rust 2024 edition）：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// Rust 2024 edition 要求 extern 块声明为 unsafe</span><br><span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">extern</span> <span class="hljs-string">&quot;C&quot;</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">c_add</span>(a: <span class="hljs-type">i32</span>, b: <span class="hljs-type">i32</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">i32</span>;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">result</span> = <span class="hljs-keyword">unsafe</span> &#123; <span class="hljs-title function_ invoke__">c_add</span>(<span class="hljs-number">10</span>, <span class="hljs-number">32</span>) &#125;;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;c_add(10, 32) = &#123;&#125;&quot;</span>, result);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">c_add</span>(<span class="hljs-number">10</span>, <span class="hljs-number">32</span>) = <span class="hljs-number">42</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>Rust 2024 edition 注意事项</strong>：Rust 2024 要求所有 <code>extern</code> 块必须显式写成 <code>unsafe extern</code>，以明确标出”调用这些函数的风险由程序员负责”。如果使用的是 <code>edition = &quot;2021&quot;</code> 或更早版本，保持原来的 <code>extern &quot;C&quot; {}</code> 即可。</p>
+</blockquote>
+<p><code>cc::Build</code> 的常用方法：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>.file(&quot;path.c&quot;)</code></td>
+<td>添加一个 C 源文件</td>
+</tr>
+<tr>
+<td><code>.files(iter)</code></td>
+<td>批量添加多个 C 源文件</td>
+</tr>
+<tr>
+<td><code>.include(&quot;dir&quot;)</code></td>
+<td>添加头文件搜索目录（等同 <code>-I</code>）</td>
+</tr>
+<tr>
+<td><code>.define(&quot;KEY&quot;, &quot;VALUE&quot;)</code></td>
+<td>添加预处理宏定义（等同 <code>-DKEY=VALUE</code>）</td>
+</tr>
+<tr>
+<td><code>.flag(&quot;-O2&quot;)</code></td>
+<td>传递额外的编译器标志</td>
+</tr>
+<tr>
+<td><code>.opt_level(2)</code></td>
+<td>设置优化级别</td>
+</tr>
+<tr>
+<td><code>.compile(&quot;name&quot;)</code></td>
+<td>编译并生成 <code>libname.a</code>，同时自动发出链接指令</td>
+</tr>
+</tbody></table>
+<h2 id="七、重运行条件与性能陷阱"><a href="#七、重运行条件与性能陷阱" class="headerlink" title="七、重运行条件与性能陷阱"></a>七、重运行条件与性能陷阱</h2><h3 id="7-1-默认行为：每次构建都重跑"><a href="#7-1-默认行为：每次构建都重跑" class="headerlink" title="7.1 默认行为：每次构建都重跑"></a>7.1 默认行为：每次构建都重跑</h3><p>这是新手最容易踩的坑：<strong>如果 <code>build.rs</code> 没有任何 <code>cargo:rerun-if-changed</code> 指令，<code>Cargo</code> 默认在每次 <code>cargo build</code> 时都重新运行它</strong>，不管任何文件是否发生变化。</p>
+<p>对于简单的脚本，这只是几毫秒的开销，几乎感知不到。但如果 <code>build.rs</code> 执行了代码生成或 C 编译，每次改动任意 Rust 源码都会触发重跑，极大拖慢增量编译速度。</p>
+<h3 id="7-2-正确声明-rerun-if-changed"><a href="#7-2-正确声明-rerun-if-changed" class="headerlink" title="7.2 正确声明 rerun-if-changed"></a>7.2 正确声明 rerun-if-changed</h3><p><strong>一旦声明了哪怕一条 <code>cargo:rerun-if-changed</code>，Cargo 就会切换为”只在这些路径变化时才重跑”的模式</strong>。因此声明必须覆盖所有真正会影响 <code>build.rs</code> 输出的文件。</p>
+<p>常见场景的声明方式：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-comment">// 场景 1：只注入版本信息，仅 Cargo.toml 变化时重跑</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rerun-if-changed=Cargo.toml&quot;</span>);<br><br>    <span class="hljs-comment">// 场景 2：依赖 C 源文件，声明所有 .c 和 .h 文件</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rerun-if-changed=c_src/add.c&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rerun-if-changed=c_src/math.h&quot;</span>);<br><br>    <span class="hljs-comment">// 场景 3：整个目录下任意文件变化都重跑（声明目录路径）</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rerun-if-changed=c_src&quot;</span>);<br><br>    <span class="hljs-comment">// 场景 4：环境变量变化时重跑（如依赖 OPENSSL_DIR 路径）</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rerun-if-env-changed=OPENSSL_DIR&quot;</span>);<br><br>    <span class="hljs-comment">// 场景 5：build.rs 自身变化时重跑（始终建议加上）</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cargo:rerun-if-changed=build.rs&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>一个常见误区</strong>：把 <code>build.rs</code> 自身加入 <code>rerun-if-changed</code> 是好习惯，但声明目录时要小心——如果声明了 <code>src/</code>，任何 <code>.rs</code> 文件的修改都会触发重跑，相当于退回到”每次都重跑”的状态。只声明真正被 <code>build.rs</code> 读取的文件或目录。</p>
+</blockquote>
+<h2 id="八、常见陷阱"><a href="#八、常见陷阱" class="headerlink" title="八、常见陷阱"></a>八、常见陷阱</h2><table>
+<thead>
+<tr>
+<th>陷阱</th>
+<th>说明与解决方案</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>写入 <code>OUT_DIR</code> 以外的路径</td>
+<td><code>Cargo</code> 的沙箱机制会拒绝写入。所有生成文件必须放在 <code>env::var(&quot;OUT_DIR&quot;)</code> 指向的目录</td>
+</tr>
+<tr>
+<td><code>build.rs</code> <code>panic</code></td>
+<td>会导致整个 <code>cargo build</code> 失败。在处理环境变量和文件操作时做好错误处理，使用 <code>unwrap_or_else</code> 或 <code>?</code> 传播错误</td>
+</tr>
+<tr>
+<td>普通 <code>println!</code> 不可见</td>
+<td>非 <code>cargo:</code> 前缀的输出默认被丢弃，调试信息需用 <code>cargo:warning=</code></td>
+</tr>
+<tr>
+<td>跨编译混用 <code>HOST</code> 和 <code>TARGET</code></td>
+<td>探测目标平台特性时必须用 <code>CARGO_CFG_TARGET_OS</code>&#x2F;<code>CARGO_CFG_TARGET_ARCH</code>，而非 <code>HOST</code></td>
+</tr>
+<tr>
+<td>忘记 <code>rustc-check-cfg</code></td>
+<td><code>Rust 1.80+</code> 对未声明的自定义 <code>cfg</code> 发出警告。每个 <code>cargo:rustc-cfg=X</code> 都要配套 <code>cargo::rustc-check-cfg=cfg(X)</code></td>
+</tr>
+<tr>
+<td><code>build-dependencies</code> 与 <code>dependencies</code> 混淆</td>
+<td><code>build.rs</code> 用到的 <code>crate</code>（如 <code>cc</code>）必须放在 <code>[build-dependencies]</code>，放在 <code>[dependencies]</code> 会导致类型不匹配的编译错误</td>
+</tr>
+<tr>
+<td>没有声明 <code>rerun-if-changed</code></td>
+<td>每次 <code>cargo build</code> 都会重跑，代码生成&#x2F;C 编译场景下拖慢增量构建速度</td>
+</tr>
+</tbody></table>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%9E%84%E5%BB%BA%E8%84%9A%E6%9C%AC/" class="print-no-link">#构建脚本</a>
+      
+        <a href="/tags/%E4%BB%A3%E7%A0%81%E7%94%9F%E6%88%90/" class="print-no-link">#代码生成</a>
+      
+        <a href="/tags/FFI/" class="print-no-link">#FFI</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/rust/std-collections.html" title="[标准库] std::collections 集合类型原理与实战">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">[标准库] std::collections 集合类型原理与实战</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/cargo.html" title="Cargo 包管理器介绍与实战">
+                        <span class="hidden-mobile">Cargo 包管理器介绍与实战</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

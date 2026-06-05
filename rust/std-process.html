@@ -1,0 +1,1166 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="操作系统的进程模型让每个程序运行在独立的地址空间中，程序既要能控制自身的生命周期（优雅退出、异常中止），也常常需要启动子进程完成外部工具调用、Shell 脚本执行或多进程并行任务。std::process 是 Rust 标准库中处理这两类需求的统一接口：它提供 exit&amp;#x2F;abort 控制当前进程、Command 构建并启动子进程、Stdio 精确配置子进程的标准流，以及 Child 管理">
+  
+  
+  
+  <title>[标准库] std::process 进程管理介绍与实战 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="[标准库] std::process 进程管理介绍与实战"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-29 10:00" pubdate>
+          2026年5月29日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          14k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          120 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">[标准库] std::process 进程管理介绍与实战</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>操作系统的进程模型让每个程序运行在独立的地址空间中，程序既要能控制自身的生命周期（优雅退出、异常中止），也常常需要启动子进程完成外部工具调用、Shell 脚本执行或多进程并行任务。<code>std::process</code> 是 Rust 标准库中处理这两类需求的统一接口：它提供 <code>exit</code>&#x2F;<code>abort</code> 控制当前进程、<code>Command</code> 构建并启动子进程、<code>Stdio</code> 精确配置子进程的标准流，以及 <code>Child</code> 管理子进程的生命周期和 I&#x2F;O 交互。</p>
+<h2 id="一、模块概览"><a href="#一、模块概览" class="headerlink" title="一、模块概览"></a>一、模块概览</h2><p><code>std::process</code> 自 <code>Rust 1.0.0</code> 起稳定，核心组件如下：</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>id</code></td>
+<td><code>fn</code></td>
+<td>返回当前进程的 <code>PID</code></td>
+</tr>
+<tr>
+<td><code>exit</code></td>
+<td><code>fn</code></td>
+<td>以指定退出码终止当前进程</td>
+</tr>
+<tr>
+<td><code>abort</code></td>
+<td><code>fn</code></td>
+<td>以异常方式终止进程（不运行析构函数）</td>
+</tr>
+<tr>
+<td><code>Command</code></td>
+<td><code>struct</code></td>
+<td>子进程构建器，支持参数、环境变量、工作目录、I&#x2F;O 重定向</td>
+</tr>
+<tr>
+<td><code>Child</code></td>
+<td><code>struct</code></td>
+<td>已启动子进程的句柄，可等待、杀死、读写 I&#x2F;O</td>
+</tr>
+<tr>
+<td><code>ChildStdin</code></td>
+<td><code>struct</code></td>
+<td>子进程标准输入句柄，实现 <code>Write</code></td>
+</tr>
+<tr>
+<td><code>ChildStdout</code></td>
+<td><code>struct</code></td>
+<td>子进程标准输出句柄，实现 <code>Read</code></td>
+</tr>
+<tr>
+<td><code>ChildStderr</code></td>
+<td><code>struct</code></td>
+<td>子进程标准错误句柄，实现 <code>Read</code></td>
+</tr>
+<tr>
+<td><code>Output</code></td>
+<td><code>struct</code></td>
+<td>子进程完成后的 <code>status</code> + <code>stdout</code> + <code>stderr</code></td>
+</tr>
+<tr>
+<td><code>ExitCode</code></td>
+<td><code>struct</code></td>
+<td>当前进程向父进程返回的退出码，可用作 <code>main</code> 返回值</td>
+</tr>
+<tr>
+<td><code>ExitStatus</code></td>
+<td><code>struct</code></td>
+<td>子进程终止状态，包含退出码或信号信息</td>
+</tr>
+<tr>
+<td><code>Stdio</code></td>
+<td><code>struct</code></td>
+<td>子进程标准流配置，描述继承、管道、丢弃等模式</td>
+</tr>
+<tr>
+<td><code>Termination</code></td>
+<td><code>trait</code></td>
+<td>允许 <code>main</code> 函数返回自定义类型</td>
+</tr>
+</tbody></table>
+<h2 id="二、进程控制函数"><a href="#二、进程控制函数" class="headerlink" title="二、进程控制函数"></a>二、进程控制函数</h2><h3 id="2-1-id"><a href="#2-1-id" class="headerlink" title="2.1 id"></a>2.1 id</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">id</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">u32</span><br></code></pre></td></tr></table></figure>
+
+<p>返回当前进程的操作系统分配的进程标识符（<code>PID</code>）。返回值类型为 <code>u32</code>，在 <code>Linux</code> 和 <code>macOS</code> 上对应 <code>pid_t</code>，<code>Windows</code> 上对应 <code>DWORD</code>。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::process;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">pid</span> = process::<span class="hljs-title function_ invoke__">id</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;当前进程 PID: &#123;pid&#125;&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;PID 类型: u32，范围 0–4294967295&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">当前进程 PID</span><span class="hljs-punctuation">:</span> <span class="hljs-string">88438</span><br><span class="hljs-attribute">PID 类型</span><span class="hljs-punctuation">:</span> <span class="hljs-string">u32，范围 0–4294967295</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>PID</code> 每次运行都不同，由操作系统分配。<code>PID 0</code> 通常是内核进程，用户进程不会得到 0。</p>
+</blockquote>
+<h3 id="2-2-exit"><a href="#2-2-exit" class="headerlink" title="2.2 exit"></a>2.2 exit</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">exit</span>(code: <span class="hljs-type">i32</span>) <span class="hljs-punctuation">-&gt;</span> !<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>code</code></td>
+<td>-</td>
+<td>退出码；<code>0</code> 表示成功，非零表示失败；<code>Unix</code> 只使用低 8 位（0–255）</td>
+</tr>
+</tbody></table>
+<p><code>exit</code> 会立即终止当前进程，并且<strong>不会运行 Rust 变量的析构函数</strong>（<code>Drop</code>）。因此若有未 <code>flush</code> 的 <code>BufWriter</code> 或需要显式释放的资源，应在调用 <code>exit</code> 之前手动处理，或使用 <code>ExitCode</code> 作为 <code>main</code> 的返回值（后者会正常走析构流程）。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::process;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">check_config</span>(path: &amp;<span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;(), <span class="hljs-type">String</span>&gt; &#123;<br>    <span class="hljs-keyword">if</span> path.<span class="hljs-title function_ invoke__">is_empty</span>() &#123;<br>        <span class="hljs-title function_ invoke__">Err</span>(<span class="hljs-string">&quot;配置文件路径不能为空&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>())<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(())<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Err</span>(e) = <span class="hljs-title function_ invoke__">check_config</span>(<span class="hljs-string">&quot;&quot;</span>) &#123;<br>        <span class="hljs-built_in">eprintln!</span>(<span class="hljs-string">&quot;Fatal: &#123;e&#125;&quot;</span>);<br>        process::<span class="hljs-title function_ invoke__">exit</span>(<span class="hljs-number">1</span>);<br>    &#125;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;配置加载成功&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>如果只是把业务校验结果转换成进程退出码，更推荐让 <code>main</code> 返回 <code>ExitCode</code>。这样错误分支仍然可以返回非零状态码，但函数返回前会正常离开作用域，局部变量的 <code>Drop</code> 析构逻辑也会运行。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::process::ExitCode;<br><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Cleanup</span>;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">Drop</span> <span class="hljs-keyword">for</span> <span class="hljs-title class_">Cleanup</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">drop</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>) &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;清理临时资源&quot;</span>);<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">check_config</span>(path: &amp;<span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;(), <span class="hljs-type">String</span>&gt; &#123;<br>    <span class="hljs-keyword">if</span> path.<span class="hljs-title function_ invoke__">is_empty</span>() &#123;<br>        <span class="hljs-title function_ invoke__">Err</span>(<span class="hljs-string">&quot;配置文件路径不能为空&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>())<br>    &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> !path.<span class="hljs-title function_ invoke__">ends_with</span>(<span class="hljs-string">&quot;.toml&quot;</span>) &#123;<br>        <span class="hljs-title function_ invoke__">Err</span>(<span class="hljs-string">&quot;配置文件必须使用 .toml 后缀&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>())<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(())<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> ExitCode &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">_cleanup</span> = Cleanup;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">config_path</span> = std::env::<span class="hljs-title function_ invoke__">args</span>().<span class="hljs-title function_ invoke__">nth</span>(<span class="hljs-number">1</span>).<span class="hljs-title function_ invoke__">unwrap_or_default</span>();<br><br>    <span class="hljs-keyword">match</span> <span class="hljs-title function_ invoke__">check_config</span>(&amp;config_path) &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(()) =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;配置加载成功: &#123;config_path&#125;&quot;</span>);<br>            ExitCode::SUCCESS<br>        &#125;<br>        <span class="hljs-title function_ invoke__">Err</span>(e) =&gt; &#123;<br>            <span class="hljs-built_in">eprintln!</span>(<span class="hljs-string">&quot;Fatal: &#123;e&#125;&quot;</span>);<br>            ExitCode::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-number">2</span>)<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>执行结果示例：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs bash">$ cargo run --quiet -- ./app.toml<br>配置加载成功: ./app.toml<br>清理临时资源<br><br>$ cargo run --quiet --<br>Fatal: 配置文件路径不能为空<br>清理临时资源<br></code></pre></td></tr></table></figure>
+
+<p><code>ExitCode::SUCCESS</code> 等价于退出码 <code>0</code>，<code>ExitCode::FAILURE</code> 通常用于普通失败场景，自定义错误码可用 <code>ExitCode::from(u8)</code> 构造。若上例改成 <code>process::exit(2)</code>，程序会立即终止，<code>Cleanup::drop</code> 不会执行。</p>
+<blockquote>
+<p>优先使用 <code>main() -&gt; ExitCode</code> 而非 <code>process::exit</code>，前者保证析构函数运行，适合持有文件句柄、网络连接等资源的程序。只在确实需要立即终止（如信号处理、不可恢复错误）时才调用 <code>exit</code>。</p>
+</blockquote>
+<h3 id="2-3-abort"><a href="#2-3-abort" class="headerlink" title="2.3 abort"></a>2.3 abort</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">abort</span>() <span class="hljs-punctuation">-&gt;</span> !<br></code></pre></td></tr></table></figure>
+
+<p>以异常方式终止进程，相当于 C 的 <code>abort()</code>。与 <code>exit</code> 的关键区别：</p>
+<table>
+<thead>
+<tr>
+<th>行为</th>
+<th><code>exit</code></th>
+<th><code>abort</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>运行 Rust <code>Drop</code> 析构函数</td>
+<td>否</td>
+<td>否</td>
+</tr>
+<tr>
+<td>生成 <code>core dump</code>（<code>Unix</code>）</td>
+<td>否</td>
+<td>是（取决于系统配置）</td>
+</tr>
+<tr>
+<td>父进程感知的退出信号</td>
+<td><code>SIGCHLD</code>（正常退出）</td>
+<td><code>SIGABRT</code></td>
+</tr>
+<tr>
+<td>典型退出码</td>
+<td>指定值</td>
+<td>非零（平台决定）</td>
+</tr>
+</tbody></table>
+<p><code>abort</code> 的典型用途是在检测到内存安全违规或不可恢复的内部状态时触发，避免继续运行可能污染数据。Rust 的双重 <code>panic</code>（<code>double-panic</code>）默认就会调用 <code>abort</code>。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::process;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">check_invariant</span>(x: <span class="hljs-type">usize</span>, limit: <span class="hljs-type">usize</span>) &#123;<br>    <span class="hljs-keyword">if</span> x &gt; limit &#123;<br>        <span class="hljs-built_in">eprintln!</span>(<span class="hljs-string">&quot;内部不变量违反: &#123;x&#125; &gt; &#123;limit&#125;，立即中止&quot;</span>);<br>        process::<span class="hljs-title function_ invoke__">abort</span>();<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-title function_ invoke__">check_invariant</span>(<span class="hljs-number">10</span>, <span class="hljs-number">100</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;检查通过&quot;</span>);<br>    <span class="hljs-comment">// check_invariant(200, 100); // 取消注释触发 abort</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">检查通过<br></code></pre></td></tr></table></figure>
+
+<h2 id="三、退出状态"><a href="#三、退出状态" class="headerlink" title="三、退出状态"></a>三、退出状态</h2><h3 id="3-1-ExitCode"><a href="#3-1-ExitCode" class="headerlink" title="3.1 ExitCode"></a>3.1 ExitCode</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">ExitCode</span>(_);<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">ExitCode</span> &#123;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">const</span> SUCCESS: ExitCode;   <span class="hljs-comment">// 0</span><br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">const</span> FAILURE: ExitCode;   <span class="hljs-comment">// 1</span><br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">from</span>(code: <span class="hljs-type">u8</span>) <span class="hljs-punctuation">-&gt;</span> ExitCode<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>ExitCode</code> 实现了 <code>Termination</code> 特征，因此可以直接作为 <code>main</code> 函数的返回类型。与调用 <code>process::exit</code> 相比，返回 <code>ExitCode</code> 会让 Rust 运行时正常完成析构流程后再终止，是更安全的惯用方式。</p>
+<p>注意 <code>ExitCode</code> 的底层类型接受 <code>u8</code>（0–255），而 <code>process::exit</code> 接受 <code>i32</code>——在 <code>Unix</code> 上两者都只使用低 8 位，但语义上 <code>ExitCode</code> 强调的是”正常终止的状态码”，<code>exit(i32)</code> 更接近”立即退出”。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::process::ExitCode;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">validate</span>(value: <span class="hljs-type">i32</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;<span class="hljs-type">i32</span>, <span class="hljs-type">String</span>&gt; &#123;<br>    <span class="hljs-keyword">if</span> value &lt; <span class="hljs-number">0</span> &#123;<br>        <span class="hljs-title function_ invoke__">Err</span>(<span class="hljs-built_in">format!</span>(<span class="hljs-string">&quot;无效值: &#123;value&#125;&quot;</span>))<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(value)<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> ExitCode &#123;<br>    <span class="hljs-keyword">match</span> <span class="hljs-title function_ invoke__">validate</span>(<span class="hljs-number">42</span>) &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(v) =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;验证通过: &#123;v&#125;&quot;</span>);<br>            ExitCode::SUCCESS<br>        &#125;<br>        <span class="hljs-title function_ invoke__">Err</span>(e) =&gt; &#123;<br>            <span class="hljs-built_in">eprintln!</span>(<span class="hljs-string">&quot;错误: &#123;e&#125;&quot;</span>);<br>            ExitCode::FAILURE<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">验证通过: 42</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="3-2-ExitStatus"><a href="#3-2-ExitStatus" class="headerlink" title="3.2 ExitStatus"></a>3.2 ExitStatus</h3><p><code>ExitStatus</code> 描述子进程的终止状态，由 <code>Child::wait</code> 或 <code>Command::output</code> 返回。</p>
+<p><strong>主要方法：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>返回类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>success()</code></td>
+<td><code>bool</code></td>
+<td>退出码为 0 时返回 <code>true</code></td>
+</tr>
+<tr>
+<td><code>code()</code></td>
+<td><code>Option&lt;i32&gt;</code></td>
+<td>返回退出码；<code>Unix</code> 上被信号杀死时为 <code>None</code></td>
+</tr>
+<tr>
+<td><code>signal()</code></td>
+<td><code>Option&lt;i32&gt;</code></td>
+<td><code>Unix</code> 专有：返回终止信号编号</td>
+</tr>
+</tbody></table>
+<p><code>code()</code> 返回 <code>Option</code> 而非直接是 <code>i32</code>，原因在于 <code>Unix</code> 进程可以被信号终止（如 <code>SIGSEGV</code>、<code>SIGKILL</code>），此时没有退出码概念，<code>code()</code> 返回 <code>None</code>，<code>signal()</code> 返回对应信号编号。<code>Windows</code> 上进程不被信号终止，<code>code()</code> 始终是 <code>Some</code>。</p>
+<p>下面的示例启动一个子进程，让它主动以退出码 <code>7</code> 结束，然后通过 <code>ExitStatus</code> 判断子进程是否成功、具体退出码是多少。为了兼容不同平台，示例在 <code>Unix</code> 上使用 <code>sh -c &quot;exit 7&quot;</code>，在 <code>Windows</code> 上使用 <code>cmd /C &quot;exit /B 7&quot;</code>。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::process::&#123;Command, ExitStatus&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">build_exit_command</span>() <span class="hljs-punctuation">-&gt;</span> Command &#123;<br>    <span class="hljs-meta">#[cfg(unix)]</span><br>    &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">command</span> = Command::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;sh&quot;</span>);<br>        command.<span class="hljs-title function_ invoke__">args</span>([<span class="hljs-string">&quot;-c&quot;</span>, <span class="hljs-string">&quot;exit 7&quot;</span>]);<br>        command<br>    &#125;<br><br>    <span class="hljs-meta">#[cfg(windows)]</span><br>    &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">command</span> = Command::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;cmd&quot;</span>);<br>        command.<span class="hljs-title function_ invoke__">args</span>([<span class="hljs-string">&quot;/C&quot;</span>, <span class="hljs-string">&quot;exit /B 7&quot;</span>]);<br>        command<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">print_status</span>(status: ExitStatus) &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;状态展示: &#123;status&#125;&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;是否成功: &#123;&#125;&quot;</span>, status.<span class="hljs-title function_ invoke__">success</span>());<br><br>    <span class="hljs-keyword">match</span> status.<span class="hljs-title function_ invoke__">code</span>() &#123;<br>        <span class="hljs-title function_ invoke__">Some</span>(code) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;退出码: &#123;code&#125;&quot;</span>),<br>        <span class="hljs-literal">None</span> =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;没有退出码，进程可能被信号终止&quot;</span>),<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> std::io::<span class="hljs-type">Result</span>&lt;()&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">status</span> = <span class="hljs-title function_ invoke__">build_exit_command</span>().<span class="hljs-title function_ invoke__">status</span>()?;<br>    <span class="hljs-title function_ invoke__">print_status</span>(status);<br>    <span class="hljs-title function_ invoke__">Ok</span>(())<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">状态展示: <span class="hljs-built_in">exit</span> status: 7<br>是否成功: <span class="hljs-literal">false</span><br>退出码: 7<br></code></pre></td></tr></table></figure>
+
+<p><code>success()</code> 只是对”是否为成功退出”的快速判断；如果业务需要区分不同失败原因，应继续读取 <code>code()</code> 并按退出码分支处理。<code>code()</code> 返回 <code>None</code> 的情况主要出现在 <code>Unix</code> 子进程被信号杀死时，此时应结合平台专有的 <code>ExitStatusExt::signal()</code> 进一步判断。</p>
+<h2 id="四、Command-构建器"><a href="#四、Command-构建器" class="headerlink" title="四、Command 构建器"></a>四、Command 构建器</h2><h3 id="4-1-创建与基础执行"><a href="#4-1-创建与基础执行" class="headerlink" title="4.1 创建与基础执行"></a>4.1 创建与基础执行</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">new</span>&lt;S: <span class="hljs-built_in">AsRef</span>&lt;OsStr&gt;&gt;(program: S) <span class="hljs-punctuation">-&gt;</span> Command<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">output</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;Output&gt;<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">status</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;ExitStatus&gt;<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">spawn</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;Child&gt;<br></code></pre></td></tr></table></figure>
+
+<p><code>Command::new</code> 接受程序名或完整路径。三种执行方式的区别：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>行为</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>output()</code></td>
+<td>等待完成，收集 <code>stdout</code>&#x2F;<code>stderr</code></td>
+<td>需要读取输出</td>
+</tr>
+<tr>
+<td><code>status()</code></td>
+<td>等待完成，只返回退出状态</td>
+<td>只关心成功与否</td>
+</tr>
+<tr>
+<td><code>spawn()</code></td>
+<td>立即返回 <code>Child</code>，不等待</td>
+<td>需要并发或 I&#x2F;O 交互</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::process::Command;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">output</span> = Command::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;echo&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">arg</span>(<span class="hljs-string">&quot;Hello, std::process!&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">output</span>()<br>        .<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;执行命令失败&quot;</span>);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;成功: &#123;&#125;&quot;</span>, output.status.<span class="hljs-title function_ invoke__">success</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;退出码: &#123;&#125;&quot;</span>, output.status.<span class="hljs-title function_ invoke__">code</span>().<span class="hljs-title function_ invoke__">unwrap_or</span>(-<span class="hljs-number">1</span>));<br>    <span class="hljs-built_in">print!</span>(<span class="hljs-string">&quot;标准输出: &#123;&#125;&quot;</span>, <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from_utf8_lossy</span>(&amp;output.stdout));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs arduino">成功: <span class="hljs-literal">true</span><br>退出码: <span class="hljs-number">0</span><br>标准输出: Hello, std::process!<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-2-参数传递"><a href="#4-2-参数传递" class="headerlink" title="4.2 参数传递"></a>4.2 参数传递</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">arg</span>&lt;S: <span class="hljs-built_in">AsRef</span>&lt;OsStr&gt;&gt;(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, arg: S) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-keyword">mut</span> Command<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">args</span>&lt;I, S&gt;(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, args: I) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-keyword">mut</span> Command<br><span class="hljs-keyword">where</span><br>    I: <span class="hljs-built_in">IntoIterator</span>&lt;Item = S&gt;,<br>    S: <span class="hljs-built_in">AsRef</span>&lt;OsStr&gt;,<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>arg(s)</code></td>
+<td>添加单个参数</td>
+</tr>
+<tr>
+<td><code>args(iter)</code></td>
+<td>批量添加参数</td>
+</tr>
+</tbody></table>
+<p>每个 <code>arg</code> 调用对应一个独立参数——<code>Command</code> 在 <code>Unix</code> 上通过 <code>execve</code> 的参数数组传递，不经过 Shell 解析，因此<strong>不需要对空格或特殊字符转义</strong>。这与直接在 Shell 中执行不同：<code>Command::new(&quot;ls&quot;).arg(&quot;-la /tmp&quot;)</code> 会把 <code>-la /tmp</code> 作为整体传给 <code>ls</code>（通常会报错），而 <code>.arg(&quot;-la&quot;).arg(&quot;/tmp&quot;)</code> 才是正确写法。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::process::Command;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">files</span> = <span class="hljs-built_in">vec!</span>[<span class="hljs-string">&quot;/tmp&quot;</span>, <span class="hljs-string">&quot;/var&quot;</span>];<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">output</span> = Command::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;ls&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">arg</span>(<span class="hljs-string">&quot;-1&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">args</span>(&amp;files)<br>        .<span class="hljs-title function_ invoke__">output</span>()<br>        .<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;执行失败&quot;</span>);<br><br>    <span class="hljs-built_in">print!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from_utf8_lossy</span>(&amp;output.stdout));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>在 <code>Windows</code> 上，参数最终以单个命令行字符串传递给子进程，<code>Command</code> 会自动按 <code>MSVC C runtime</code> 规则转义引号和空格。如需绕过转义（调用自行解析命令行的程序），使用 <code>raw_arg</code>（<code>Windows</code> 专有）。</p>
+</blockquote>
+<h3 id="4-3-环境变量与工作目录"><a href="#4-3-环境变量与工作目录" class="headerlink" title="4.3 环境变量与工作目录"></a>4.3 环境变量与工作目录</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">env</span>&lt;K, V&gt;(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, key: K, val: V) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-keyword">mut</span> Command<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">envs</span>&lt;I, K, V&gt;(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, vars: I) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-keyword">mut</span> Command<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">env_remove</span>&lt;K: <span class="hljs-built_in">AsRef</span>&lt;OsStr&gt;&gt;(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, key: K) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-keyword">mut</span> Command<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">env_clear</span>(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-keyword">mut</span> Command<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">current_dir</span>&lt;P: <span class="hljs-built_in">AsRef</span>&lt;Path&gt;&gt;(&amp;<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, dir: P) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-keyword">mut</span> Command<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>env(key, val)</code></td>
+<td>为子进程设置单个环境变量；已存在则覆盖</td>
+</tr>
+<tr>
+<td><code>envs(iter)</code></td>
+<td>批量设置环境变量</td>
+</tr>
+<tr>
+<td><code>env_remove(key)</code></td>
+<td>从子进程继承的环境中删除指定变量</td>
+</tr>
+<tr>
+<td><code>env_clear()</code></td>
+<td>清除所有继承的环境变量，只保留通过 <code>env</code> 显式设置的</td>
+</tr>
+<tr>
+<td><code>current_dir(dir)</code></td>
+<td>设置子进程的工作目录；父进程 <code>CWD</code> 不受影响</td>
+</tr>
+</tbody></table>
+<p>默认情况下子进程继承父进程的全部环境变量，<code>env</code> 在此基础上叠加或覆盖。若需要完全隔离的沙箱环境，先调用 <code>env_clear()</code> 再按需 <code>env</code> 注入。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::process::Command;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">output</span> = Command::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;sh&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">arg</span>(<span class="hljs-string">&quot;-c&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">arg</span>(<span class="hljs-string">&quot;echo \&quot;$GREETING from $(pwd)\&quot;&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">env</span>(<span class="hljs-string">&quot;GREETING&quot;</span>, <span class="hljs-string">&quot;Hello&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">current_dir</span>(<span class="hljs-string">&quot;/tmp&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">output</span>()<br>        .<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;执行命令失败&quot;</span>);<br><br>    <span class="hljs-built_in">print!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from_utf8_lossy</span>(&amp;output.stdout));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs angelscript">Hello <span class="hljs-keyword">from</span> /tmp<br></code></pre></td></tr></table></figure>
+
+<h2 id="五、标准-I-O-配置（Stdio）"><a href="#五、标准-I-O-配置（Stdio）" class="headerlink" title="五、标准 I&#x2F;O 配置（Stdio）"></a>五、标准 I&#x2F;O 配置（Stdio）</h2><h3 id="5-1-Stdio-模式"><a href="#5-1-Stdio-模式" class="headerlink" title="5.1 Stdio 模式"></a>5.1 Stdio 模式</h3><p><code>Stdio</code> 描述子进程某路标准流（<code>stdin</code>&#x2F;<code>stdout</code>&#x2F;<code>stderr</code>）的连接方式。</p>
+<table>
+<thead>
+<tr>
+<th>构造方式</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Stdio::inherit()</code></td>
+<td>继承父进程的对应流（默认行为）</td>
+</tr>
+<tr>
+<td><code>Stdio::piped()</code></td>
+<td>创建匿名管道，父进程持有另一端</td>
+</tr>
+<tr>
+<td><code>Stdio::null()</code></td>
+<td>连接到 <code>/dev/null</code>（<code>Unix</code>）或 <code>NUL</code>（<code>Windows</code>），丢弃读写</td>
+</tr>
+<tr>
+<td><code>Stdio::from(file)</code></td>
+<td>将现有文件句柄或另一子进程的 I&#x2F;O 作为输入&#x2F;输出</td>
+</tr>
+</tbody></table>
+<p><code>inherit</code> 是默认模式，适合交互式工具；<code>piped</code> 用于捕获或提供数据；<code>null</code> 适合抑制噪声输出的后台任务；<code>from</code> 是进程管道的基础，将一个子进程的 <code>stdout</code> 直接接到另一个的 <code>stdin</code>。</p>
+<h3 id="5-2-输出捕获"><a href="#5-2-输出捕获" class="headerlink" title="5.2 输出捕获"></a>5.2 输出捕获</h3><p>通过 <code>Stdio::piped()</code> 捕获 <code>stdout</code> 和 <code>stderr</code>，配合 <code>output()</code> 一次性拿到两者：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::process::&#123;Command, Stdio&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">output</span> = Command::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;ls&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">arg</span>(<span class="hljs-string">&quot;/nonexistent_path_xyz&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">stdout</span>(Stdio::<span class="hljs-title function_ invoke__">piped</span>())<br>        .<span class="hljs-title function_ invoke__">stderr</span>(Stdio::<span class="hljs-title function_ invoke__">piped</span>())<br>        .<span class="hljs-title function_ invoke__">output</span>()<br>        .<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;执行命令失败&quot;</span>);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;退出码: &#123;&#125;&quot;</span>, output.status.<span class="hljs-title function_ invoke__">code</span>().<span class="hljs-title function_ invoke__">unwrap_or</span>(-<span class="hljs-number">1</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;stdout 字节数: &#123;&#125;&quot;</span>, output.stdout.<span class="hljs-title function_ invoke__">len</span>());<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">stderr</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from_utf8_lossy</span>(&amp;output.stderr);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;stderr: &#123;&#125;&quot;</span>, stderr.<span class="hljs-title function_ invoke__">trim</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight livecodeserver"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs livecodeserver">退出码: <span class="hljs-number">2</span><br><span class="hljs-keyword">stdout</span> 字节数: <span class="hljs-number">0</span><br><span class="hljs-keyword">stderr</span>: ls: cannot access <span class="hljs-string">&#x27;/nonexistent_path_xyz&#x27;</span>: No such <span class="hljs-built_in">file</span> <span class="hljs-keyword">or</span> <span class="hljs-built_in">directory</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>output()</code> 内部会同时读取 <code>stdout</code> 和 <code>stderr</code> 以防止缓冲区满导致死锁。如果使用 <code>spawn()</code> + 手动读取，必须注意在不同线程中分别消费两路输出，否则一路满缓冲区会阻塞子进程写另一路，从而死锁。</p>
+</blockquote>
+<h2 id="六、子进程管理（Child）"><a href="#六、子进程管理（Child）" class="headerlink" title="六、子进程管理（Child）"></a>六、子进程管理（Child）</h2><h3 id="6-1-spawn-与-wait"><a href="#6-1-spawn-与-wait" class="headerlink" title="6.1 spawn 与 wait"></a>6.1 spawn 与 wait</h3><p><code>spawn()</code> 立即返回 <code>Child</code>，子进程在后台运行。<code>Child</code> 的主要方法：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>返回类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>wait()</code></td>
+<td><code>io::Result&lt;ExitStatus&gt;</code></td>
+<td>阻塞直到子进程退出，返回状态</td>
+</tr>
+<tr>
+<td><code>wait_with_output()</code></td>
+<td><code>io::Result&lt;Output&gt;</code></td>
+<td>阻塞直到退出，同时收集 <code>stdout</code>&#x2F;<code>stderr</code></td>
+</tr>
+<tr>
+<td><code>kill()</code></td>
+<td><code>io::Result&lt;()&gt;</code></td>
+<td>向子进程发送终止信号（<code>Unix</code> 为 <code>SIGKILL</code>，<code>Windows</code> 为 <code>TerminateProcess</code>）</td>
+</tr>
+<tr>
+<td><code>id()</code></td>
+<td><code>Option&lt;u32&gt;</code></td>
+<td>返回子进程 <code>PID</code>；进程已退出时为 <code>None</code></td>
+</tr>
+<tr>
+<td><code>try_wait()</code></td>
+<td><code>io::Result&lt;Option&lt;ExitStatus&gt;&gt;</code></td>
+<td>非阻塞检查子进程是否已退出</td>
+</tr>
+</tbody></table>
+<p><code>wait</code> 与 <code>wait_with_output</code> 的选择取决于是否需要读取输出：如果已用 <code>Stdio::piped()</code> 配置了输出流，应用 <code>wait_with_output</code>，因为它会在等待的同时消费管道缓冲区，避免死锁；如果输出配置为 <code>inherit</code> 或 <code>null</code>，用 <code>wait</code> 即可。</p>
+<p>不调用 <code>wait</code> 而直接丢弃 <code>Child</code> 并不会杀死子进程——子进程会成为孤儿进程，继续运行直到自然退出。若要确保子进程随父进程退出，需要显式调用 <code>kill</code> 或在析构时处理。</p>
+<h3 id="6-2-stdin-写入"><a href="#6-2-stdin-写入" class="headerlink" title="6.2 stdin 写入"></a>6.2 stdin 写入</h3><p>向子进程的 <code>stdin</code> 写入数据需要两个步骤：用 <code>Stdio::piped()</code> 配置 <code>stdin</code>，然后在独立线程中写入，避免与读取 <code>stdout</code> 产生死锁：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::io::Write;<br><span class="hljs-keyword">use</span> std::process::&#123;Command, Stdio&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">child</span> = Command::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;cat&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">stdin</span>(Stdio::<span class="hljs-title function_ invoke__">piped</span>())<br>        .<span class="hljs-title function_ invoke__">stdout</span>(Stdio::<span class="hljs-title function_ invoke__">piped</span>())<br>        .<span class="hljs-title function_ invoke__">spawn</span>()<br>        .<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;启动子进程失败&quot;</span>);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">stdin</span> = child.stdin.<span class="hljs-title function_ invoke__">take</span>().<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;获取 stdin 失败&quot;</span>);<br>    std::thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>        stdin<br>            .<span class="hljs-title function_ invoke__">write_all</span>(<span class="hljs-string">b&quot;Hello from Rust!\nLine 2\n&quot;</span>)<br>            .<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;写入 stdin 失败&quot;</span>);<br>    &#125;);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">output</span> = child.<span class="hljs-title function_ invoke__">wait_with_output</span>().<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;等待子进程失败&quot;</span>);<br>    <span class="hljs-built_in">print!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from_utf8_lossy</span>(&amp;output.stdout));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs css">Hello <span class="hljs-selector-tag">from</span> Rust!<br><span class="hljs-selector-tag">Line</span> <span class="hljs-number">2</span><br></code></pre></td></tr></table></figure>
+
+<p>这里使用 <code>thread::spawn</code> 的原因是：主线程随后要调用 <code>wait_with_output()</code> 等待子进程退出并收集 <code>stdout</code>，而子进程 <code>cat</code> 又要等父进程写完 <code>stdin</code> 并关闭写入端后才会退出。把写入逻辑放到独立线程后，执行流程变成：</p>
+<ol>
+<li>子线程持有 <code>ChildStdin</code>，负责调用 <code>write_all</code> 写入输入数据；</li>
+<li>子线程结束时 <code>stdin</code> 离开作用域，管道写入端自动关闭；</li>
+<li><code>cat</code> 读到 EOF 后退出；</li>
+<li>主线程的 <code>wait_with_output()</code> 完成等待并拿到输出。</li>
+</ol>
+<p><code>stdin.take()</code> 将 <code>stdin</code> 从 <code>Child</code> 中取出，移交给子线程——这一步也很关键：它让写入端的所有权不再留在 <code>Child</code> 结构里，写入线程结束后句柄可以及时关闭。若父线程一直持有 <code>stdin</code> 句柄，又直接调用 <code>wait_with_output()</code> 等子进程退出，子进程可能因为等不到 EOF 而继续等待输入，父子进程互相等待，最终造成死锁。</p>
+<p>如果输入内容很小，也可以在主线程中写完后显式 <code>drop(stdin)</code>，再调用 <code>wait_with_output()</code>；文章示例使用线程，是为了展示更通用的模式，适合输入和输出都可能阻塞、或者子进程需要边读边处理的场景。</p>
+<h3 id="6-3-进程间管道"><a href="#6-3-进程间管道" class="headerlink" title="6.3 进程间管道"></a>6.3 进程间管道</h3><p><code>Stdio::from</code> 可以将一个子进程的 <code>stdout</code> 直接作为另一个子进程的 <code>stdin</code>，无需经过父进程的内存缓冲，实现类似 Shell 管道（<code>cmd1 | cmd2</code>）的效果：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::process::&#123;Command, Stdio&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">echo</span> = Command::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;echo&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">arg</span>(<span class="hljs-string">&quot;hello world rust&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">stdout</span>(Stdio::<span class="hljs-title function_ invoke__">piped</span>())<br>        .<span class="hljs-title function_ invoke__">spawn</span>()<br>        .<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;启动 echo 失败&quot;</span>);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">output</span> = Command::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;tr&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">arg</span>(<span class="hljs-string">&quot;a-z&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">arg</span>(<span class="hljs-string">&quot;A-Z&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">stdin</span>(Stdio::<span class="hljs-title function_ invoke__">from</span>(echo.stdout.<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;获取 stdout 失败&quot;</span>)))<br>        .<span class="hljs-title function_ invoke__">stdout</span>(Stdio::<span class="hljs-title function_ invoke__">piped</span>())<br>        .<span class="hljs-title function_ invoke__">output</span>()<br>        .<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;启动 tr 失败&quot;</span>);<br><br>    <span class="hljs-built_in">print!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from_utf8_lossy</span>(&amp;output.stdout));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ebnf"><span class="hljs-attribute">HELLO WORLD RUST</span><br></code></pre></td></tr></table></figure>
+
+<p><code>echo.stdout</code> 是 <code>Option&lt;ChildStdout&gt;</code>，<code>ChildStdout</code> 实现了 <code>Into&lt;Stdio&gt;</code>，因此可以直接传给 <code>Stdio::from</code>。这种方式将操作系统的管道文件描述符直接接入下一个子进程，数据不经过 Rust 堆，适合处理大量输出的场景。</p>
+<h2 id="七、综合实战"><a href="#七、综合实战" class="headerlink" title="七、综合实战"></a>七、综合实战</h2><p>以下示例整合了本文的主要 API：用 <code>ExitCode</code> 作为 <code>main</code> 返回值，封装带错误处理的命令执行函数，并演示 <code>stdin</code> 写入与进程管道两种 I&#x2F;O 模式：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::io::Write;<br><span class="hljs-keyword">use</span> std::process::&#123;Command, ExitCode, Stdio&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">run_command</span>(cmd: &amp;<span class="hljs-type">str</span>, args: &amp;[&amp;<span class="hljs-type">str</span>]) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;<span class="hljs-type">String</span>, <span class="hljs-type">String</span>&gt; &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">output</span> = Command::<span class="hljs-title function_ invoke__">new</span>(cmd)<br>        .<span class="hljs-title function_ invoke__">args</span>(args)<br>        .<span class="hljs-title function_ invoke__">stdout</span>(Stdio::<span class="hljs-title function_ invoke__">piped</span>())<br>        .<span class="hljs-title function_ invoke__">stderr</span>(Stdio::<span class="hljs-title function_ invoke__">piped</span>())<br>        .<span class="hljs-title function_ invoke__">output</span>()<br>        .<span class="hljs-title function_ invoke__">map_err</span>(|e| <span class="hljs-built_in">format!</span>(<span class="hljs-string">&quot;启动命令失败: &#123;e&#125;&quot;</span>))?;<br><br>    <span class="hljs-keyword">if</span> output.status.<span class="hljs-title function_ invoke__">success</span>() &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from_utf8_lossy</span>(&amp;output.stdout).<span class="hljs-title function_ invoke__">trim</span>().<span class="hljs-title function_ invoke__">to_string</span>())<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">err</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from_utf8_lossy</span>(&amp;output.stderr).<span class="hljs-title function_ invoke__">trim</span>().<span class="hljs-title function_ invoke__">to_string</span>();<br>        <span class="hljs-title function_ invoke__">Err</span>(<span class="hljs-built_in">format!</span>(<br>            <span class="hljs-string">&quot;退出码 &#123;&#125;: &#123;err&#125;&quot;</span>,<br>            output.status.<span class="hljs-title function_ invoke__">code</span>().<span class="hljs-title function_ invoke__">unwrap_or</span>(-<span class="hljs-number">1</span>)<br>        ))<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() <span class="hljs-punctuation">-&gt;</span> ExitCode &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;=== 进程信息 ===&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;当前 PID: &#123;&#125;&quot;</span>, std::process::<span class="hljs-title function_ invoke__">id</span>());<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;\n=== 命令执行 ===&quot;</span>);<br>    <span class="hljs-keyword">match</span> <span class="hljs-title function_ invoke__">run_command</span>(<span class="hljs-string">&quot;uname&quot;</span>, &amp;[<span class="hljs-string">&quot;-sr&quot;</span>]) &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(output) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;系统信息: &#123;output&#125;&quot;</span>),<br>        <span class="hljs-title function_ invoke__">Err</span>(e) =&gt; &#123;<br>            <span class="hljs-built_in">eprintln!</span>(<span class="hljs-string">&quot;错误: &#123;e&#125;&quot;</span>);<br>            <span class="hljs-keyword">return</span> ExitCode::FAILURE;<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;\n=== stdin 写入 ===&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">child</span> = Command::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;cat&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">stdin</span>(Stdio::<span class="hljs-title function_ invoke__">piped</span>())<br>        .<span class="hljs-title function_ invoke__">stdout</span>(Stdio::<span class="hljs-title function_ invoke__">piped</span>())<br>        .<span class="hljs-title function_ invoke__">spawn</span>()<br>        .<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;启动 cat 失败&quot;</span>);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">stdin</span> = child.stdin.<span class="hljs-title function_ invoke__">take</span>().<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;获取 stdin 失败&quot;</span>);<br>    std::thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>        stdin<br>            .<span class="hljs-title function_ invoke__">write_all</span>(<span class="hljs-string">b&quot;Rust process demo\n&quot;</span>)<br>            .<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;写入失败&quot;</span>);<br>    &#125;);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">out</span> = child.<span class="hljs-title function_ invoke__">wait_with_output</span>().<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;等待失败&quot;</span>);<br>    <span class="hljs-built_in">print!</span>(<span class="hljs-string">&quot;cat 回显: &#123;&#125;&quot;</span>, <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from_utf8_lossy</span>(&amp;out.stdout));<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;\n=== 进程管道 ===&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">producer</span> = Command::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;sh&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">arg</span>(<span class="hljs-string">&quot;-c&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">arg</span>(<span class="hljs-string">&quot;printf &#x27;apple\\nbanana\\ncherry\\napricot\\n&#x27;&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">stdout</span>(Stdio::<span class="hljs-title function_ invoke__">piped</span>())<br>        .<span class="hljs-title function_ invoke__">spawn</span>()<br>        .<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;启动失败&quot;</span>);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">result</span> = Command::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;grep&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">arg</span>(<span class="hljs-string">&quot;^a&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">stdin</span>(Stdio::<span class="hljs-title function_ invoke__">from</span>(producer.stdout.<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;获取 stdout 失败&quot;</span>)))<br>        .<span class="hljs-title function_ invoke__">stdout</span>(Stdio::<span class="hljs-title function_ invoke__">piped</span>())<br>        .<span class="hljs-title function_ invoke__">output</span>()<br>        .<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;grep 失败&quot;</span>);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;以 &#x27;a&#x27; 开头的水果:&quot;</span>);<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">line</span> <span class="hljs-keyword">in</span> <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from_utf8_lossy</span>(&amp;result.stdout).<span class="hljs-title function_ invoke__">trim</span>().<span class="hljs-title function_ invoke__">lines</span>() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  - &#123;line&#125;&quot;</span>);<br>    &#125;<br><br>    ExitCode::SUCCESS<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-section">=== 进程信息 ===</span><br>当前 PID: 91314<br><br><span class="hljs-section">=== 命令执行 ===</span><br>系统信息: Linux 7.0.9-205.fc44.x86_64<br><br><span class="hljs-section">=== stdin 写入 ===</span><br>cat 回显: Rust process demo<br><br><span class="hljs-section">=== 进程管道 ===</span><br>以 <span class="hljs-emphasis">&#x27;a&#x27;</span> 开头的水果:<br><span class="hljs-code">  - apple</span><br><span class="hljs-code">  - apricot</span><br></code></pre></td></tr></table></figure>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E5%AD%90%E8%BF%9B%E7%A8%8B/" class="print-no-link">#子进程</a>
+      
+        <a href="/tags/%E7%AE%A1%E9%81%93/" class="print-no-link">#管道</a>
+      
+        <a href="/tags/Command/" class="print-no-link">#Command</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/rust/std-path.html" title="[标准库] std::path 路径处理介绍与实战">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">[标准库] std::path 路径处理介绍与实战</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/std-net.html" title="[标准库] std::net 网络通信介绍与实战">
+                        <span class="hidden-mobile">[标准库] std::net 网络通信介绍与实战</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

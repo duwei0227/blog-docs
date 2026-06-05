@@ -1,0 +1,1556 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="每个 Rust 项目背后都有一个隐形的管家——Cargo。它不只是编译器的包装脚本，而是集依赖解析、构建系统、测试运行器、文档生成器、发布工具于一身的完整工作流平台。本文从项目创建到发布 crates.io，系统介绍 Cargo 的核心功能与常用命令。 一、Cargo 简介Cargo 是 Rust 官方的包管理器与构建工具，随 rustup 安装时一并提供。它解决了三个核心问题：依赖版本锁定、跨平">
+  
+  
+  
+  <title>Cargo 包管理器介绍与实战 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Cargo 包管理器介绍与实战"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-20 10:00" pubdate>
+          2026年5月20日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          18k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          153 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Cargo 包管理器介绍与实战</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>每个 Rust 项目背后都有一个隐形的管家——<code>Cargo</code>。它不只是编译器的包装脚本，而是集依赖解析、构建系统、测试运行器、文档生成器、发布工具于一身的完整工作流平台。本文从项目创建到发布 <code>crates.io</code>，系统介绍 <code>Cargo</code> 的核心功能与常用命令。</p>
+<h2 id="一、Cargo-简介"><a href="#一、Cargo-简介" class="headerlink" title="一、Cargo 简介"></a>一、Cargo 简介</h2><p><code>Cargo</code> 是 Rust 官方的包管理器与构建工具，随 <code>rustup</code> 安装时一并提供。它解决了三个核心问题：<strong>依赖版本锁定</strong>、<strong>跨平台构建一致性</strong>、<strong>生态共享</strong>（通过 <code>crates.io</code>）。</p>
+<h3 id="1-1-安装与版本验证"><a href="#1-1-安装与版本验证" class="headerlink" title="1.1 安装与版本验证"></a>1.1 安装与版本验证</h3><p>通过 <code>rustup</code> 安装 Rust 工具链后，<code>Cargo</code> 已自动就绪：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 查看 Cargo 版本</span><br>cargo --version<br></code></pre></td></tr></table></figure>
+
+<p>输出结果：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">cargo</span> <span class="hljs-number">1</span>.<span class="hljs-number">87</span>.<span class="hljs-number">0</span> (<span class="hljs-number">99624</span>be96 <span class="hljs-number">2025</span>-<span class="hljs-number">05</span>-<span class="hljs-number">06</span>)<br></code></pre></td></tr></table></figure>
+
+<h3 id="1-2-核心概念"><a href="#1-2-核心概念" class="headerlink" title="1.2 核心概念"></a>1.2 核心概念</h3><table>
+<thead>
+<tr>
+<th>概念</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>crate</code></td>
+<td>Rust 的编译单元，分为 <code>lib</code>（库）和 <code>bin</code>（可执行文件）两种类型</td>
+</tr>
+<tr>
+<td><code>package</code></td>
+<td>包含一个 <code>Cargo.toml</code> 的目录，可含多个 <code>crate</code></td>
+</tr>
+<tr>
+<td><code>workspace</code></td>
+<td>多个 <code>package</code> 共享同一个 <code>Cargo.lock</code> 和 <code>target</code> 目录的集合</td>
+</tr>
+<tr>
+<td><code>Cargo.toml</code></td>
+<td>项目清单文件，声明元数据、依赖与构建配置</td>
+</tr>
+<tr>
+<td><code>Cargo.lock</code></td>
+<td>依赖版本快照，由 <code>Cargo</code> 自动生成和维护</td>
+</tr>
+<tr>
+<td><code>registry</code></td>
+<td>crate 发布的远程索引，默认为 <code>crates.io</code></td>
+</tr>
+</tbody></table>
+<h2 id="二、项目创建"><a href="#二、项目创建" class="headerlink" title="二、项目创建"></a>二、项目创建</h2><h3 id="2-1-cargo-new"><a href="#2-1-cargo-new" class="headerlink" title="2.1 cargo new"></a>2.1 cargo new</h3><p><strong>语法：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo new [OPTIONS] &lt;path&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&lt;path&gt;</code></td>
+<td>-</td>
+<td>项目目录路径，同时作为包名</td>
+</tr>
+<tr>
+<td><code>--bin</code></td>
+<td>是</td>
+<td>创建可执行二进制项目（默认）</td>
+</tr>
+<tr>
+<td><code>--lib</code></td>
+<td>-</td>
+<td>创建库项目，生成 <code>src/lib.rs</code></td>
+</tr>
+<tr>
+<td><code>--name &lt;name&gt;</code></td>
+<td>-</td>
+<td>单独指定包名，与目录名解耦</td>
+</tr>
+<tr>
+<td><code>--edition &lt;year&gt;</code></td>
+<td><code>2024</code></td>
+<td>指定 Rust Edition，可选 <code>2015</code>、<code>2018</code>、<code>2021</code>、<code>2024</code></td>
+</tr>
+<tr>
+<td><code>--vcs &lt;vcs&gt;</code></td>
+<td><code>git</code></td>
+<td>版本控制系统；可选 <code>git</code>、<code>hg</code>、<code>none</code></td>
+</tr>
+</tbody></table>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 创建二进制项目</span><br>cargo new hello_world<br><br><span class="hljs-comment"># 创建库项目</span><br>cargo new my_lib --lib<br><br><span class="hljs-comment"># 指定名称（目录名与包名不同）</span><br>cargo new ./projects/v2 --name my-app<br></code></pre></td></tr></table></figure>
+
+<p><code>cargo new</code> 会自动生成 <code>.gitignore</code>（忽略 <code>target/</code>）并初始化 <code>git</code> 仓库。</p>
+<h3 id="2-2-cargo-init"><a href="#2-2-cargo-init" class="headerlink" title="2.2 cargo init"></a>2.2 cargo init</h3><p><code>cargo init</code> 与 <code>cargo new</code> 功能相同，区别在于它在<strong>当前已存在的目录</strong>中初始化项目，而不创建新目录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-built_in">mkdir</span> my_project &amp;&amp; <span class="hljs-built_in">cd</span> my_project<br>cargo init --bin<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-3-项目结构"><a href="#2-3-项目结构" class="headerlink" title="2.3 项目结构"></a>2.3 项目结构</h3><p>标准二进制项目的目录结构：</p>
+<figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs nix">hello_world<span class="hljs-symbol">/</span><br>├── Cargo.toml       <span class="hljs-comment"># 项目清单</span><br>├── Cargo.lock       <span class="hljs-comment"># 依赖锁文件（自动生成）</span><br>├── src<span class="hljs-symbol">/</span><br>│   └── main.rs      <span class="hljs-comment"># 二进制入口</span><br>├── tests<span class="hljs-symbol">/</span>           <span class="hljs-comment"># 集成测试目录（可选）</span><br>├── benches<span class="hljs-symbol">/</span>         <span class="hljs-comment"># 基准测试目录（可选）</span><br>├── examples<span class="hljs-symbol">/</span>        <span class="hljs-comment"># 示例程序目录（可选）</span><br>└── target<span class="hljs-symbol">/</span>          <span class="hljs-comment"># 构建输出目录（自动生成，.gitignore 忽略）</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>一个 <code>package</code> 可以同时包含 <code>src/main.rs</code>（<code>bin</code> crate）和 <code>src/lib.rs</code>（<code>lib</code> crate）。多个可执行文件放在 <code>src/bin/</code> 下，每个 <code>.rs</code> 文件对应一个独立的二进制目标。</p>
+</blockquote>
+<h2 id="三、Cargo-toml-结构详解"><a href="#三、Cargo-toml-结构详解" class="headerlink" title="三、Cargo.toml 结构详解"></a>三、Cargo.toml 结构详解</h2><p><code>Cargo.toml</code> 使用 <code>TOML</code> 格式，是 <code>Cargo</code> 一切行为的配置中心。</p>
+<h3 id="3-1-package-段"><a href="#3-1-package-段" class="headerlink" title="3.1 [package] 段"></a>3.1 [package] 段</h3><figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[package]</span><br><span class="hljs-attr">name</span> = <span class="hljs-string">&quot;hello_world&quot;</span>        <span class="hljs-comment"># 包名，发布时作为 crate 名</span><br><span class="hljs-attr">version</span> = <span class="hljs-string">&quot;0.1.0&quot;</span>           <span class="hljs-comment"># 语义化版本（SemVer）</span><br><span class="hljs-attr">edition</span> = <span class="hljs-string">&quot;2024&quot;</span>            <span class="hljs-comment"># Rust Edition</span><br><span class="hljs-attr">authors</span> = [<span class="hljs-string">&quot;Alice &lt;alice@example.com&gt;&quot;</span>]<br><span class="hljs-attr">description</span> = <span class="hljs-string">&quot;A brief description&quot;</span><br><span class="hljs-attr">license</span> = <span class="hljs-string">&quot;MIT OR Apache-2.0&quot;</span><br><span class="hljs-attr">repository</span> = <span class="hljs-string">&quot;https://github.com/user/hello_world&quot;</span><br><span class="hljs-attr">readme</span> = <span class="hljs-string">&quot;README.md&quot;</span><br><span class="hljs-attr">keywords</span> = [<span class="hljs-string">&quot;cli&quot;</span>, <span class="hljs-string">&quot;tool&quot;</span>]  <span class="hljs-comment"># 最多 5 个，用于 crates.io 搜索</span><br><span class="hljs-attr">categories</span> = [<span class="hljs-string">&quot;command-line-utilities&quot;</span>]<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>字段</th>
+<th>是否必填</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>name</code></td>
+<td>是</td>
+<td>只能含字母、数字、<code>-</code>、<code>_</code></td>
+</tr>
+<tr>
+<td><code>version</code></td>
+<td>是</td>
+<td>遵循 <code>SemVer</code>，格式为 <code>MAJOR.MINOR.PATCH</code></td>
+</tr>
+<tr>
+<td><code>edition</code></td>
+<td>否</td>
+<td>不填默认为 <code>2015</code>，强烈建议显式声明</td>
+</tr>
+<tr>
+<td><code>license</code></td>
+<td>发布必填</td>
+<td><code>SPDX</code> 表达式，如 <code>MIT</code>、<code>Apache-2.0</code></td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>为什么 <code>edition</code> 默认是 <code>2015</code>？</strong><br>Edition 系统在 Rust 2018 时才正式引入，此前的项目均无该字段。为保证老 <code>Cargo.toml</code> 在升级工具链后不发生破坏性编译失败（2018 引入了 <code>async</code>&#x2F;<code>await</code> 关键字、模块路径解析等不兼容变更），Cargo 将缺省值设为 <code>2015</code> 作为向后兼容的兜底。<code>cargo new</code> 新建项目时默认写入当前最新 edition（目前为 <code>2024</code>），因此<strong>新项目应始终显式声明 <code>edition = &quot;2024&quot;</code></strong>，避免无意间退回旧语义。</p>
+</blockquote>
+<h3 id="3-2-依赖段"><a href="#3-2-依赖段" class="headerlink" title="3.2 依赖段"></a>3.2 依赖段</h3><figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[dependencies]</span>          <span class="hljs-comment"># 运行时依赖</span><br><span class="hljs-attr">serde</span> = <span class="hljs-string">&quot;1.0&quot;</span><br><br><span class="hljs-section">[dev-dependencies]</span>      <span class="hljs-comment"># 仅测试/示例时使用</span><br><span class="hljs-attr">pretty_assertions</span> = <span class="hljs-string">&quot;1&quot;</span><br><br><span class="hljs-section">[build-dependencies]</span>    <span class="hljs-comment"># 仅 build.rs 构建脚本使用</span><br><span class="hljs-attr">cc</span> = <span class="hljs-string">&quot;1.0&quot;</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="3-3-版本规范语法"><a href="#3-3-版本规范语法" class="headerlink" title="3.3 版本规范语法"></a>3.3 版本规范语法</h3><p><code>Cargo</code> 使用语义化版本约束，常见写法如下：</p>
+<table>
+<thead>
+<tr>
+<th>写法</th>
+<th>含义</th>
+<th>等价范围</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&quot;1.2.3&quot;</code></td>
+<td>精确兼容（<code>^1.2.3</code>）</td>
+<td><code>&gt;=1.2.3, &lt;2.0.0</code></td>
+</tr>
+<tr>
+<td><code>&quot;^1.2&quot;</code></td>
+<td>主版本兼容</td>
+<td><code>&gt;=1.2.0, &lt;2.0.0</code></td>
+</tr>
+<tr>
+<td><code>&quot;~1.2.3&quot;</code></td>
+<td>补丁级兼容</td>
+<td><code>&gt;=1.2.3, &lt;1.3.0</code></td>
+</tr>
+<tr>
+<td><code>&quot;&gt;=1.0, &lt;2.0&quot;</code></td>
+<td>显式范围</td>
+<td><code>&gt;=1.0.0, &lt;2.0.0</code></td>
+</tr>
+<tr>
+<td><code>&quot;*&quot;</code></td>
+<td>任意版本</td>
+<td>最新稳定版</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><code>Cargo</code> 默认使用 <code>^</code> 语义——即只要不破坏主版本号的兼容性，就允许升级。对于 <code>0.x.y</code> 版本，<code>^0.3</code> 意为 <code>&gt;=0.3.0, &lt;0.4.0</code>（次版本号视为破坏性变更）。</p>
+</blockquote>
+<h3 id="3-4-特殊依赖来源"><a href="#3-4-特殊依赖来源" class="headerlink" title="3.4 特殊依赖来源"></a>3.4 特殊依赖来源</h3><p>除 <code>crates.io</code> 外，<code>Cargo</code> 还支持 <code>Git</code> 仓库和本地路径依赖：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[dependencies]</span><br><span class="hljs-comment"># Git 仓库（指定分支）</span><br><span class="hljs-attr">my_lib</span> = &#123; git = <span class="hljs-string">&quot;https://github.com/user/my_lib&quot;</span>, branch = <span class="hljs-string">&quot;main&quot;</span> &#125;<br><br><span class="hljs-comment"># Git 仓库（指定 tag 或 commit）</span><br><span class="hljs-attr">my_lib</span> = &#123; git = <span class="hljs-string">&quot;https://github.com/user/my_lib&quot;</span>, tag = <span class="hljs-string">&quot;v1.0.0&quot;</span> &#125;<br><br><span class="hljs-comment"># 本地路径依赖（单体仓库或调试场景常用）</span><br><span class="hljs-attr">utils</span> = &#123; path = <span class="hljs-string">&quot;../utils&quot;</span> &#125;<br><br><span class="hljs-comment"># 启用可选 features</span><br><span class="hljs-attr">serde</span> = &#123; version = <span class="hljs-string">&quot;1.0&quot;</span>, features = [<span class="hljs-string">&quot;derive&quot;</span>] &#125;<br><br><span class="hljs-comment"># 可选依赖（需配合 features 使用）</span><br><span class="hljs-attr">serde_json</span> = &#123; version = <span class="hljs-string">&quot;1.0&quot;</span>, optional = <span class="hljs-literal">true</span> &#125;<br></code></pre></td></tr></table></figure>
+
+
+<h2 id="四、构建与运行"><a href="#四、构建与运行" class="headerlink" title="四、构建与运行"></a>四、构建与运行</h2><h3 id="4-1-cargo-build"><a href="#4-1-cargo-build" class="headerlink" title="4.1 cargo build"></a>4.1 cargo build</h3><p><strong>语法：</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo build [OPTIONS]<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>--release</code></td>
+<td>-</td>
+<td>使用 <code>release</code> profile 编译，开启优化，去除调试信息</td>
+</tr>
+<tr>
+<td><code>--target &lt;triple&gt;</code></td>
+<td>宿主机</td>
+<td>交叉编译目标，如 <code>x86_64-unknown-linux-musl</code></td>
+</tr>
+<tr>
+<td><code>--bin &lt;name&gt;</code></td>
+<td>-</td>
+<td>只编译指定的二进制目标</td>
+</tr>
+<tr>
+<td><code>--lib</code></td>
+<td>-</td>
+<td>只编译库目标</td>
+</tr>
+<tr>
+<td><code>-p &lt;pkg&gt;</code></td>
+<td>-</td>
+<td>在 <code>workspace</code> 中只编译指定 <code>package</code></td>
+</tr>
+</tbody></table>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo build              <span class="hljs-comment"># debug 构建，产物在 target/debug/</span><br>cargo build --release    <span class="hljs-comment"># release 构建，产物在 target/release/</span><br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs scss">Compiling base-rust v0<span class="hljs-selector-class">.1</span><span class="hljs-selector-class">.0</span> (/home/duwei/workspace/rust/base-rust)<br> Finished `release` profile <span class="hljs-selector-attr">[optimized]</span> <span class="hljs-built_in">target</span>(s) in <span class="hljs-number">0.06s</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>debug</code> 构建保留完整调试符号，编译速度快但运行慢；<code>release</code> 构建开启 <code>opt-level = 3</code>，运行快但编译慢。开发时始终用 <code>debug</code>，部署时切换到 <code>release</code>。</p>
+</blockquote>
+<h3 id="4-2-cargo-run"><a href="#4-2-cargo-run" class="headerlink" title="4.2 cargo run"></a>4.2 cargo run</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo run [OPTIONS] [-- &lt;args&gt;...]<br></code></pre></td></tr></table></figure>
+
+<p>等同于先 <code>cargo build</code> 再运行产物，并将 <code>--</code> 之后的参数透传给程序：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Hello, Cargo!&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;version: &#123;&#125;&quot;</span>, <span class="hljs-built_in">env!</span>(<span class="hljs-string">&quot;CARGO_PKG_VERSION&quot;</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;name: &#123;&#125;&quot;</span>, <span class="hljs-built_in">env!</span>(<span class="hljs-string">&quot;CARGO_PKG_NAME&quot;</span>));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo run<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight autohotkey"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs autohotkey">   Compiling base-rust v0.<span class="hljs-number">1.0</span> (/home/duwei/workspace/rust/base-rust)<br>    Finished `dev` profile [unoptimized + debuginfo] target(s) in <span class="hljs-number">0.05</span>s<br>     Running `target/debug/base-rust`<br><span class="hljs-built_in">Hello,</span> Cargo!<br><span class="hljs-title">version:</span> <span class="hljs-number">0.1</span>.<span class="hljs-number">0</span><br><span class="hljs-title">name:</span> base-rust<br></code></pre></td></tr></table></figure>
+
+<p><code>src/bin/</code> 下有多个二进制目标时，使用 <code>--bin</code> 指定：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo run --bin server<br>cargo run --bin client -- --port 8080<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-3-cargo-check"><a href="#4-3-cargo-check" class="headerlink" title="4.3 cargo check"></a>4.3 cargo check</h3><p><code>cargo check</code> 只做类型检查和借用检查，<strong>不生成可执行文件</strong>，速度通常比完整编译快 3–10 倍，适合开发时的快速反馈循环：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo check<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight scss"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs scss">Checking base-rust v0<span class="hljs-selector-class">.1</span><span class="hljs-selector-class">.0</span> (/home/duwei/workspace/rust/base-rust)<br>Finished `dev` profile <span class="hljs-selector-attr">[unoptimized + debuginfo]</span> <span class="hljs-built_in">target</span>(s) in <span class="hljs-number">0.02s</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="4-4-构建配置文件（Profiles）"><a href="#4-4-构建配置文件（Profiles）" class="headerlink" title="4.4 构建配置文件（Profiles）"></a>4.4 构建配置文件（Profiles）</h3><p><code>Profiles</code> 控制编译器优化级别、调试信息、<code>panic</code> 策略等行为。在 <code>Cargo.toml</code> 中自定义：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[profile.dev]</span><br><span class="hljs-attr">opt-level</span> = <span class="hljs-number">0</span>          <span class="hljs-comment"># 不优化，编译快</span><br><span class="hljs-attr">debug</span> = <span class="hljs-literal">true</span>           <span class="hljs-comment"># 保留调试信息</span><br><span class="hljs-attr">overflow-checks</span> = <span class="hljs-literal">true</span> <span class="hljs-comment"># 开启整数溢出检查</span><br><br><span class="hljs-section">[profile.release]</span><br><span class="hljs-attr">opt-level</span> = <span class="hljs-number">3</span>          <span class="hljs-comment"># 最高优化</span><br><span class="hljs-attr">debug</span> = <span class="hljs-literal">false</span><br><span class="hljs-attr">lto</span> = <span class="hljs-literal">true</span>             <span class="hljs-comment"># 开启链接时优化（Link-Time Optimization）</span><br><span class="hljs-attr">codegen-units</span> = <span class="hljs-number">1</span>      <span class="hljs-comment"># 单码生成单元，进一步提升优化质量</span><br><span class="hljs-attr">panic</span> = <span class="hljs-string">&quot;abort&quot;</span>        <span class="hljs-comment"># 出现 panic 直接 abort，减小二进制体积</span><br><span class="hljs-attr">strip</span> = <span class="hljs-string">&quot;symbols&quot;</span>      <span class="hljs-comment"># 剥离符号表，进一步缩小产物</span><br><br><span class="hljs-section">[profile.dev.package.&quot;*&quot;]</span><br><span class="hljs-attr">opt-level</span> = <span class="hljs-number">2</span>          <span class="hljs-comment"># 对所有依赖开启优化，只有自身代码保持 debug 状态</span><br></code></pre></td></tr></table></figure>
+
+<p>内置 <code>profile</code> 一览：</p>
+<table>
+<thead>
+<tr>
+<th>Profile</th>
+<th>触发命令</th>
+<th><code>opt-level</code> 默认</th>
+<th><code>debug</code> 默认</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dev</code></td>
+<td><code>cargo build</code> &#x2F; <code>cargo run</code></td>
+<td><code>0</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>release</code></td>
+<td><code>cargo build --release</code></td>
+<td><code>3</code></td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>test</code></td>
+<td><code>cargo test</code></td>
+<td><code>0</code></td>
+<td><code>true</code></td>
+</tr>
+<tr>
+<td><code>bench</code></td>
+<td><code>cargo bench</code></td>
+<td><code>3</code></td>
+<td><code>false</code></td>
+</tr>
+</tbody></table>
+<p>所有内置和自定义 <code>profile</code> 均支持以下配置项：</p>
+<table>
+<thead>
+<tr>
+<th>配置项</th>
+<th>可选值</th>
+<th><code>dev</code> 默认</th>
+<th><code>release</code> 默认</th>
+<th>说明与用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>opt-level</code></td>
+<td><code>0</code> &#x2F; <code>1</code> &#x2F; <code>2</code> &#x2F; <code>3</code> &#x2F; <code>&quot;s&quot;</code> &#x2F; <code>&quot;z&quot;</code></td>
+<td><code>0</code></td>
+<td><code>3</code></td>
+<td>编译器优化等级。<code>0</code> &#x3D; 不优化（编译最快）；<code>1</code> &#x3D; 基础优化；<code>2</code> &#x3D; 中等优化；<code>3</code> &#x3D; 最高优化（运行最快）；<code>&quot;s&quot;</code> &#x3D; 优化二进制体积；<code>&quot;z&quot;</code> &#x3D; 进一步缩小体积（同时禁用循环向量化）</td>
+</tr>
+<tr>
+<td><code>debug</code></td>
+<td><code>0</code>&#x2F;<code>false</code> &#x2F; <code>&quot;line-tables-only&quot;</code> &#x2F; <code>&quot;limited&quot;</code> &#x2F; <code>1</code> &#x2F; <code>2</code>&#x2F;<code>true</code>&#x2F;<code>&quot;full&quot;</code></td>
+<td><code>true</code>（等同 <code>2</code>）</td>
+<td><code>false</code>（等同 <code>0</code>）</td>
+<td>调试信息详细程度。<code>false</code> &#x3D; 不含调试信息；<code>&quot;line-tables-only&quot;</code> &#x3D; 仅行号表（最小调试信息，可用于 <code>panic</code> 回溯）；<code>&quot;limited&quot;</code> &#x3D; 部分信息（含行号，无类型与变量）；<code>true</code>&#x2F;<code>&quot;full&quot;</code> &#x3D; 完整调试信息</td>
+</tr>
+<tr>
+<td><code>split-debuginfo</code></td>
+<td><code>&quot;off&quot;</code> &#x2F; <code>&quot;packed&quot;</code> &#x2F; <code>&quot;unpacked&quot;</code></td>
+<td>平台相关</td>
+<td>平台相关</td>
+<td>控制调试信息是否从可执行文件中分离。<code>&quot;off&quot;</code> &#x3D; 内嵌到产物；<code>&quot;packed&quot;</code> &#x3D; 拆出到单独文件（如 <code>.dSYM</code>、<code>.pdb</code>）；<code>&quot;unpacked&quot;</code> &#x3D; 拆出为多个对象文件（仅 macOS）</td>
+</tr>
+<tr>
+<td><code>strip</code></td>
+<td><code>&quot;none&quot;</code> &#x2F; <code>&quot;debuginfo&quot;</code> &#x2F; <code>&quot;symbols&quot;</code></td>
+<td><code>&quot;none&quot;</code></td>
+<td><code>&quot;none&quot;</code></td>
+<td>从产物中剥离信息。<code>&quot;none&quot;</code> &#x3D; 不剥离；<code>&quot;debuginfo&quot;</code> &#x3D; 仅剥离调试信息（保留符号表）；<code>&quot;symbols&quot;</code> &#x3D; 剥离全部符号与调试信息（产物最小）</td>
+</tr>
+<tr>
+<td><code>debug-assertions</code></td>
+<td><code>true</code> &#x2F; <code>false</code></td>
+<td><code>true</code></td>
+<td><code>false</code></td>
+<td>是否启用 <code>debug_assert!</code> 宏及标准库内部断言的运行时检查。关闭后相关断言被完全消除，不产生运行时开销</td>
+</tr>
+<tr>
+<td><code>overflow-checks</code></td>
+<td><code>true</code> &#x2F; <code>false</code></td>
+<td><code>true</code></td>
+<td><code>false</code></td>
+<td>是否开启整数算术溢出的运行时 <code>panic</code> 检测。关闭后溢出行为遵循二进制补码回绕（与 C 相同），性能略优但存在隐患</td>
+</tr>
+<tr>
+<td><code>lto</code></td>
+<td><code>false</code> &#x2F; <code>&quot;thin&quot;</code> &#x2F; <code>true</code>&#x2F;<code>&quot;fat&quot;</code> &#x2F; <code>&quot;off&quot;</code></td>
+<td><code>false</code></td>
+<td><code>false</code></td>
+<td>链接时优化（LTO）策略。<code>false</code> &#x3D; 仅在同一 crate 内做 ThinLTO；<code>&quot;thin&quot;</code> &#x3D; 跨 crate ThinLTO（速度与质量均衡）；<code>true</code>&#x2F;<code>&quot;fat&quot;</code> &#x3D; 全量 LTO（优化质量最佳，编译最慢）；<code>&quot;off&quot;</code> &#x3D; 完全禁用所有 LTO</td>
+</tr>
+<tr>
+<td><code>panic</code></td>
+<td><code>&quot;unwind&quot;</code> &#x2F; <code>&quot;abort&quot;</code></td>
+<td><code>&quot;unwind&quot;</code></td>
+<td><code>&quot;unwind&quot;</code></td>
+<td><code>panic</code> 发生时的处理策略。<code>&quot;unwind&quot;</code> &#x3D; 展开调用栈（支持 <code>catch_unwind</code> 恢复）；<code>&quot;abort&quot;</code> &#x3D; 立即终止进程（减小二进制体积，不可恢复，适合嵌入式或体积敏感场景）</td>
+</tr>
+<tr>
+<td><code>incremental</code></td>
+<td><code>true</code> &#x2F; <code>false</code></td>
+<td><code>true</code></td>
+<td><code>false</code></td>
+<td>是否开启增量编译。开启后仅重新编译变更部分，显著提升开发时迭代速度；关闭后全量编译，通常优化质量更高且产物更稳定</td>
+</tr>
+<tr>
+<td><code>codegen-units</code></td>
+<td>正整数</td>
+<td><code>256</code></td>
+<td><code>16</code></td>
+<td>将 crate 拆分为多少个并行代码生成单元。值越大编译越快，但跨单元的内联优化机会越少；设为 <code>1</code> 时串行编译，优化质量最高，适合 <code>release</code> 最终构建</td>
+</tr>
+<tr>
+<td><code>rpath</code></td>
+<td><code>true</code> &#x2F; <code>false</code></td>
+<td><code>false</code></td>
+<td><code>false</code></td>
+<td>是否在产物中写入 <code>rpath</code>（运行时动态库搜索路径）。仅对链接动态库的 Unix 平台有意义，通常不建议开启以避免可移植性问题</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>自定义 profile 继承</strong>：自定义 <code>profile</code> 须通过 <code>inherits</code> 字段指定继承基础，例如 <code>inherits = &quot;release&quot;</code>，否则 Cargo 会报错。未显式覆盖的选项均沿用父 <code>profile</code> 的值。</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[profile.release-lto]</span><br><span class="hljs-attr">inherits</span> = <span class="hljs-string">&quot;release&quot;</span><br><span class="hljs-attr">lto</span> = <span class="hljs-string">&quot;fat&quot;</span><br><span class="hljs-attr">codegen-units</span> = <span class="hljs-number">1</span><br></code></pre></td></tr></table></figure></blockquote>
+<h2 id="五、依赖管理"><a href="#五、依赖管理" class="headerlink" title="五、依赖管理"></a>五、依赖管理</h2><h3 id="5-1-cargo-add-cargo-remove"><a href="#5-1-cargo-add-cargo-remove" class="headerlink" title="5.1 cargo add &#x2F; cargo remove"></a>5.1 cargo add &#x2F; cargo remove</h3><p>从 <code>Cargo 1.62</code> 起，<code>cargo add</code> 成为内置命令，无需手动编辑 <code>Cargo.toml</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 添加最新版本</span><br>cargo add serde<br><br><span class="hljs-comment"># 添加并启用 features</span><br>cargo add serde --features derive<br><br><span class="hljs-comment"># 添加指定版本</span><br>cargo add tokio@1.28 --features full<br><br><span class="hljs-comment"># 添加为开发依赖</span><br>cargo add --dev pretty_assertions<br><br><span class="hljs-comment"># 移除依赖</span><br>cargo remove serde<br></code></pre></td></tr></table></figure>
+
+<h3 id="5-2-cargo-update-与-Cargo-lock"><a href="#5-2-cargo-update-与-Cargo-lock" class="headerlink" title="5.2 cargo update 与 Cargo.lock"></a>5.2 cargo update 与 Cargo.lock</h3><p><code>Cargo.lock</code> 将所有直接和间接依赖锁定到精确版本，确保团队成员和 <code>CI</code> 环境构建结果一致。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 将所有依赖升级到符合版本约束的最新版</span><br>cargo update<br><br><span class="hljs-comment"># 只升级指定 crate</span><br>cargo update serde<br><br><span class="hljs-comment"># 升级到特定版本（会修改 Cargo.toml）</span><br>cargo add serde@1.0.197<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>库（<code>lib</code> crate）不应提交 <code>Cargo.lock</code></strong>，因为下游使用者会用自己的锁文件。<strong>二进制项目（<code>bin</code> crate）应提交 <code>Cargo.lock</code></strong>，以保证可重复构建。</p>
+</blockquote>
+<h3 id="5-3-cargo-tree"><a href="#5-3-cargo-tree" class="headerlink" title="5.3 cargo tree"></a>5.3 cargo tree</h3><p>可视化展示依赖树，快速排查重复依赖或版本冲突：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo tree<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">base</span>-rust v0.<span class="hljs-number">1</span>.<span class="hljs-number">0</span> (/home/duwei/workspace/rust/base-rust)<br></code></pre></td></tr></table></figure>
+
+<p>实际有依赖时的典型输出：</p>
+<figure class="highlight mipsasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs mipsasm">my_app <span class="hljs-built_in">v0</span>.<span class="hljs-number">1</span>.<span class="hljs-number">0</span><br>├── serde <span class="hljs-built_in">v1</span>.<span class="hljs-number">0</span>.<span class="hljs-number">197</span><br>│   └── serde_derive <span class="hljs-built_in">v1</span>.<span class="hljs-number">0</span>.<span class="hljs-number">197</span> (proc-macro)<br>├── tokio <span class="hljs-built_in">v1</span>.<span class="hljs-number">37</span>.<span class="hljs-number">0</span><br>│   ├── <span class="hljs-keyword">bytes </span><span class="hljs-built_in">v1</span>.<span class="hljs-number">6</span>.<span class="hljs-number">0</span><br>│   └── mio <span class="hljs-built_in">v0</span>.<span class="hljs-number">8</span>.<span class="hljs-number">11</span><br>└── reqwest <span class="hljs-built_in">v0</span>.<span class="hljs-number">12</span>.<span class="hljs-number">3</span><br>    ├── hyper <span class="hljs-built_in">v1</span>.<span class="hljs-number">3</span>.<span class="hljs-number">1</span><br>    └── ...<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 只显示重复出现的 crate</span><br>cargo tree --duplicates<br><br><span class="hljs-comment"># 查看某个 crate 被哪些依赖引入</span><br>cargo tree --invert serde<br></code></pre></td></tr></table></figure>
+
+
+<h2 id="六、测试"><a href="#六、测试" class="headerlink" title="六、测试"></a>六、测试</h2><h3 id="6-1-单元测试"><a href="#6-1-单元测试" class="headerlink" title="6.1 单元测试"></a>6.1 单元测试</h3><p>单元测试写在源文件内，用 <code>#[cfg(test)]</code> 模块隔离，可访问私有函数：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">add</span>(a: <span class="hljs-type">i32</span>, b: <span class="hljs-type">i32</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">i32</span> &#123;<br>    a + b<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">is_even</span>(n: <span class="hljs-type">i32</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">bool</span> &#123;<br>    n % <span class="hljs-number">2</span> == <span class="hljs-number">0</span><br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;add(3, 4) = &#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">add</span>(<span class="hljs-number">3</span>, <span class="hljs-number">4</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;is_even(6) = &#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">is_even</span>(<span class="hljs-number">6</span>));<br>&#125;<br><br><span class="hljs-meta">#[cfg(test)]</span><br><span class="hljs-keyword">mod</span> tests &#123;<br>    <span class="hljs-keyword">use</span> super::*;<br><br>    <span class="hljs-meta">#[test]</span><br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">test_add</span>() &#123;<br>        <span class="hljs-built_in">assert_eq!</span>(<span class="hljs-title function_ invoke__">add</span>(<span class="hljs-number">2</span>, <span class="hljs-number">3</span>), <span class="hljs-number">5</span>);<br>        <span class="hljs-built_in">assert_eq!</span>(<span class="hljs-title function_ invoke__">add</span>(-<span class="hljs-number">1</span>, <span class="hljs-number">1</span>), <span class="hljs-number">0</span>);<br>    &#125;<br><br>    <span class="hljs-meta">#[test]</span><br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">test_is_even</span>() &#123;<br>        <span class="hljs-built_in">assert!</span>(<span class="hljs-title function_ invoke__">is_even</span>(<span class="hljs-number">4</span>));<br>        <span class="hljs-built_in">assert!</span>(!<span class="hljs-title function_ invoke__">is_even</span>(<span class="hljs-number">7</span>));<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo <span class="hljs-built_in">test</span><br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs subunit">   Compiling base-rust v0.1.0 (/home/duwei/workspace/rust/base-rust)<br>    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.06s<br>     Running unittests src/main.rs (target/debug/deps/base_rust-b65e63a635fc6ae0)<br><br>running 2 tests<br><span class="hljs-keyword">test test</span>s::test_add ... ok<br><span class="hljs-keyword">test test</span>s::test_is_even ... ok<br><br><span class="hljs-keyword">test </span>result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s<br></code></pre></td></tr></table></figure>
+
+<h3 id="6-2-cargo-test-常用参数"><a href="#6-2-cargo-test-常用参数" class="headerlink" title="6.2 cargo test 常用参数"></a>6.2 cargo test 常用参数</h3><table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>cargo test &lt;name&gt;</code></td>
+<td>只运行名称包含 <code>&lt;name&gt;</code> 的测试</td>
+</tr>
+<tr>
+<td><code>cargo test -- --nocapture</code></td>
+<td>显示测试中的 <code>println!</code> 输出</td>
+</tr>
+<tr>
+<td><code>cargo test -- --test-threads=1</code></td>
+<td>单线程运行测试，避免并发干扰</td>
+</tr>
+<tr>
+<td><code>cargo test --lib</code></td>
+<td>只运行 <code>lib</code> crate 的单元测试</td>
+</tr>
+<tr>
+<td><code>cargo test --test &lt;filename&gt;</code></td>
+<td>只运行 <code>tests/</code> 目录下指定的集成测试文件</td>
+</tr>
+<tr>
+<td><code>cargo test --doc</code></td>
+<td>只运行文档测试</td>
+</tr>
+</tbody></table>
+<h3 id="6-3-集成测试"><a href="#6-3-集成测试" class="headerlink" title="6.3 集成测试"></a>6.3 集成测试</h3><p>集成测试放在 <code>tests/</code> 目录，每个文件是独立的 <code>crate</code>，只能访问库的公开 <code>API</code>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// tests/integration_test.rs</span><br><span class="hljs-keyword">use</span> my_lib::add;<br><br><span class="hljs-meta">#[test]</span><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">test_add_from_outside</span>() &#123;<br>    <span class="hljs-built_in">assert_eq!</span>(<span class="hljs-title function_ invoke__">add</span>(<span class="hljs-number">10</span>, <span class="hljs-number">20</span>), <span class="hljs-number">30</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="6-4-文档测试"><a href="#6-4-文档测试" class="headerlink" title="6.4 文档测试"></a>6.4 文档测试</h3><p>文档注释中的代码块会被 <code>cargo test --doc</code> 自动执行，确保文档示例始终有效：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">/// 将两个整数相加。</span><br><span class="hljs-comment">///</span><br><span class="hljs-comment">/// # Examples</span><br><span class="hljs-comment">///</span><br><span class="hljs-comment">/// ```</span><br><span class="hljs-comment">/// let result = my_lib::add(2, 3);</span><br><span class="hljs-comment">/// assert_eq!(result, 5);</span><br><span class="hljs-comment">/// ```</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">add</span>(a: <span class="hljs-type">i32</span>, b: <span class="hljs-type">i32</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">i32</span> &#123;<br>    a + b<br>&#125;<br></code></pre></td></tr></table></figure>
+
+
+<h2 id="七、工作空间（Workspace）"><a href="#七、工作空间（Workspace）" class="headerlink" title="七、工作空间（Workspace）"></a>七、工作空间（Workspace）</h2><p>当项目拆分为多个相互依赖的 <code>crate</code> 时，<code>Workspace</code> 让它们共享同一个 <code>Cargo.lock</code> 和 <code>target/</code> 目录，避免重复编译依赖。</p>
+<h3 id="7-1-创建工作空间"><a href="#7-1-创建工作空间" class="headerlink" title="7.1 创建工作空间"></a>7.1 创建工作空间</h3><p>根目录的 <code>Cargo.toml</code> 只声明 <code>[workspace]</code>，不含 <code>[package]</code>：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-comment"># workspace/Cargo.toml（根清单）</span><br><span class="hljs-section">[workspace]</span><br><span class="hljs-attr">resolver</span> = <span class="hljs-string">&quot;2&quot;</span><br><span class="hljs-attr">members</span> = [<br>    <span class="hljs-string">&quot;crates/core&quot;</span>,<br>    <span class="hljs-string">&quot;crates/cli&quot;</span>,<br>    <span class="hljs-string">&quot;crates/server&quot;</span>,<br>]<br></code></pre></td></tr></table></figure>
+
+<p>成员 <code>crate</code> 的结构：</p>
+<figure class="highlight nix"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs nix">workspace<span class="hljs-symbol">/</span><br>├── Cargo.toml          <span class="hljs-comment"># 根清单（只有 [workspace]）</span><br>├── Cargo.lock          <span class="hljs-comment"># 整个 workspace 共享</span><br>├── target<span class="hljs-symbol">/</span>             <span class="hljs-comment"># 整个 workspace 共享</span><br>├── crates<span class="hljs-symbol">/</span><br>│   ├── core<span class="hljs-symbol">/</span><br>│   │   ├── Cargo.toml<br>│   │   └── src<span class="hljs-symbol">/lib.rs</span><br>│   ├── cli<span class="hljs-symbol">/</span><br>│   │   ├── Cargo.toml<br>│   │   └── src<span class="hljs-symbol">/main.rs</span><br>│   └── server<span class="hljs-symbol">/</span><br>│       ├── Cargo.toml<br>│       └── src<span class="hljs-operator">/</span>main.rs<br></code></pre></td></tr></table></figure>
+
+<h3 id="7-2-成员间依赖与共享依赖"><a href="#7-2-成员间依赖与共享依赖" class="headerlink" title="7.2 成员间依赖与共享依赖"></a>7.2 成员间依赖与共享依赖</h3><p>成员 <code>crate</code> 互相依赖时使用路径依赖：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-comment"># crates/cli/Cargo.toml</span><br><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">core</span> = &#123; path = <span class="hljs-string">&quot;../core&quot;</span> &#125;<br></code></pre></td></tr></table></figure>
+
+<p>从 <code>Cargo 1.64</code> 起，可在根清单中用 <code>[workspace.dependencies]</code> 统一管理版本，避免各成员各自声明版本不一致：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-comment"># workspace/Cargo.toml</span><br><span class="hljs-section">[workspace.dependencies]</span><br><span class="hljs-attr">serde</span> = &#123; version = <span class="hljs-string">&quot;1.0&quot;</span>, features = [<span class="hljs-string">&quot;derive&quot;</span>] &#125;<br><span class="hljs-attr">tokio</span> = &#123; version = <span class="hljs-string">&quot;1&quot;</span>, features = [<span class="hljs-string">&quot;full&quot;</span>] &#125;<br></code></pre></td></tr></table></figure>
+
+<p>成员中只需继承，无需重复填写版本：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-comment"># crates/server/Cargo.toml</span><br><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">serde</span> = &#123; workspace = <span class="hljs-literal">true</span> &#125;<br><span class="hljs-attr">tokio</span> = &#123; workspace = <span class="hljs-literal">true</span> &#125;<br></code></pre></td></tr></table></figure>
+
+<p>在 <code>workspace</code> 根目录运行命令时，默认作用于所有成员；用 <code>-p</code> 指定单个：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo build              <span class="hljs-comment"># 构建所有成员</span><br>cargo <span class="hljs-built_in">test</span> -p core       <span class="hljs-comment"># 只测试 core crate</span><br>cargo run -p cli         <span class="hljs-comment"># 只运行 cli</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="7-3-根清单完整配置说明"><a href="#7-3-根清单完整配置说明" class="headerlink" title="7.3 根清单完整配置说明"></a>7.3 根清单完整配置说明</h3><p>workspace 根 <code>Cargo.toml</code> 支持以下顶层表，各自职责独立：</p>
+<h4 id="workspace-—-核心声明"><a href="#workspace-—-核心声明" class="headerlink" title="[workspace] — 核心声明"></a><code>[workspace]</code> — 核心声明</h4><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>类型</th>
+<th>是否必填</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>members</code></td>
+<td>字符串数组</td>
+<td>是</td>
+<td>成员包路径列表，支持 glob（如 <code>&quot;crates/*&quot;</code>）。Cargo 按此列表发现并管理所有成员</td>
+</tr>
+<tr>
+<td><code>exclude</code></td>
+<td>字符串数组</td>
+<td>否</td>
+<td>从 <code>members</code> glob 匹配结果中排除的路径，精确匹配，不支持 glob</td>
+</tr>
+<tr>
+<td><code>default-members</code></td>
+<td>字符串数组</td>
+<td>否</td>
+<td>未指定 <code>-p</code> 时默认操作的成员子集；不填则默认作用于所有成员</td>
+</tr>
+<tr>
+<td><code>resolver</code></td>
+<td><code>&quot;1&quot;</code> &#x2F; <code>&quot;2&quot;</code></td>
+<td>否</td>
+<td>依赖解析器版本。<code>&quot;2&quot;</code> 支持更精细的 feature 独立解析，edition 2021+ 项目默认为 <code>&quot;2&quot;</code>，强烈建议显式声明</td>
+</tr>
+</tbody></table>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[workspace]</span><br><span class="hljs-attr">resolver</span> = <span class="hljs-string">&quot;2&quot;</span><br><span class="hljs-attr">members</span> = [<span class="hljs-string">&quot;crates/*&quot;</span>, <span class="hljs-string">&quot;tools/cli&quot;</span>]<br><span class="hljs-attr">exclude</span> = [<span class="hljs-string">&quot;crates/experimental&quot;</span>]<br><span class="hljs-attr">default-members</span> = [<span class="hljs-string">&quot;crates/core&quot;</span>, <span class="hljs-string">&quot;tools/cli&quot;</span>]<br></code></pre></td></tr></table></figure>
+
+<h4 id="workspace-package-—-共享包元数据（Cargo-1-64-）"><a href="#workspace-package-—-共享包元数据（Cargo-1-64-）" class="headerlink" title="[workspace.package] — 共享包元数据（Cargo 1.64+）"></a><code>[workspace.package]</code> — 共享包元数据（Cargo 1.64+）</h4><p>在根清单统一声明后，成员通过 <code>key.workspace = true</code> 继承，避免重复维护。</p>
+<table>
+<thead>
+<tr>
+<th>可继承字段</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>version</code></td>
+<td>语义化版本号</td>
+</tr>
+<tr>
+<td><code>authors</code></td>
+<td>作者列表</td>
+</tr>
+<tr>
+<td><code>edition</code></td>
+<td>Rust Edition</td>
+</tr>
+<tr>
+<td><code>rust-version</code></td>
+<td>最低支持的 Rust 版本（MSRV）</td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td>包描述</td>
+</tr>
+<tr>
+<td><code>documentation</code></td>
+<td>文档 URL</td>
+</tr>
+<tr>
+<td><code>readme</code></td>
+<td>README 文件路径</td>
+</tr>
+<tr>
+<td><code>homepage</code></td>
+<td>主页 URL</td>
+</tr>
+<tr>
+<td><code>repository</code></td>
+<td>仓库 URL</td>
+</tr>
+<tr>
+<td><code>license</code></td>
+<td>SPDX 许可证表达式</td>
+</tr>
+<tr>
+<td><code>license-file</code></td>
+<td>许可证文件路径</td>
+</tr>
+<tr>
+<td><code>keywords</code></td>
+<td>关键词列表（最多 5 个）</td>
+</tr>
+<tr>
+<td><code>categories</code></td>
+<td>crates.io 分类列表</td>
+</tr>
+<tr>
+<td><code>publish</code></td>
+<td>是否允许发布到 crates.io</td>
+</tr>
+<tr>
+<td><code>exclude</code> &#x2F; <code>include</code></td>
+<td>打包时的文件过滤规则</td>
+</tr>
+</tbody></table>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-comment"># workspace/Cargo.toml</span><br><span class="hljs-section">[workspace.package]</span><br><span class="hljs-attr">version</span> = <span class="hljs-string">&quot;1.0.0&quot;</span><br><span class="hljs-attr">edition</span> = <span class="hljs-string">&quot;2024&quot;</span><br><span class="hljs-attr">authors</span> = [<span class="hljs-string">&quot;Alice &lt;alice@example.com&gt;&quot;</span>]<br><span class="hljs-attr">license</span> = <span class="hljs-string">&quot;MIT OR Apache-2.0&quot;</span><br><span class="hljs-attr">repository</span> = <span class="hljs-string">&quot;https://github.com/user/my-workspace&quot;</span><br><span class="hljs-attr">rust-version</span> = <span class="hljs-string">&quot;1.85&quot;</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-comment"># crates/core/Cargo.toml</span><br><span class="hljs-section">[package]</span><br><span class="hljs-attr">name</span> = <span class="hljs-string">&quot;core&quot;</span><br><span class="hljs-attr">version.workspace</span> = <span class="hljs-literal">true</span><br><span class="hljs-attr">edition.workspace</span> = <span class="hljs-literal">true</span><br><span class="hljs-attr">authors.workspace</span> = <span class="hljs-literal">true</span><br><span class="hljs-attr">license.workspace</span> = <span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="workspace-dependencies-—-共享依赖版本（Cargo-1-64-）"><a href="#workspace-dependencies-—-共享依赖版本（Cargo-1-64-）" class="headerlink" title="[workspace.dependencies] — 共享依赖版本（Cargo 1.64+）"></a><code>[workspace.dependencies]</code> — 共享依赖版本（Cargo 1.64+）</h4><p>在根清单统一锁定版本，成员通过 <code>dep = { workspace = true }</code> 继承，可在继承时追加额外 <code>features</code>，但不能覆盖 <code>version</code>。</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-comment"># workspace/Cargo.toml</span><br><span class="hljs-section">[workspace.dependencies]</span><br><span class="hljs-attr">serde</span>       = &#123; version = <span class="hljs-string">&quot;1.0&quot;</span>, features = [<span class="hljs-string">&quot;derive&quot;</span>] &#125;<br><span class="hljs-attr">tokio</span>       = &#123; version = <span class="hljs-string">&quot;1&quot;</span>, features = [<span class="hljs-string">&quot;rt-multi-thread&quot;</span>] &#125;<br><span class="hljs-attr">tracing</span>     = <span class="hljs-string">&quot;0.1&quot;</span><br><span class="hljs-attr">anyhow</span>      = <span class="hljs-string">&quot;1&quot;</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-comment"># crates/server/Cargo.toml</span><br><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">serde</span>   = &#123; workspace = <span class="hljs-literal">true</span> &#125;<br><span class="hljs-attr">tokio</span>   = &#123; workspace = <span class="hljs-literal">true</span>, features = [<span class="hljs-string">&quot;net&quot;</span>] &#125;   <span class="hljs-comment"># 追加 features</span><br><span class="hljs-attr">tracing</span> = &#123; workspace = <span class="hljs-literal">true</span> &#125;<br><br><span class="hljs-section">[dev-dependencies]</span><br><span class="hljs-attr">anyhow</span> = &#123; workspace = <span class="hljs-literal">true</span> &#125;<br></code></pre></td></tr></table></figure>
+
+<h4 id="workspace-lints-—-共享-lint-配置（Cargo-1-73-）"><a href="#workspace-lints-—-共享-lint-配置（Cargo-1-73-）" class="headerlink" title="[workspace.lints] — 共享 lint 配置（Cargo 1.73+）"></a><code>[workspace.lints]</code> — 共享 lint 配置（Cargo 1.73+）</h4><p>在根清单统一设置 lint 级别，成员通过 <code>[lints] workspace = true</code> 继承。</p>
+<table>
+<thead>
+<tr>
+<th>子表</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>[workspace.lints.rust]</code></td>
+<td>标准 <code>rustc</code> lint</td>
+</tr>
+<tr>
+<td><code>[workspace.lints.clippy]</code></td>
+<td>Clippy lint</td>
+</tr>
+<tr>
+<td><code>[workspace.lints.rustdoc]</code></td>
+<td>rustdoc lint</td>
+</tr>
+</tbody></table>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-comment"># workspace/Cargo.toml</span><br><span class="hljs-section">[workspace.lints.rust]</span><br><span class="hljs-attr">unsafe_code</span>     = <span class="hljs-string">&quot;forbid&quot;</span><br><span class="hljs-attr">missing_docs</span>    = <span class="hljs-string">&quot;warn&quot;</span><br><br><span class="hljs-section">[workspace.lints.clippy]</span><br><span class="hljs-attr">unwrap_used</span>     = <span class="hljs-string">&quot;warn&quot;</span><br><span class="hljs-attr">pedantic</span>        = <span class="hljs-string">&quot;warn&quot;</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-comment"># crates/core/Cargo.toml</span><br><span class="hljs-section">[lints]</span><br><span class="hljs-attr">workspace</span> = <span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="workspace-metadata-—-工具自定义元数据"><a href="#workspace-metadata-—-工具自定义元数据" class="headerlink" title="[workspace.metadata] — 工具自定义元数据"></a><code>[workspace.metadata]</code> — 工具自定义元数据</h4><p>Cargo 完全忽略此表，可供外部工具（CI 脚本、构建系统、IDE 插件等）存储 workspace 级别的配置，结构自由定义。</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[workspace.metadata.release]</span><br><span class="hljs-attr">pre-release-commit-message</span> = <span class="hljs-string">&quot;chore: release &#123;&#123;version&#125;&#125;&quot;</span><br><span class="hljs-attr">tag-message</span> = <span class="hljs-string">&quot;Release &#123;&#123;version&#125;&#125;&quot;</span><br><br><span class="hljs-section">[workspace.metadata.docs]</span><br><span class="hljs-attr">default-target</span> = <span class="hljs-string">&quot;x86_64-unknown-linux-gnu&quot;</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="profile-—-构建配置（workspace-共享）"><a href="#profile-—-构建配置（workspace-共享）" class="headerlink" title="[profile.*] — 构建配置（workspace 共享）"></a><code>[profile.*]</code> — 构建配置（workspace 共享）</h4><p>定义在根清单的 <code>[profile.*]</code> 自动对所有成员生效，成员自身的 <code>Cargo.toml</code> <strong>不能</strong>覆盖 profile（会被忽略）。详见 <a href="#44-%E6%9E%84%E5%BB%BA%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6profiles">4.4 构建配置文件</a>。</p>
+<h2 id="八、特性（Features）"><a href="#八、特性（Features）" class="headerlink" title="八、特性（Features）"></a>八、特性（Features）</h2><p><code>Features</code> 是一套条件编译机制，允许用户按需启用可选功能，避免将不必要的依赖引入编译结果。</p>
+<h3 id="8-1-声明特性"><a href="#8-1-声明特性" class="headerlink" title="8.1 声明特性"></a>8.1 声明特性</h3><p><code>[features]</code> 表中每一行的格式为 <code>feature名 = [依赖列表]</code>，列表元素有三种形式：</p>
+<table>
+<thead>
+<tr>
+<th>元素形式</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&quot;other-feature&quot;</code></td>
+<td>启用同一 crate 内的另一个 feature</td>
+</tr>
+<tr>
+<td><code>&quot;dep:pkg&quot;</code></td>
+<td>启用名为 <code>pkg</code> 的可选依赖（不暴露同名 feature）</td>
+</tr>
+<tr>
+<td><code>&quot;pkg/feat&quot;</code></td>
+<td>启用依赖 <code>pkg</code> 的子 feature，同时也会引入该依赖</td>
+</tr>
+<tr>
+<td><code>&quot;pkg?/feat&quot;</code></td>
+<td>仅当 <code>pkg</code> 已被其他途径启用时，才为其追加子 feature（弱依赖语法，Cargo 1.60+）</td>
+</tr>
+</tbody></table>
+<h4 id="纯标志-feature"><a href="#纯标志-feature" class="headerlink" title="纯标志 feature"></a>纯标志 feature</h4><p>最简单的形式，不关联任何依赖，仅作为条件编译开关：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[features]</span><br><span class="hljs-attr">logging</span> = []<br><span class="hljs-attr">metrics</span> = []<br></code></pre></td></tr></table></figure>
+
+<h4 id="default-feature"><a href="#default-feature" class="headerlink" title="default feature"></a><code>default</code> feature</h4><p>名为 <code>default</code> 的 feature 在未指定 <code>--no-default-features</code> 时自动启用。它的值是一个普通的 feature 列表：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[features]</span><br><span class="hljs-attr">default</span> = [<span class="hljs-string">&quot;logging&quot;</span>]   <span class="hljs-comment"># 默认启用 logging，不启用 metrics</span><br><span class="hljs-attr">logging</span> = []<br><span class="hljs-attr">metrics</span> = []<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>下游使用者可通过 <code>default-features = false</code> 关闭所有默认 feature，再按需手动指定：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">my-lib</span> = &#123; version = <span class="hljs-string">&quot;1.0&quot;</span>, default-features = <span class="hljs-literal">false</span>, features = [<span class="hljs-string">&quot;metrics&quot;</span>] &#125;<br></code></pre></td></tr></table></figure></blockquote>
+<h4 id="可选依赖与-dep-前缀"><a href="#可选依赖与-dep-前缀" class="headerlink" title="可选依赖与 dep: 前缀"></a>可选依赖与 <code>dep:</code> 前缀</h4><p>将依赖标记为 <code>optional = true</code> 后，可在 <code>[features]</code> 中通过 <code>dep:</code> 前缀显式引入。<code>dep:</code> 语法（Cargo 1.60+）可避免自动生成与依赖同名的隐式 feature，从而自由命名：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">serde_json</span> = &#123; version = <span class="hljs-string">&quot;1.0&quot;</span>, optional = <span class="hljs-literal">true</span> &#125;<br><span class="hljs-attr">ravif</span>       = &#123; version = <span class="hljs-string">&quot;0.6&quot;</span>, optional = <span class="hljs-literal">true</span> &#125;<br><span class="hljs-attr">rgb</span>         = &#123; version = <span class="hljs-string">&quot;0.8&quot;</span>, optional = <span class="hljs-literal">true</span> &#125;<br><br><span class="hljs-section">[features]</span><br><span class="hljs-attr">json-support</span> = [<span class="hljs-string">&quot;dep:serde_json&quot;</span>]   <span class="hljs-comment"># 自定义名称，不暴露 serde_json feature</span><br><span class="hljs-attr">avif</span>         = [<span class="hljs-string">&quot;dep:ravif&quot;</span>, <span class="hljs-string">&quot;dep:rgb&quot;</span>]  <span class="hljs-comment"># 一个 feature 聚合多个可选依赖</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若不加 <code>dep:</code> 前缀直接写 <code>&quot;serde_json&quot;</code>，Cargo 会把该可选依赖当作同名 feature 来启用，等价于旧式写法。推荐始终使用 <code>dep:</code> 以保持语义清晰。</p>
+</blockquote>
+<h4 id="启用依赖的子-feature（pkg-feat-语法）"><a href="#启用依赖的子-feature（pkg-feat-语法）" class="headerlink" title="启用依赖的子 feature（pkg/feat 语法）"></a>启用依赖的子 feature（<code>pkg/feat</code> 语法）</h4><p>激活某个 feature 时，顺带启用其依赖的指定子 feature：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">serde</span> = &#123; version = <span class="hljs-string">&quot;1.0&quot;</span>, optional = <span class="hljs-literal">true</span> &#125;<br><br><span class="hljs-section">[features]</span><br><span class="hljs-attr">serde</span> = [<span class="hljs-string">&quot;dep:serde&quot;</span>, <span class="hljs-string">&quot;serde/derive&quot;</span>]   <span class="hljs-comment"># 启用 serde 并同时开启其 derive feature</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="弱依赖-feature（pkg-feat-语法，Cargo-1-60-）"><a href="#弱依赖-feature（pkg-feat-语法，Cargo-1-60-）" class="headerlink" title="弱依赖 feature（pkg?/feat 语法，Cargo 1.60+）"></a>弱依赖 feature（<code>pkg?/feat</code> 语法，Cargo 1.60+）</h4><p><code>?</code> 语法表示”如果该可选依赖已被启用，则为其追加子 feature；否则什么都不做”。常用于避免无意间将可选依赖变为强依赖：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">serde</span> = &#123; version = <span class="hljs-string">&quot;1.0&quot;</span>, optional = <span class="hljs-literal">true</span> &#125;<br><span class="hljs-attr">rgb</span>   = &#123; version = <span class="hljs-string">&quot;0.8&quot;</span>, optional = <span class="hljs-literal">true</span> &#125;<br><br><span class="hljs-section">[features]</span><br><span class="hljs-attr">serde</span> = [<span class="hljs-string">&quot;dep:serde&quot;</span>, <span class="hljs-string">&quot;rgb?/serde&quot;</span>]<br><span class="hljs-comment"># 启用 serde feature 时：</span><br><span class="hljs-comment">#   - 引入 serde 依赖</span><br><span class="hljs-comment">#   - 若 rgb 已被其他 feature 启用，则也为 rgb 开启 serde 支持</span><br><span class="hljs-comment">#   - 若 rgb 未被启用，rgb?/serde 被忽略，不会强制引入 rgb</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="feature-聚合与完整示例"><a href="#feature-聚合与完整示例" class="headerlink" title="feature 聚合与完整示例"></a>feature 聚合与完整示例</h4><figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">serde</span>      = &#123; version = <span class="hljs-string">&quot;1.0&quot;</span>, optional = <span class="hljs-literal">true</span> &#125;<br><span class="hljs-attr">serde_json</span> = &#123; version = <span class="hljs-string">&quot;1.0&quot;</span>, optional = <span class="hljs-literal">true</span> &#125;<br><span class="hljs-attr">tracing</span>    = &#123; version = <span class="hljs-string">&quot;0.1&quot;</span>, optional = <span class="hljs-literal">true</span> &#125;<br><br><span class="hljs-section">[features]</span><br><span class="hljs-attr">default</span>      = [<span class="hljs-string">&quot;logging&quot;</span>]<br><span class="hljs-attr">logging</span>      = [<span class="hljs-string">&quot;dep:tracing&quot;</span>]<br><span class="hljs-attr">serde-support</span> = [<span class="hljs-string">&quot;dep:serde&quot;</span>, <span class="hljs-string">&quot;serde/derive&quot;</span>]<br><span class="hljs-attr">json-support</span>  = [<span class="hljs-string">&quot;serde-support&quot;</span>, <span class="hljs-string">&quot;dep:serde_json&quot;</span>]  <span class="hljs-comment"># 依赖另一个 feature</span><br><span class="hljs-attr">full</span>          = [<span class="hljs-string">&quot;logging&quot;</span>, <span class="hljs-string">&quot;json-support&quot;</span>]           <span class="hljs-comment"># 聚合所有可选功能</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>可加性原则</strong>：feature 必须是可加的——启用一个 feature 只能增加功能，绝不能破坏已有功能。互斥 feature（如 <code>backend-a</code> 与 <code>backend-b</code> 不能同时开启）在 Cargo 层面无法强制约束，只能在代码中用 <code>compile_error!</code> 主动报错：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-meta">#[cfg(all(feature = <span class="hljs-string">&quot;backend-a&quot;</span>, feature = <span class="hljs-string">&quot;backend-b&quot;</span>))]</span><br>compile_error!(<span class="hljs-string">&quot;feature \&quot;backend-a\&quot; and \&quot;backend-b\&quot; cannot be enabled at the same time&quot;</span>);<br></code></pre></td></tr></table></figure></blockquote>
+<h3 id="8-2-条件编译"><a href="#8-2-条件编译" class="headerlink" title="8.2 条件编译"></a>8.2 条件编译</h3><p>在代码中通过 <code>#[cfg(feature = &quot;...&quot;)]</code> 按 <code>feature</code> 开关代码块：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">process</span>(data: &amp;<span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">String</span> &#123;<br>    <span class="hljs-meta">#[cfg(feature = <span class="hljs-string">&quot;logging&quot;</span>)]</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[LOG] processing: &#123;&#125;&quot;</span>, data);<br><br>    <span class="hljs-built_in">format!</span>(<span class="hljs-string">&quot;result: &#123;&#125;&quot;</span>, data.<span class="hljs-title function_ invoke__">to_uppercase</span>())<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">r</span> = <span class="hljs-title function_ invoke__">process</span>(<span class="hljs-string">&quot;hello cargo&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, r);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>不启用 <code>logging</code> feature 时：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo run<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs applescript"><span class="hljs-literal">result</span>: HELLO CARGO<br></code></pre></td></tr></table></figure>
+
+<p>启用 <code>logging</code> feature 时：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo run --features logging<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">[LOG] processing</span><span class="hljs-punctuation">:</span> <span class="hljs-string">hello cargo</span><br><span class="hljs-attribute">result</span><span class="hljs-punctuation">:</span> <span class="hljs-string">HELLO CARGO</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="8-3-Features-使用建议"><a href="#8-3-Features-使用建议" class="headerlink" title="8.3 Features 使用建议"></a>8.3 Features 使用建议</h3><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>重型可选依赖（如 <code>tokio</code>、<code>serde</code>）</td>
+<td>封装为可选 <code>feature</code>，减小最小构建体积</td>
+</tr>
+<tr>
+<td>跨平台差异实现</td>
+<td>用 <code>#[cfg(target_os = &quot;linux&quot;)]</code> 而非 <code>feature</code></td>
+</tr>
+<tr>
+<td>默认行为</td>
+<td>放入 <code>default = [...]</code>，用户可通过 <code>default-features = false</code> 关闭</td>
+</tr>
+<tr>
+<td>聚合多个 feature</td>
+<td>提供 <code>full</code> feature 方便一次性开启所有功能</td>
+</tr>
+</tbody></table>
+<h2 id="九、常用工具命令"><a href="#九、常用工具命令" class="headerlink" title="九、常用工具命令"></a>九、常用工具命令</h2><h3 id="9-1-代码质量"><a href="#9-1-代码质量" class="headerlink" title="9.1 代码质量"></a>9.1 代码质量</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 格式化代码（依赖 rustfmt）</span><br>cargo <span class="hljs-built_in">fmt</span><br><br><span class="hljs-comment"># 静态分析，给出更严格的建议（依赖 clippy）</span><br>cargo clippy<br><br><span class="hljs-comment"># 修复编译器警告（自动应用建议）</span><br>cargo fix<br></code></pre></td></tr></table></figure>
+
+<h3 id="9-2-文档"><a href="#9-2-文档" class="headerlink" title="9.2 文档"></a>9.2 文档</h3><figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 生成并在浏览器中打开文档</span><br>cargo doc --open<br><br><span class="hljs-comment"># 同时为依赖生成文档</span><br>cargo doc --open --no-deps<br></code></pre></td></tr></table></figure>
+
+<h3 id="9-3-供应商（Vendor）与离线构建"><a href="#9-3-供应商（Vendor）与离线构建" class="headerlink" title="9.3 供应商（Vendor）与离线构建"></a>9.3 供应商（Vendor）与离线构建</h3><p>在网络受限环境中，可将所有依赖源码下载到本地 <code>vendor/</code> 目录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo vendor<br></code></pre></td></tr></table></figure>
+
+<p>随后在 <code>.cargo/config.toml</code> 中声明使用本地源：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[source.crates-io]</span><br><span class="hljs-attr">replace-with</span> = <span class="hljs-string">&quot;vendored-sources&quot;</span><br><br><span class="hljs-section">[source.vendored-sources]</span><br><span class="hljs-attr">directory</span> = <span class="hljs-string">&quot;vendor&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>之后所有 <code>cargo</code> 命令均不再需要网络访问。</p>
+<h3 id="9-4-常用命令速查"><a href="#9-4-常用命令速查" class="headerlink" title="9.4 常用命令速查"></a>9.4 常用命令速查</h3><table>
+<thead>
+<tr>
+<th>命令</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>cargo new &lt;name&gt;</code></td>
+<td>创建新项目</td>
+</tr>
+<tr>
+<td><code>cargo build</code></td>
+<td>debug 构建</td>
+</tr>
+<tr>
+<td><code>cargo build --release</code></td>
+<td>release 构建</td>
+</tr>
+<tr>
+<td><code>cargo run</code></td>
+<td>构建并运行</td>
+</tr>
+<tr>
+<td><code>cargo check</code></td>
+<td>快速类型检查，不生成产物</td>
+</tr>
+<tr>
+<td><code>cargo test</code></td>
+<td>运行所有测试</td>
+</tr>
+<tr>
+<td><code>cargo doc --open</code></td>
+<td>生成并浏览文档</td>
+</tr>
+<tr>
+<td><code>cargo add &lt;crate&gt;</code></td>
+<td>添加依赖</td>
+</tr>
+<tr>
+<td><code>cargo remove &lt;crate&gt;</code></td>
+<td>移除依赖</td>
+</tr>
+<tr>
+<td><code>cargo update</code></td>
+<td>升级依赖到最新兼容版本</td>
+</tr>
+<tr>
+<td><code>cargo tree</code></td>
+<td>查看依赖树</td>
+</tr>
+<tr>
+<td><code>cargo fmt</code></td>
+<td>格式化代码</td>
+</tr>
+<tr>
+<td><code>cargo clippy</code></td>
+<td>静态分析</td>
+</tr>
+<tr>
+<td><code>cargo clean</code></td>
+<td>清除 <code>target/</code> 目录</td>
+</tr>
+<tr>
+<td><code>cargo publish</code></td>
+<td>发布到 <code>crates.io</code></td>
+</tr>
+</tbody></table>
+<h2 id="十、发布到-crates-io"><a href="#十、发布到-crates-io" class="headerlink" title="十、发布到 crates.io"></a>十、发布到 crates.io</h2><h3 id="10-1-发布前准备"><a href="#10-1-发布前准备" class="headerlink" title="10.1 发布前准备"></a>10.1 发布前准备</h3><p>发布前 <code>Cargo.toml</code> 中以下字段为必填：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[package]</span><br><span class="hljs-attr">name</span> = <span class="hljs-string">&quot;my_unique_crate&quot;</span><br><span class="hljs-attr">version</span> = <span class="hljs-string">&quot;0.1.0&quot;</span><br><span class="hljs-attr">edition</span> = <span class="hljs-string">&quot;2024&quot;</span><br><span class="hljs-attr">description</span> = <span class="hljs-string">&quot;A short description of what this crate does&quot;</span><br><span class="hljs-attr">license</span> = <span class="hljs-string">&quot;MIT OR Apache-2.0&quot;</span><br><span class="hljs-attr">repository</span> = <span class="hljs-string">&quot;https://github.com/user/my_unique_crate&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>用 <code>cargo package</code> 预检打包内容，确认哪些文件会被上传：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo package --list<br></code></pre></td></tr></table></figure>
+
+<h3 id="10-2-登录与发布"><a href="#10-2-登录与发布" class="headerlink" title="10.2 登录与发布"></a>10.2 登录与发布</h3><p>在 <code>crates.io</code> 注册账号后，生成 <code>API token</code> 并登录：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo login &lt;your_api_token&gt;<br></code></pre></td></tr></table></figure>
+
+<p>正式发布：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">cargo publish<br></code></pre></td></tr></table></figure>
+
+<p>发布后版本不可删除，只能用 <code>cargo yank</code> 撤销（阻止新项目依赖该版本，不影响已锁定的项目）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash"><span class="hljs-comment"># 撤销版本（不删除，仅标记）</span><br>cargo yank --version 0.1.0<br><br><span class="hljs-comment"># 取消撤销</span><br>cargo yank --version 0.1.0 --undo<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>每次发布前记得更新 <code>version</code> 字段，<code>crates.io</code> 不允许覆盖已发布的版本号。</p>
+</blockquote>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Cargo/" class="print-no-link">#Cargo</a>
+      
+        <a href="/tags/%E5%8C%85%E7%AE%A1%E7%90%86/" class="print-no-link">#包管理</a>
+      
+        <a href="/tags/%E6%9E%84%E5%BB%BA%E5%B7%A5%E5%85%B7/" class="print-no-link">#构建工具</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/rust/build-rs.html" title="build.rs 构建脚本介绍与实战">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">build.rs 构建脚本介绍与实战</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/macro.html" title="宏介绍与实战">
+                        <span class="hidden-mobile">宏介绍与实战</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

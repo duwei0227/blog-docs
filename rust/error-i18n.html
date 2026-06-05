@@ -1,0 +1,903 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="一、问题背景std::error::Error trait 的 Display trait 方法签名如下： 1fn fmt(&amp;amp;self, f: &amp;amp;mut Formatter&amp;lt;&amp;#x27;_&amp;gt;) -&amp;gt; fmt::Result;  该签名中不存在 locale 或语言上下文参数，std::fmt::Formatter 本身也不携带语言环境信息。因此 std::erro">
+  
+  
+  
+  <title>Rust 错误描述国际化 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Rust 错误描述国际化"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-04-07 16:51" pubdate>
+          2026年4月7日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          9k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          76 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Rust 错误描述国际化</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="一、问题背景"><a href="#一、问题背景" class="headerlink" title="一、问题背景"></a>一、问题背景</h2><p><code>std::error::Error</code> trait 的 <code>Display</code> trait 方法签名如下：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">fmt</span>(&amp;<span class="hljs-keyword">self</span>, f: &amp;<span class="hljs-keyword">mut</span> Formatter&lt;<span class="hljs-symbol">&#x27;_</span>&gt;) <span class="hljs-punctuation">-&gt;</span> fmt::<span class="hljs-type">Result</span>;<br></code></pre></td></tr></table></figure>
+
+<p>该签名中不存在 locale 或语言上下文参数，<code>std::fmt::Formatter</code> 本身也不携带语言环境信息。因此 <code>std::error::Error</code> 的设计从根源上就不支持国际化。</p>
+<p><code>thiserror</code> 的 <code>#[error(&quot;...&quot;)]</code> 属性接受编译期字符串字面量，derive 宏在编译阶段生成 <code>Display</code> trait 实现，运行时不存在任何翻译查找逻辑。以下代码展示了这一限制：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">DataStoreError</span> &#123;<br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;data store disconnected&quot;</span>)]</span> <span class="hljs-comment">// 硬编码，编译时固定</span><br>    Disconnect,<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>编译器将 <code>&quot;data store disconnected&quot;</code> 直接嵌入生成的代码，运行时无法切换为 <code>&quot;数据存储连接断开&quot;</code>。</p>
+<p>因此，如果项目需要多语言错误消息，不能依赖 <code>thiserror</code> 的 <code>#[error]</code> 属性，需要另行设计。</p>
+<h2 id="二、主流方案"><a href="#二、主流方案" class="headerlink" title="二、主流方案"></a>二、主流方案</h2><p>Rust 生态中，处理错误描述国际化的主流方案有以下三种：</p>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>核心思路</th>
+<th>优点</th>
+<th>缺点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>错误码 + 翻译表</td>
+<td>错误只携带代码和结构化数据，翻译由调用方或翻译层负责</td>
+<td>简单、灵活、兼容性好</td>
+<td>调用方需额外处理翻译</td>
+</tr>
+<tr>
+<td>fluent-rs</td>
+<td>Mozilla 主导的本地化系统，通过 FTL 文件定义消息</td>
+<td>支持复数、性别、占位符等复杂特性</td>
+<td>API 较底层，较复杂</td>
+</tr>
+<tr>
+<td>rust-i18n</td>
+<td>从 YAML&#x2F;JSON 文件加载翻译宏，编译时生成</td>
+<td>用法简单，YAML 文件易于维护</td>
+<td><code>t!</code> 宏需要编译期字符串字面量，不支持运行时 key 查找</td>
+</tr>
+</tbody></table>
+<h2 id="三、方案一：错误码-翻译表"><a href="#三、方案一：错误码-翻译表" class="headerlink" title="三、方案一：错误码 + 翻译表"></a>三、方案一：错误码 + 翻译表</h2><h3 id="3-1-核心设计"><a href="#3-1-核心设计" class="headerlink" title="3.1 核心设计"></a>3.1 核心设计</h3><p>错误类型只携带错误码（字符串标识符）和结构化参数，<code>Display</code> trait 的实现调用翻译函数查找消息：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::error::Error <span class="hljs-keyword">as</span> StdError;<br><span class="hljs-keyword">use</span> std::fmt;<br><br><span class="hljs-comment">// 错误码定义</span><br><span class="hljs-meta">#[derive(Debug, Clone, Copy, PartialEq)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">ErrorCode</span> &#123;<br>    DbConnectionFailed,<br>    DbQueryTimeout,<br>    ConfigMissingKey,<br>    ConfigInvalidValue,<br>&#125;<br><br><span class="hljs-comment">// 翻译表（实际项目替换为 rust-i18n 或数据库）</span><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">translations</span>(lang: &amp;<span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> std::collections::HashMap&lt;&amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span>, &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span>&gt; &#123;<br>    <span class="hljs-keyword">match</span> lang &#123;<br>        <span class="hljs-string">&quot;zh-CN&quot;</span> =&gt; &#123;<br>            <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">m</span> = std::collections::HashMap::<span class="hljs-title function_ invoke__">new</span>();<br>            m.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-string">&quot;db.connection_failed&quot;</span>, <span class="hljs-string">&quot;数据库连接失败: &#123;reason&#125;&quot;</span>);<br>            m.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-string">&quot;db.query_timeout&quot;</span>, <span class="hljs-string">&quot;数据库查询超时 (&#123;seconds&#125;秒)&quot;</span>);<br>            m.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-string">&quot;config.missing_key&quot;</span>, <span class="hljs-string">&quot;缺少配置项: &#123;key&#125;&quot;</span>);<br>            m.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-string">&quot;config.invalid_value&quot;</span>, <span class="hljs-string">&quot;配置项 &#x27;&#123;key&#125;&#x27; 的值无效: &#123;value&#125;&quot;</span>);<br>            m<br>        &#125;<br>        _ =&gt; &#123;<br>            <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">m</span> = std::collections::HashMap::<span class="hljs-title function_ invoke__">new</span>();<br>            m.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-string">&quot;db.connection_failed&quot;</span>, <span class="hljs-string">&quot;Database connection failed: &#123;reason&#125;&quot;</span>);<br>            m.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-string">&quot;db.query_timeout&quot;</span>, <span class="hljs-string">&quot;Database query timeout (&#123;seconds&#125;s)&quot;</span>);<br>            m.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-string">&quot;config.missing_key&quot;</span>, <span class="hljs-string">&quot;Missing configuration key: &#123;key&#125;&quot;</span>);<br>            m.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-string">&quot;config.invalid_value&quot;</span>, <span class="hljs-string">&quot;Invalid value for key &#x27;&#123;key&#125;&#x27;: &#123;value&#125;&quot;</span>);<br>            m<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">translate</span>(key: &amp;<span class="hljs-type">str</span>, lang: &amp;<span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">String</span> &#123;<br>    <span class="hljs-title function_ invoke__">translations</span>(lang)<br>        .<span class="hljs-title function_ invoke__">get</span>(key)<br>        .<span class="hljs-title function_ invoke__">cloned</span>()<br>        .<span class="hljs-title function_ invoke__">unwrap_or</span>(key)<br>        .<span class="hljs-title function_ invoke__">to_string</span>()<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-2-统一错误类型"><a href="#3-2-统一错误类型" class="headerlink" title="3.2 统一错误类型"></a>3.2 统一错误类型</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// 统一错误类型：携带错误码 + 结构化参数</span><br><span class="hljs-meta">#[derive(Debug)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">struct</span> <span class="hljs-title class_">AppError</span> &#123;<br>    code: ErrorCode,<br>    params: <span class="hljs-type">Vec</span>&lt;(<span class="hljs-type">String</span>, <span class="hljs-type">String</span>)&gt;,<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">AppError</span> &#123;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">new</span>(code: ErrorCode) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-keyword">Self</span> &#123;<br>        <span class="hljs-keyword">Self</span> &#123; code, params: <span class="hljs-built_in">vec!</span>[] &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">with_param</span>(<span class="hljs-keyword">mut</span> <span class="hljs-keyword">self</span>, k: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">Into</span>&lt;<span class="hljs-type">String</span>&gt;, v: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">Into</span>&lt;<span class="hljs-type">String</span>&gt;) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-keyword">Self</span> &#123;<br>        <span class="hljs-keyword">self</span>.params.<span class="hljs-title function_ invoke__">push</span>((k.<span class="hljs-title function_ invoke__">into</span>(), v.<span class="hljs-title function_ invoke__">into</span>()));<br>        <span class="hljs-keyword">self</span><br>    &#125;<br><br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">code</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> ErrorCode &#123;<br>        <span class="hljs-keyword">self</span>.code<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">fmt</span>::Display <span class="hljs-keyword">for</span> <span class="hljs-title class_">AppError</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">fmt</span>(&amp;<span class="hljs-keyword">self</span>, f: &amp;<span class="hljs-keyword">mut</span> fmt::Formatter&lt;<span class="hljs-symbol">&#x27;_</span>&gt;) <span class="hljs-punctuation">-&gt;</span> fmt::<span class="hljs-type">Result</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">key</span> = <span class="hljs-keyword">match</span> <span class="hljs-keyword">self</span>.code &#123;<br>            ErrorCode::DbConnectionFailed =&gt; <span class="hljs-string">&quot;db.connection_failed&quot;</span>,<br>            ErrorCode::DbQueryTimeout =&gt; <span class="hljs-string">&quot;db.query_timeout&quot;</span>,<br>            ErrorCode::ConfigMissingKey =&gt; <span class="hljs-string">&quot;config.missing_key&quot;</span>,<br>            ErrorCode::ConfigInvalidValue =&gt; <span class="hljs-string">&quot;config.invalid_value&quot;</span>,<br>        &#125;;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">lang</span> = LOCALE.<span class="hljs-title function_ invoke__">read</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>        <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">msg</span> = <span class="hljs-title function_ invoke__">translate</span>(key, lang);<br>        <span class="hljs-comment">// 替换占位符</span><br>        <span class="hljs-keyword">for</span> (k, v) <span class="hljs-keyword">in</span> &amp;<span class="hljs-keyword">self</span>.params &#123;<br>            msg = msg.<span class="hljs-title function_ invoke__">replace</span>(&amp;<span class="hljs-built_in">format!</span>(<span class="hljs-string">&quot;&#123;&#123;&#123;&#125;&#125;&#125;&quot;</span>, k), v);<br>        &#125;<br>        <span class="hljs-built_in">write!</span>(f, <span class="hljs-string">&quot;&#123;&#125;&quot;</span>, msg)<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">StdError</span> <span class="hljs-keyword">for</span> <span class="hljs-title class_">AppError</span> &#123;&#125;<br><br><span class="hljs-comment">// 辅助构造函数</span><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">AppError</span> &#123;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">db_connection_failed</span>(reason: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">Into</span>&lt;<span class="hljs-type">String</span>&gt;) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-keyword">Self</span> &#123;<br>        <span class="hljs-keyword">Self</span>::<span class="hljs-title function_ invoke__">new</span>(ErrorCode::DbConnectionFailed).<span class="hljs-title function_ invoke__">with_param</span>(<span class="hljs-string">&quot;reason&quot;</span>, reason)<br>    &#125;<br><br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">config_missing_key</span>(key: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">Into</span>&lt;<span class="hljs-type">String</span>&gt;) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-keyword">Self</span> &#123;<br>        <span class="hljs-keyword">Self</span>::<span class="hljs-title function_ invoke__">new</span>(ErrorCode::ConfigMissingKey).<span class="hljs-title function_ invoke__">with_param</span>(<span class="hljs-string">&quot;key&quot;</span>, key)<br>    &#125;<br><br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">config_invalid_value</span>(key: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">Into</span>&lt;<span class="hljs-type">String</span>&gt;, value: <span class="hljs-keyword">impl</span> <span class="hljs-title class_">Into</span>&lt;<span class="hljs-type">String</span>&gt;) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-keyword">Self</span> &#123;<br>        <span class="hljs-keyword">Self</span>::<span class="hljs-title function_ invoke__">new</span>(ErrorCode::ConfigInvalidValue)<br>            .<span class="hljs-title function_ invoke__">with_param</span>(<span class="hljs-string">&quot;key&quot;</span>, key)<br>            .<span class="hljs-title function_ invoke__">with_param</span>(<span class="hljs-string">&quot;value&quot;</span>, value)<br>    &#125;<br>&#125;<br><br><span class="hljs-comment">// 全局语言设置</span><br><span class="hljs-keyword">static</span> LOCALE: std::sync::RwLock&lt;&amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span>&gt; = std::sync::RwLock::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-string">&quot;en&quot;</span>);<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">set_locale</span>(s: &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span>) &#123;<br>    *LOCALE.<span class="hljs-title function_ invoke__">write</span>().<span class="hljs-title function_ invoke__">unwrap</span>() = s;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;=== 英文环境 ===&quot;</span>);<br>    <span class="hljs-title function_ invoke__">set_locale</span>(<span class="hljs-string">&quot;en&quot;</span>);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, AppError::<span class="hljs-title function_ invoke__">db_connection_failed</span>(<span class="hljs-string">&quot;connection refused&quot;</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, AppError::<span class="hljs-title function_ invoke__">config_missing_key</span>(<span class="hljs-string">&quot;database.url&quot;</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, AppError::<span class="hljs-title function_ invoke__">config_invalid_value</span>(<span class="hljs-string">&quot;port&quot;</span>, <span class="hljs-string">&quot;not a number&quot;</span>));<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;\n=== 中文环境 ===&quot;</span>);<br>    <span class="hljs-title function_ invoke__">set_locale</span>(<span class="hljs-string">&quot;zh-CN&quot;</span>);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, AppError::<span class="hljs-title function_ invoke__">db_connection_failed</span>(<span class="hljs-string">&quot;connection refused&quot;</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, AppError::<span class="hljs-title function_ invoke__">config_missing_key</span>(<span class="hljs-string">&quot;database.url&quot;</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, AppError::<span class="hljs-title function_ invoke__">config_invalid_value</span>(<span class="hljs-string">&quot;port&quot;</span>, <span class="hljs-string">&quot;not a number&quot;</span>));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-section">=== 英文环境 ===</span><br>Database connection failed: connection refused<br>Missing configuration key: database.url<br>Invalid value for key <span class="hljs-emphasis">&#x27;port&#x27;</span>: not a number<br><br><span class="hljs-section">=== 中文环境 ===</span><br>数据库连接失败: connection refused<br>缺少配置项: database.url<br>配置项 <span class="hljs-emphasis">&#x27;port&#x27;</span> 的值无效: not a number<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-3-与-thiserror-结合"><a href="#3-3-与-thiserror-结合" class="headerlink" title="3.3 与 thiserror 结合"></a>3.3 与 <code>thiserror</code> 结合</h3><p>上述方案完全独立于 <code>thiserror</code>，如果希望在已有 <code>thiserror</code> 错误类型中增加 i18n 能力，可以为每个错误变体添加 <code>code()</code> 方法返回错误码，上层根据错误码查翻译表：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> thiserror::Error;<br><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">DataStoreError</span> &#123;<br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;data store disconnected&quot;</span>)]</span><br>    Disconnect,<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;connection failed: &#123;reason&#125;&quot;</span>)]</span><br>    ConnectionFailed &#123; reason: <span class="hljs-type">String</span> &#125;,<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">DataStoreError</span> &#123;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">code</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span> &#123;<br>        <span class="hljs-keyword">match</span> <span class="hljs-keyword">self</span> &#123;<br>            DataStoreError::Disconnect =&gt; <span class="hljs-string">&quot;ERR_DISCONNECT&quot;</span>,<br>            DataStoreError::ConnectionFailed &#123; .. &#125; =&gt; <span class="hljs-string">&quot;ERR_CONNECTION_FAILED&quot;</span>,<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>应用层根据 <code>code()</code> 查翻译表获取本地化消息，<code>Display</code> 仍用于日志和调试输出。</p>
+<h2 id="四、方案二：rust-i18n"><a href="#四、方案二：rust-i18n" class="headerlink" title="四、方案二：rust-i18n"></a>四、方案二：rust-i18n</h2><p><code>rust-i18n</code> 是 Rust 生态中最易用的国际化库，支持 YAML&#x2F;JSON 格式的翻译文件，翻译在编译时打包进二进制，运行时通过 <code>t!</code> 宏读取。</p>
+<h3 id="4-1-安装与配置"><a href="#4-1-安装与配置" class="headerlink" title="4.1 安装与配置"></a>4.1 安装与配置</h3><p>在 <code>Cargo.toml</code> 中添加依赖，并在项目根目录创建 <code>locales/</code> 目录：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">rust-i18n</span> = <span class="hljs-string">&quot;3&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>在 <code>Cargo.toml</code> 中配置可用语言：</p>
+<figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[package.metadata.i18n]</span><br><span class="hljs-attr">available-locales</span> = [<span class="hljs-string">&quot;en&quot;</span>, <span class="hljs-string">&quot;zh-CN&quot;</span>]<br><span class="hljs-attr">default-locale</span> = <span class="hljs-string">&quot;en&quot;</span><br><span class="hljs-attr">load-path</span> = <span class="hljs-string">&quot;locales&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p>在 <code>main.rs</code> 开头初始化：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust">rust_i18n::i18n!(<span class="hljs-string">&quot;locales&quot;</span>);<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-2-翻译文件"><a href="#4-2-翻译文件" class="headerlink" title="4.2 翻译文件"></a>4.2 翻译文件</h3><p>在 <code>locales/app.yml</code> 中定义翻译：</p>
+<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">db.connection_failed:</span><br>  <span class="hljs-attr">en:</span> <span class="hljs-string">&quot;Database connection failed: &#123;reason&#125;&quot;</span><br>  <span class="hljs-attr">zh-CN:</span> <span class="hljs-string">&quot;数据库连接失败: &#123;reason&#125;&quot;</span><br><br><span class="hljs-attr">config.missing_key:</span><br>  <span class="hljs-attr">en:</span> <span class="hljs-string">&quot;Missing configuration key: &#123;key&#125;&quot;</span><br>  <span class="hljs-attr">zh-CN:</span> <span class="hljs-string">&quot;缺少配置项: &#123;key&#125;&quot;</span><br><br><span class="hljs-attr">messages.saved:</span><br>  <span class="hljs-attr">en:</span> <span class="hljs-string">&quot;Data saved successfully&quot;</span><br>  <span class="hljs-attr">zh-CN:</span> <span class="hljs-string">&quot;数据保存成功&quot;</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="4-3-在代码中使用"><a href="#4-3-在代码中使用" class="headerlink" title="4.3 在代码中使用"></a>4.3 在代码中使用</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs rust">rust_i18n::i18n!(<span class="hljs-string">&quot;locales&quot;</span>);<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-comment">// 设置全局语言</span><br>    rust_i18n::<span class="hljs-title function_ invoke__">set_locale</span>(<span class="hljs-string">&quot;zh-CN&quot;</span>);<br><br>    <span class="hljs-comment">// 获取翻译（支持占位符替换）</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">msg</span> = t!(<span class="hljs-string">&quot;db.connection_failed&quot;</span>, reason = <span class="hljs-string">&quot;connection refused&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, msg); <span class="hljs-comment">// 数据库连接失败: connection refused</span><br><br>    <span class="hljs-comment">// 查询所有可用语言</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, rust_i18n::available_locales!()); <span class="hljs-comment">// [&quot;en&quot;, &quot;zh-CN&quot;]</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>rust-i18n</code> 的 <code>t!</code> 宏接受编译期字符串字面量作为 key，<strong>不支持运行时 key 变量</strong>。因此与 <code>thiserror</code> 结合时，只能在手动实现的 <code>Display</code> 中使用 <code>t!</code> 宏，而不能用于运行时动态查表。</p>
+<h2 id="五、方案三：fluent-rs"><a href="#五、方案三：fluent-rs" class="headerlink" title="五、方案三：fluent-rs"></a>五、方案三：fluent-rs</h2><p>fluent-rs 是 Mozilla 主导的本地化系统，比 rust-i18n 更强大，支持复数形式、性别语法、条件逻辑等复杂翻译场景。</p>
+<h3 id="5-1-安装"><a href="#5-1-安装" class="headerlink" title="5.1 安装"></a>5.1 安装</h3><figure class="highlight toml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs toml"><span class="hljs-section">[dependencies]</span><br><span class="hljs-attr">fluent</span> = <span class="hljs-string">&quot;0.16&quot;</span><br><span class="hljs-attr">unic-langid</span> = <span class="hljs-string">&quot;0.9&quot;</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="5-2-基本用法"><a href="#5-2-基本用法" class="headerlink" title="5.2 基本用法"></a>5.2 基本用法</h3><p>FTL（Fluent）文件格式：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs ftl"># locales/app.ftl<br>err-disconnect = 数据文件断开连接<br>err-disconnect-en = Data store disconnected<br></code></pre></td></tr></table></figure>
+
+<p>在 Rust 中使用：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> fluent::&#123;FluentBundle, FluentResource&#125;;<br><span class="hljs-keyword">use</span> fluent::syntax::parser::parse;<br><span class="hljs-keyword">use</span> unic_langid::LanguageIdentifier;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">ftl</span> = <span class="hljs-string">&quot;</span><br><span class="hljs-string">err-disconnect = 数据文件断开连接</span><br><span class="hljs-string">err-disconnect-en = Data store disconnected</span><br><span class="hljs-string">&quot;</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">resource</span> = <span class="hljs-title function_ invoke__">parse</span>(ftl, <span class="hljs-number">0</span>).<span class="hljs-title function_ invoke__">into_iter</span>().<span class="hljs-title function_ invoke__">next</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">langid</span>: LanguageIdentifier = <span class="hljs-string">&quot;zh-CN&quot;</span>.<span class="hljs-title function_ invoke__">parse</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">bundle</span> = FluentBundle::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-built_in">vec!</span>[langid]);<br>    bundle.<span class="hljs-title function_ invoke__">add_resource</span>(resource).<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;failed to add resource&quot;</span>);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">msg</span> = bundle.<span class="hljs-title function_ invoke__">get_message</span>(<span class="hljs-string">&quot;err-disconnect&quot;</span>)<br>        .<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;message not found&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">pattern</span> = msg.<span class="hljs-title function_ invoke__">value</span>().<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;no pattern&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">value</span> = bundle.format_pattern(&amp;pattern, <span class="hljs-literal">None</span>, &amp;<span class="hljs-keyword">mut</span> <span class="hljs-built_in">vec!</span>[]);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, value); <span class="hljs-comment">// 数据文件断开连接</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h2 id="六、方案对比与选择"><a href="#六、方案对比与选择" class="headerlink" title="六、方案对比与选择"></a>六、方案对比与选择</h2><table>
+<thead>
+<tr>
+<th>维度</th>
+<th>错误码 + 翻译表</th>
+<th>rust-i18n</th>
+<th>fluent-rs</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>翻译格式</td>
+<td>HashMap &#x2F; JSON &#x2F; YAML</td>
+<td>YAML &#x2F; JSON &#x2F; TOML</td>
+<td>FTL</td>
+</tr>
+<tr>
+<td>运行时 key 查找</td>
+<td>✅ 支持</td>
+<td>❌ 只支持编译期字面量</td>
+<td>✅ 支持</td>
+</tr>
+<tr>
+<td>复数&#x2F;性别支持</td>
+<td>❌</td>
+<td>❌</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>翻译工具链</td>
+<td>自建或用现成 i18n 工具</td>
+<td>有 VS Code I18n Ally 插件</td>
+<td>有专业工具支持</td>
+</tr>
+<tr>
+<td>与 <code>thiserror</code> 结合</td>
+<td>✅ 通过 <code>code()</code> 方法</td>
+<td>✅ 仅限手动 Display</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>学习成本</td>
+<td>低</td>
+<td>中</td>
+<td>高</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>错误消息为主的场景</td>
+<td>完整应用国际化</td>
+<td>复杂多语言场景</td>
+</tr>
+</tbody></table>
+<h2 id="七、推荐做法"><a href="#七、推荐做法" class="headerlink" title="七、推荐做法"></a>七、推荐做法</h2><p>实际项目中的最佳实践是<strong>错误码与翻译分离</strong>：</p>
+<ul>
+<li>错误定义层（库&#x2F;模块）：使用 <code>thiserror</code> 定义错误变体，通过 <code>code()</code> 方法暴露错误码，Display 用于日志（默认语言）</li>
+<li>翻译层（应用）：根据错误码在翻译文件中查找对应语言的消息</li>
+</ul>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> thiserror::Error;<br><br><span class="hljs-meta">#[derive(Error, Debug)]</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">DbError</span> &#123;<br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;connection failed&quot;</span>)]</span><br>    ConnectionFailed,<br><br>    <span class="hljs-meta">#[error(<span class="hljs-string">&quot;query timeout&quot;</span>)]</span><br>    QueryTimeout,<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">DbError</span> &#123;<br>    <span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">code</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span> &#123;<br>        <span class="hljs-keyword">match</span> <span class="hljs-keyword">self</span> &#123;<br>            DbError::ConnectionFailed =&gt; <span class="hljs-string">&quot;ERR_DB_CONNECTION_FAILED&quot;</span>,<br>            DbError::QueryTimeout =&gt; <span class="hljs-string">&quot;ERR_DB_QUERY_TIMEOUT&quot;</span>,<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>调用方根据 <code>code()</code> 查翻译系统得到本地化消息，同时保留原始 <code>Display</code> 用于日志和调试输出。这样既利用了 <code>thiserror</code> 的便利性，又不牺牲国际化能力。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E9%94%99%E8%AF%AF%E5%A4%84%E7%90%86/" class="print-no-link">#错误处理</a>
+      
+        <a href="/tags/%E5%9B%BD%E9%99%85%E5%8C%96/" class="print-no-link">#国际化</a>
+      
+        <a href="/tags/i18n/" class="print-no-link">#i18n</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/python/asyncio.html" title="Python asyncio 从入门到实践">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Python asyncio 从入门到实践</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/thiserror.html" title="thiserror 错误处理">
+                        <span class="hidden-mobile">thiserror 错误处理</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

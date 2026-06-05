@@ -1,0 +1,1508 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="std::collections 是 Rust 标准库中提供通用集合类型的模块，涵盖动态数组、双端队列、链表、哈希表、B 树映射、集合与优先队列共 8 种类型。与其他语言不同，Rust 的集合 API 始终将所有权和借用融入设计：迭代方式决定是否转移元素所有权，容量管理完全显式，没有隐式的 GC 收缩。本文逐一介绍每种集合的内部数据结构与时间复杂度，覆盖核心 API，并在最后以多集合协作的文本分析">
+  
+  
+  
+  <title>[标准库] std::collections 集合类型原理与实战 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="[标准库] std::collections 集合类型原理与实战"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-27 10:00" pubdate>
+          2026年5月27日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          16k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          136 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">[标准库] std::collections 集合类型原理与实战</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p><code>std::collections</code> 是 Rust 标准库中提供通用集合类型的模块，涵盖动态数组、双端队列、链表、哈希表、B 树映射、集合与优先队列共 8 种类型。与其他语言不同，Rust 的集合 API 始终将<strong>所有权</strong>和<strong>借用</strong>融入设计：迭代方式决定是否转移元素所有权，容量管理完全显式，没有隐式的 <code>GC</code> 收缩。本文逐一介绍每种集合的内部数据结构与时间复杂度，覆盖核心 API，并在最后以多集合协作的文本分析器收尾。</p>
+<h2 id="一、序列类集合"><a href="#一、序列类集合" class="headerlink" title="一、序列类集合"></a>一、序列类集合</h2><p>序列类集合按插入顺序保存元素，支持通过下标或迭代器访问，包含 <code>Vec</code>、<code>VecDeque</code>、<code>LinkedList</code> 三种类型。</p>
+<h3 id="1-1-Vec-—-动态数组"><a href="#1-1-Vec-—-动态数组" class="headerlink" title="1.1 Vec — 动态数组"></a>1.1 Vec — 动态数组</h3><p><strong>内部原理</strong></p>
+<p><code>Vec&lt;T&gt;</code> 在栈上维护一个三元组 <code>(ptr, len, capacity)</code>：<code>ptr</code> 指向堆上连续分配的内存块，<code>len</code> 是当前元素数量，<code>capacity</code> 是已分配但不一定使用的槽位数。当 <code>push</code> 导致 <code>len == capacity</code> 时，<code>Vec</code> 触发一次 <code>realloc</code>——通常将容量翻倍——并把旧数据 <code>memcpy</code> 到新地址。这一策略使 <code>push</code> 的均摊代价为 O(1)，单次最坏为 O(n)。</p>
+<figure class="highlight coq"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs coq">栈：[ ptr → 堆 | <span class="hljs-type">len</span>=<span class="hljs-number">3</span> | <span class="hljs-type">cap</span>=<span class="hljs-number">4</span> ]<br>堆：[ <span class="hljs-number">1</span> | <span class="hljs-type">2</span> | <span class="hljs-type">3</span> | <span class="hljs-type">_</span> ]   ← 第 <span class="hljs-number">4</span> 格空闲，尚未初始化<br></code></pre></td></tr></table></figure>
+
+<p><strong><code>Vec::new()</code> 的初始分配行为</strong></p>
+<p><code>Vec::new()</code> 不触发任何堆分配，<code>capacity</code> 为 0，<code>ptr</code> 是一个对齐的悬空指针（非 <code>null</code> 但不指向有效内存）。第一次 <code>push</code> 时才真正申请内存，初始容量由 <code>RawVec</code> 内部的 <code>MIN_NON_ZERO_CAP</code> 常量决定：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// 标准库 alloc/src/raw_vec.rs</span><br><span class="hljs-keyword">const</span> MIN_NON_ZERO_CAP: <span class="hljs-type">usize</span> = <span class="hljs-keyword">if</span> mem::size_of::&lt;T&gt;() == <span class="hljs-number">1</span> &#123;<br>    <span class="hljs-number">8</span><br>&#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> mem::size_of::&lt;T&gt;() &lt;= <span class="hljs-number">1024</span> &#123;<br>    <span class="hljs-number">4</span><br>&#125; <span class="hljs-keyword">else</span> &#123;<br>    <span class="hljs-number">1</span><br>&#125;;<br></code></pre></td></tr></table></figure>
+
+<p>增长公式为 <code>new_cap = max(2 × old_cap, 1)</code>，当 <code>old_cap = 0</code> 时结果为 1，随后被 clamp 到 <code>MIN_NON_ZERO_CAP</code>。设计意图是：小元素（如 <code>u8</code>）批量存储更常见，给 8 减少早期 <code>realloc</code>；超大结构体（&gt; 1024 B）则保守给 1，避免首次分配就浪费大量内存。</p>
+<table>
+<thead>
+<tr>
+<th>元素类型</th>
+<th><code>size_of</code></th>
+<th><code>MIN_NON_ZERO_CAP</code></th>
+<th>第一次 <code>push</code> 后 <code>capacity</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>u8</code></td>
+<td>1 B</td>
+<td>8</td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>i32</code></td>
+<td>4 B</td>
+<td>4</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>i64</code></td>
+<td>8 B</td>
+<td>4</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>[u8; 32]</code></td>
+<td>32 B</td>
+<td>4</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>[u8; 2048]</code></td>
+<td>2048 B</td>
+<td>1</td>
+<td>1</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>这是实现细节，不属于语言规范，不同 Rust 版本可能调整。已知元素数量时应始终用 <code>Vec::with_capacity(n)</code> 显式预分配，而不依赖默认增长行为。</p>
+</blockquote>
+<p>正因为元素必须连续存放，<code>insert(i, val)</code> 和 <code>remove(i)</code> 需要将索引 <code>i</code> 之后的所有元素向后&#x2F;向前移动一格，代价为 O(n − i)——其中 n 是当前元素总数，i 是操作位置。最坏情况在 i &#x3D; 0（头部操作）时退化为 O(n)，最好情况在 i &#x3D; len − 1（尾部）时为 O(1)（等同于 <code>pop</code>）。写作 O(n) 是大 O 取最坏情况的惯例。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-type">Vec</span>::<span class="hljs-title function_ invoke__">new</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Vec</span>&lt;T&gt;<br><span class="hljs-type">Vec</span>::<span class="hljs-title function_ invoke__">with_capacity</span>(capacity: <span class="hljs-type">usize</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Vec</span>&lt;T&gt;<br><span class="hljs-built_in">vec!</span>[val1, val2, ...]<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>capacity</code></td>
+<td>-</td>
+<td>预分配槽位数；已知元素总量时传入，避免多次 <code>realloc</code></td>
+</tr>
+</tbody></table>
+<p><strong>常用方法速查：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>复杂度</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>push(val)</code></td>
+<td>O(1) 均摊</td>
+<td>追加到末尾</td>
+</tr>
+<tr>
+<td><code>pop()</code></td>
+<td>O(1)</td>
+<td>移除并返回末尾元素</td>
+</tr>
+<tr>
+<td><code>insert(i, val)</code></td>
+<td>O(n − i)</td>
+<td>在索引 <code>i</code> 处插入，<code>i</code> 之后的元素右移一格；头部插入最慢 O(n)，尾部为 O(1)</td>
+</tr>
+<tr>
+<td><code>remove(i)</code></td>
+<td>O(n − i)</td>
+<td>移除索引 <code>i</code> 的元素，<code>i</code> 之后的元素左移一格；头部删除最慢 O(n)，尾部为 O(1)</td>
+</tr>
+<tr>
+<td><code>retain(|x| pred)</code></td>
+<td>O(n)</td>
+<td>原地保留满足谓词的元素</td>
+</tr>
+<tr>
+<td><code>drain(range)</code></td>
+<td>O(n)</td>
+<td>取出并返回指定范围的元素；<code>range</code> 支持所有区间写法，见下表</td>
+</tr>
+<tr>
+<td><code>truncate(len)</code></td>
+<td>O(n)</td>
+<td>将长度截断到 <code>len</code>，多余元素 <code>drop</code></td>
+</tr>
+<tr>
+<td><code>len()</code> &#x2F; <code>capacity()</code></td>
+<td>O(1)</td>
+<td>返回当前长度 &#x2F; 已分配容量</td>
+</tr>
+</tbody></table>
+<p><strong><code>drain</code> 区间写法（<code>RangeBounds&lt;usize&gt;</code>）：</strong></p>
+<table>
+<thead>
+<tr>
+<th>写法</th>
+<th>区间</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>a..b</code></td>
+<td>[a, b)</td>
+<td>从索引 a 取到 b 的前一个，<strong>不含 b</strong></td>
+</tr>
+<tr>
+<td><code>a..=b</code></td>
+<td>[a, b]</td>
+<td>从索引 a 取到 b，<strong>含 b</strong></td>
+</tr>
+<tr>
+<td><code>a..</code></td>
+<td>[a, len)</td>
+<td>从索引 a 取到末尾</td>
+</tr>
+<tr>
+<td><code>..b</code></td>
+<td>[0, b)</td>
+<td>从头取到 b 的前一个</td>
+</tr>
+<tr>
+<td><code>..=b</code></td>
+<td>[0, b]</td>
+<td>从头取到 b</td>
+</tr>
+<tr>
+<td><code>..</code></td>
+<td>[0, len)</td>
+<td>取走全部元素</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><code>drain</code> 返回惰性迭代器，元素在迭代器被消耗时才逐个取出。若迭代器被提前 <code>drop</code>，区间内剩余元素也会全部 <code>drop</code>，不会留在 <code>Vec</code> 里。区间越界会 <code>panic</code>，行为与切片索引一致。</p>
+</blockquote>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-comment">// 预分配容量，避免多次 realloc</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">v</span>: <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">i32</span>&gt; = <span class="hljs-type">Vec</span>::<span class="hljs-title function_ invoke__">with_capacity</span>(<span class="hljs-number">8</span>);<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">i</span> <span class="hljs-keyword">in</span> <span class="hljs-number">0</span>..<span class="hljs-number">5</span> &#123;<br>        v.<span class="hljs-title function_ invoke__">push</span>(i);<br>    &#125;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;len=&#123;&#125;, cap=&#123;&#125;&quot;</span>, v.<span class="hljs-title function_ invoke__">len</span>(), v.<span class="hljs-title function_ invoke__">capacity</span>());<br><br>    <span class="hljs-comment">// drain 取出子范围并返回迭代器</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">drained</span>: <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">i32</span>&gt; = v.<span class="hljs-title function_ invoke__">drain</span>(<span class="hljs-number">1</span>..<span class="hljs-number">3</span>).<span class="hljs-title function_ invoke__">collect</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;drained=&#123;:?&#125;, remaining=&#123;:?&#125;&quot;</span>, drained, v);<br><br>    <span class="hljs-comment">// retain：原地过滤</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">nums</span> = <span class="hljs-built_in">vec!</span>[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>, <span class="hljs-number">5</span>, <span class="hljs-number">6</span>];<br>    nums.<span class="hljs-title function_ invoke__">retain</span>(|&amp;x| x % <span class="hljs-number">2</span> == <span class="hljs-number">0</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;retain 偶数: &#123;:?&#125;&quot;</span>, nums);<br><br>    <span class="hljs-comment">// insert / remove</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">v2</span> = <span class="hljs-built_in">vec!</span>[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">4</span>, <span class="hljs-number">5</span>];<br>    v2.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-number">2</span>, <span class="hljs-number">3</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;insert(2, 3): &#123;:?&#125;&quot;</span>, v2);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">removed</span> = v2.<span class="hljs-title function_ invoke__">remove</span>(<span class="hljs-number">0</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;remove(0)=&#123;&#125;, remaining=&#123;:?&#125;&quot;</span>, removed, v2);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">len</span>=<span class="hljs-number">5</span>, cap=<span class="hljs-number">8</span><br><span class="hljs-attribute">drained</span>=[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>], remaining=[<span class="hljs-number">0</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>]<br><span class="hljs-attribute">retain</span> 偶数:<span class="hljs-meta"> [2, 4, 6]</span><br><span class="hljs-attribute">insert</span>(<span class="hljs-number">2</span>, <span class="hljs-number">3</span>):<span class="hljs-meta"> [1, 2, 3, 4, 5]</span><br><span class="hljs-attribute">remove</span>(<span class="hljs-number">0</span>)=<span class="hljs-number">1</span>, remaining=[<span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>, <span class="hljs-number">5</span>]<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>Vec</code> 是绝大多数场景下的首选序列类型。频繁在<strong>头部</strong>插入或删除时，应换用 <code>VecDeque</code>——<code>Vec</code> 的头部操作是 O(n)，因为每次都要移动所有元素。</p>
+</blockquote>
+<h3 id="1-2-VecDeque-—-环形缓冲队列"><a href="#1-2-VecDeque-—-环形缓冲队列" class="headerlink" title="1.2 VecDeque — 环形缓冲队列"></a>1.2 VecDeque — 环形缓冲队列</h3><p><strong>内部原理</strong></p>
+<p><code>VecDeque&lt;T&gt;</code> 同样在堆上分配一块连续内存，但通过 <code>head</code> 和 <code>len</code> 两个整数模拟<strong>环形缓冲区</strong>（<code>ring buffer</code>）。头部弹出时只需将 <code>head = (head + 1) % capacity</code>，头部插入时将 <code>head = (head - 1 + capacity) % capacity</code>，无需移动任何元素。因此 <code>push_front</code> 和 <code>pop_front</code> 均摊 O(1)，这是 <code>VecDeque</code> 相比 <code>Vec</code> 的核心优势。</p>
+<figure class="highlight tap"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs tap">cap=6, head=2, len=3<br>索引: <span class="hljs-number"> 0 </span>  <span class="hljs-number"> 1 </span>  <span class="hljs-number"> 2 </span>  <span class="hljs-number"> 3 </span>  <span class="hljs-number"> 4 </span>   5<br>      [ _  | _  |<span class="hljs-number"> 10 </span>|<span class="hljs-number"> 20 </span>|<span class="hljs-number"> 30 </span>| _ ]<br>                  ↑ head<br></code></pre></td></tr></table></figure>
+
+<p>随机访问 <code>[i]</code> 也是 O(1)——实际下标 &#x3D; <code>(head + i) % capacity</code>。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::collections::VecDeque;<br><br>VecDeque::<span class="hljs-title function_ invoke__">new</span>() <span class="hljs-punctuation">-&gt;</span> VecDeque&lt;T&gt;<br>VecDeque::<span class="hljs-title function_ invoke__">with_capacity</span>(capacity: <span class="hljs-type">usize</span>) <span class="hljs-punctuation">-&gt;</span> VecDeque&lt;T&gt;<br>VecDeque::<span class="hljs-title function_ invoke__">from</span>(vec: <span class="hljs-type">Vec</span>&lt;T&gt;) <span class="hljs-punctuation">-&gt;</span> VecDeque&lt;T&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>Vec vs VecDeque 操作复杂度对比：</strong></p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>Vec</th>
+<th>VecDeque</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>push_back</code> &#x2F; <code>pop_back</code></td>
+<td>O(1) 均摊</td>
+<td>O(1) 均摊</td>
+</tr>
+<tr>
+<td><code>push_front</code> &#x2F; <code>pop_front</code></td>
+<td>O(n)</td>
+<td>O(1) 均摊</td>
+</tr>
+<tr>
+<td>随机访问 <code>[i]</code></td>
+<td>O(1)</td>
+<td>O(1)（常数略大）</td>
+</tr>
+<tr>
+<td>内存连续性</td>
+<td>保证</td>
+<td>环形，可能断裂</td>
+</tr>
+<tr>
+<td>切片视图</td>
+<td><code>&amp;[T]</code> 直接</td>
+<td>需 <code>make_contiguous()</code></td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::collections::VecDeque;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">dq</span>: VecDeque&lt;<span class="hljs-type">i32</span>&gt; = VecDeque::<span class="hljs-title function_ invoke__">new</span>();<br>    dq.<span class="hljs-title function_ invoke__">push_back</span>(<span class="hljs-number">1</span>);<br>    dq.<span class="hljs-title function_ invoke__">push_back</span>(<span class="hljs-number">2</span>);<br>    dq.<span class="hljs-title function_ invoke__">push_front</span>(<span class="hljs-number">0</span>);    <span class="hljs-comment">// O(1) 头部插入</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, dq);<br><br>    <span class="hljs-comment">// pop_front 模拟 BFS 队列消费</span><br>    <span class="hljs-keyword">while</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(node) = dq.<span class="hljs-title function_ invoke__">pop_front</span>() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;处理节点: &#123;&#125;&quot;</span>, node);<br>    &#125;<br><br>    <span class="hljs-comment">// make_contiguous：将环形布局展平为连续切片</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">dq2</span>: VecDeque&lt;<span class="hljs-type">i32</span>&gt; = VecDeque::<span class="hljs-title function_ invoke__">from</span>([<span class="hljs-number">3</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>]);<br>    dq2.<span class="hljs-title function_ invoke__">push_front</span>(<span class="hljs-number">10</span>);<br>    dq2.<span class="hljs-title function_ invoke__">push_front</span>(<span class="hljs-number">20</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">slice</span> = dq2.<span class="hljs-title function_ invoke__">make_contiguous</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;连续切片: &#123;:?&#125;&quot;</span>, slice);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs makefile">[0, 1, 2]<br><span class="hljs-section">处理节点: 0</span><br><span class="hljs-section">处理节点: 1</span><br><span class="hljs-section">处理节点: 2</span><br><span class="hljs-section">连续切片: [20, 10, 3, 1, 2]</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>make_contiguous()</code> 在需要将 <code>VecDeque</code> 当作普通切片传递给函数时非常有用，它原地重排内存使数据连续，返回 <code>&amp;mut [T]</code>，不发生额外分配。</p>
+</blockquote>
+<h3 id="1-3-LinkedList-—-双向链表"><a href="#1-3-LinkedList-—-双向链表" class="headerlink" title="1.3 LinkedList — 双向链表"></a>1.3 LinkedList — 双向链表</h3><p><strong>内部原理</strong></p>
+<p><code>LinkedList&lt;T&gt;</code> 是真正的<strong>堆分配节点</strong>双向链表。每个节点独立分配在堆上，包含 <code>prev</code> 和 <code>next</code> 裸指针以及数据本体。链表头尾各有一个哨兵指针，访问任意节点需从头或尾顺序遍历，随机访问代价 O(n)。</p>
+<p>正因为节点散布在堆的不同位置，缓存局部性（<code>cache locality</code>）远不如 <code>Vec</code> 或 <code>VecDeque</code>——遍历时每次 <code>next</code> 指针跳转都可能触发缓存未命中（<code>cache miss</code>）。在大多数实际测试中，即便是需要频繁在中间插入&#x2F;删除的场景，<code>Vec</code> 的连续内存优势也足以弥补 O(n) 的移位代价。</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>复杂度</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>push_front</code> &#x2F; <code>push_back</code></td>
+<td>O(1)</td>
+<td></td>
+</tr>
+<tr>
+<td><code>pop_front</code> &#x2F; <code>pop_back</code></td>
+<td>O(1)</td>
+<td></td>
+</tr>
+<tr>
+<td>随机访问</td>
+<td>O(n)</td>
+<td>无 <code>[]</code> 索引，只能迭代</td>
+</tr>
+<tr>
+<td><code>split_off(at)</code></td>
+<td>O(n)</td>
+<td>需先走到分割点</td>
+</tr>
+<tr>
+<td><code>append(&amp;mut other)</code></td>
+<td>O(1)</td>
+<td>直接拼接两条链</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::collections::LinkedList;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">list</span>: LinkedList&lt;<span class="hljs-type">i32</span>&gt; = LinkedList::<span class="hljs-title function_ invoke__">new</span>();<br>    list.<span class="hljs-title function_ invoke__">push_back</span>(<span class="hljs-number">1</span>);<br>    list.<span class="hljs-title function_ invoke__">push_back</span>(<span class="hljs-number">2</span>);<br>    list.<span class="hljs-title function_ invoke__">push_back</span>(<span class="hljs-number">3</span>);<br>    list.<span class="hljs-title function_ invoke__">push_front</span>(<span class="hljs-number">0</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, list);<br><br>    <span class="hljs-comment">// split_off + append：O(1) 拼接</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">tail</span> = list.<span class="hljs-title function_ invoke__">split_off</span>(<span class="hljs-number">2</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;前半: &#123;:?&#125;&quot;</span>, list);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;后半: &#123;:?&#125;&quot;</span>, tail);<br>    list.<span class="hljs-title function_ invoke__">append</span>(&amp;<span class="hljs-keyword">mut</span> tail);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;合并后: &#123;:?&#125;&quot;</span>, list);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight inform7"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs inform7"><span class="hljs-comment">[0, 1, 2, 3]</span><br>前半: <span class="hljs-comment">[0, 1]</span><br>后半: <span class="hljs-comment">[2, 3]</span><br>合并后: <span class="hljs-comment">[0, 1, 2, 3]</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>不要将 <code>LinkedList</code> 作为默认列表选项。Rust 中推荐在以下极少数场景使用它：需要频繁 O(1) <code>append</code>&#x2F;<code>split_off</code> 且不能承受摊销成本的场景。其余场景首选 <code>Vec</code> 或 <code>VecDeque</code>。</p>
+</blockquote>
+<h2 id="二、映射类集合"><a href="#二、映射类集合" class="headerlink" title="二、映射类集合"></a>二、映射类集合</h2><p>映射类集合存储键值对，通过 Key 快速查找 Value，包含 <code>HashMap</code> 和 <code>BTreeMap</code> 两种类型。</p>
+<h3 id="2-1-HashMap-—-哈希表"><a href="#2-1-HashMap-—-哈希表" class="headerlink" title="2.1 HashMap — 哈希表"></a>2.1 HashMap — 哈希表</h3><p><strong>内部原理</strong></p>
+<p>Rust 1.36 将 <code>hashbrown</code> crate 合并进标准库，<code>HashMap&lt;K, V&gt;</code> 底层采用 <strong>Swiss Table</strong> 实现——一种改进的开放寻址哈希表。其核心创新是”控制字节”（<code>control byte</code>）：每个槽位额外分配 1 字节，存储该槽的状态（空&#x2F;已删除&#x2F;已占用）以及哈希值的高 7 位。查找时，SIMD 指令可同时比较 16 个控制字节，在一次缓存行加载中完成 16 路并行探测，显著提升吞吐量。</p>
+<p>默认哈希函数是 <code>SipHash-1-3</code>，能抵御哈希洪泛攻击（<code>hash flooding</code>），但速度不是最优。如需更高性能且输入不受用户控制，可换用 <code>ahash</code> 等第三方哈希器。负载因子约 87.5% 时触发扩容，扩容代价 O(n)。</p>
+<p><strong><code>HashMap::new()</code> 的初始分配行为</strong></p>
+<p><code>HashMap::new()</code> 创建时容量为 0，不触发任何堆分配；第一次 <code>insert</code> 时才真正分配内存，行为与 <code>Vec::new()</code> 一致。</p>
+<p><strong><code>with_capacity</code> 的容量取整</strong></p>
+<p><code>with_capacity(n)</code> 接受任意 <code>usize</code>，但 hashbrown 内部始终以 <strong>2 的幂次</strong> 作为桶数。实际分配规则：找最小的 2 的幂 <code>b</code>，使 <code>b × 7/8 ≥ n</code>，保证不触发 resize 前至少能存 <code>n</code> 个元素，实际 capacity 可能略大于请求值。</p>
+<table>
+<thead>
+<tr>
+<th><code>with_capacity(n)</code></th>
+<th>内部桶数</th>
+<th>实际 capacity（触发 resize 前）</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>0</code></td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>7</code></td>
+<td>8</td>
+<td>7</td>
+</tr>
+<tr>
+<td><code>8</code></td>
+<td>16</td>
+<td>14</td>
+</tr>
+<tr>
+<td><code>10</code></td>
+<td>16</td>
+<td>14</td>
+</tr>
+<tr>
+<td><code>100</code></td>
+<td>128</td>
+<td>112</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>这是 hashbrown 的实现细节，不属于语言规范，不同版本可能调整。已知元素数量时应始终用 <code>HashMap::with_capacity(n)</code> 预分配以避免多次扩容，但无需将 <code>n</code> 手动对齐到 2 的幂次——hashbrown 会自动处理。</p>
+</blockquote>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::collections::HashMap;<br><br>HashMap::<span class="hljs-title function_ invoke__">new</span>() <span class="hljs-punctuation">-&gt;</span> HashMap&lt;K, V&gt;<br>HashMap::<span class="hljs-title function_ invoke__">with_capacity</span>(capacity: <span class="hljs-type">usize</span>) <span class="hljs-punctuation">-&gt;</span> HashMap&lt;K, V&gt;<br>HashMap::<span class="hljs-title function_ invoke__">from</span>([(k1, v1), (k2, v2), ...])  <span class="hljs-comment">// Rust 1.56+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>Entry API 参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>entry(key).or_insert(val)</code></td>
+<td>Key 不存在则插入 <code>val</code>，返回 <code>&amp;mut V</code></td>
+</tr>
+<tr>
+<td><code>entry(key).or_insert_with(f)</code></td>
+<td>Key 不存在则调用 <code>f()</code> 懒求值插入</td>
+</tr>
+<tr>
+<td><code>entry(key).or_default()</code></td>
+<td>Key 不存在则插入 <code>T::default()</code></td>
+</tr>
+<tr>
+<td><code>entry(key).and_modify(|v| ...)</code></td>
+<td>Key 存在则修改，链式调用后可接 <code>or_insert</code></td>
+</tr>
+</tbody></table>
+<p><code>Entry</code> API 只做<strong>一次</strong>哈希查找。相比先 <code>contains_key</code> 再 <code>insert</code> 的写法（两次哈希 + 两次探测），性能更优，是累加计数、懒初始化等模式的首选。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::collections::HashMap;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-comment">// 词频统计：entry API 经典用法</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">text</span> = <span class="hljs-string">&quot;hello world hello rust world hello&quot;</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">freq</span>: HashMap&lt;&amp;<span class="hljs-type">str</span>, <span class="hljs-type">u32</span>&gt; = HashMap::<span class="hljs-title function_ invoke__">new</span>();<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">word</span> <span class="hljs-keyword">in</span> text.<span class="hljs-title function_ invoke__">split_whitespace</span>() &#123;<br>        *freq.<span class="hljs-title function_ invoke__">entry</span>(word).<span class="hljs-title function_ invoke__">or_insert</span>(<span class="hljs-number">0</span>) += <span class="hljs-number">1</span>;<br>    &#125;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">sorted</span>: <span class="hljs-type">Vec</span>&lt;(&amp;<span class="hljs-type">str</span>, <span class="hljs-type">u32</span>)&gt; = freq.<span class="hljs-title function_ invoke__">iter</span>().<span class="hljs-title function_ invoke__">map</span>(|(&amp;k, &amp;v)| (k, v)).<span class="hljs-title function_ invoke__">collect</span>();<br>    sorted.<span class="hljs-title function_ invoke__">sort_by_key</span>(|&amp;(k, _)| k);<br>    <span class="hljs-keyword">for</span> (word, count) <span class="hljs-keyword">in</span> &amp;sorted &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;: &#123;&#125;&quot;</span>, word, count);<br>    &#125;<br><br>    <span class="hljs-comment">// and_modify + or_insert 组合</span><br>    freq.<span class="hljs-title function_ invoke__">entry</span>(<span class="hljs-string">&quot;rust&quot;</span>).<span class="hljs-title function_ invoke__">and_modify</span>(|v| *v *= <span class="hljs-number">10</span>).<span class="hljs-title function_ invoke__">or_insert</span>(<span class="hljs-number">1</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;rust 词频: &#123;&#125;&quot;</span>, freq[<span class="hljs-string">&quot;rust&quot;</span>]);<br><br>    <span class="hljs-comment">// or_insert_with 懒求值，避免不必要的 Vec 分配</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">cache</span>: HashMap&lt;&amp;<span class="hljs-type">str</span>, <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">i32</span>&gt;&gt; = HashMap::<span class="hljs-title function_ invoke__">new</span>();<br>    cache.<span class="hljs-title function_ invoke__">entry</span>(<span class="hljs-string">&quot;nums&quot;</span>).<span class="hljs-title function_ invoke__">or_insert_with</span>(<span class="hljs-type">Vec</span>::new).<span class="hljs-title function_ invoke__">push</span>(<span class="hljs-number">42</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;cache: &#123;:?&#125;&quot;</span>, cache);<br><br>    <span class="hljs-comment">// or_default：利用类型的 Default 实现</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">counts</span>: HashMap&lt;<span class="hljs-type">char</span>, <span class="hljs-type">u32</span>&gt; = HashMap::<span class="hljs-title function_ invoke__">new</span>();<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">ch</span> <span class="hljs-keyword">in</span> <span class="hljs-string">&quot;aababc&quot;</span>.<span class="hljs-title function_ invoke__">chars</span>() &#123;<br>        *counts.<span class="hljs-title function_ invoke__">entry</span>(ch).<span class="hljs-title function_ invoke__">or_default</span>() += <span class="hljs-number">1</span>;<br>    &#125;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">cv</span>: <span class="hljs-type">Vec</span>&lt;(<span class="hljs-type">char</span>, <span class="hljs-type">u32</span>)&gt; = counts.<span class="hljs-title function_ invoke__">into_iter</span>().<span class="hljs-title function_ invoke__">collect</span>();<br>    cv.<span class="hljs-title function_ invoke__">sort</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;字符统计: &#123;:?&#125;&quot;</span>, cv);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight avrasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs avrasm"><span class="hljs-symbol">hello:</span> <span class="hljs-number">3</span><br><span class="hljs-symbol">rust:</span> <span class="hljs-number">1</span><br><span class="hljs-symbol">world:</span> <span class="hljs-number">2</span><br>rust 词频: <span class="hljs-number">10</span><br><span class="hljs-symbol">cache:</span> &#123;<span class="hljs-string">&quot;nums&quot;</span>: [<span class="hljs-number">42</span>]&#125;<br>字符统计: [(<span class="hljs-string">&#x27;a&#x27;</span>, <span class="hljs-number">3</span>), (<span class="hljs-string">&#x27;b&#x27;</span>, <span class="hljs-number">2</span>), (<span class="hljs-string">&#x27;c&#x27;</span>, <span class="hljs-number">1</span>)]<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>HashMap</code> 的遍历顺序是<strong>不确定的</strong>，每次运行可能不同。如需稳定顺序输出，先 <code>collect</code> 到 <code>Vec</code> 后排序，或直接使用 <code>BTreeMap</code>。</p>
+</blockquote>
+<h3 id="2-2-BTreeMap-—-B-树有序映射"><a href="#2-2-BTreeMap-—-B-树有序映射" class="headerlink" title="2.2 BTreeMap — B 树有序映射"></a>2.2 BTreeMap — B 树有序映射</h3><p><strong>内部原理</strong></p>
+<p><code>BTreeMap&lt;K, V&gt;</code> 基于 <strong>B 树</strong>实现，而非二叉搜索树。Rust 标准库中 B 树的阶数 <code>B=6</code>，每个内部节点最多存 11 个键，每个叶节点最多存 11 个键值对。节点内数据紧凑排列，比二叉树每节点存 1 个键的方式更缓存友好——一次缓存行加载可比对多个键，减少缓存未命中次数。</p>
+<p>与 <code>HashMap</code> 的核心区别：B 树始终按 Key 的 <code>Ord</code> 顺序维护数据，有序遍历无需额外排序，并支持 <code>range()</code> 范围查询。代价是所有操作均为 O(log n)，而 <code>HashMap</code> 的点查询均摊 O(1)。</p>
+<p><strong><code>BTreeMap::new()</code> 的初始分配行为</strong></p>
+<p><code>BTreeMap::new()</code> 创建时不触发任何堆分配，根节点在第一次 <code>insert</code> 时才分配。与 <code>HashMap</code> 不同，<code>BTreeMap</code> <strong>没有</strong> <code>with_capacity()</code> 方法——B 树的内存用量由树形结构决定，节点按需分裂与合并，无法预先预留固定槽位。</p>
+<p><strong>容量管理</strong></p>
+<p>节点未满时插入原地写入（O(log n) 定位）；节点键数达到上限（11 个）时触发分裂，分配新节点；删除导致节点过少时合并相邻节点。整个生命周期内不提供 <code>capacity()</code>、<code>reserve()</code>、<code>shrink_to_fit()</code> 等容量管理 API。</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>HashMap</th>
+<th>BTreeMap</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>new()</code> 初始分配</td>
+<td>无堆分配</td>
+<td>无堆分配</td>
+</tr>
+<tr>
+<td>预分配 API</td>
+<td><code>with_capacity(n)</code></td>
+<td><strong>不支持</strong></td>
+</tr>
+<tr>
+<td>容量管理 API</td>
+<td><code>reserve</code> &#x2F; <code>shrink_to_fit</code></td>
+<td><strong>不支持</strong></td>
+</tr>
+<tr>
+<td>内存增长方式</td>
+<td>桶数组翻倍扩容</td>
+<td>节点按需分裂</td>
+</tr>
+</tbody></table>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::collections::BTreeMap;<br><br>BTreeMap::<span class="hljs-title function_ invoke__">new</span>() <span class="hljs-punctuation">-&gt;</span> BTreeMap&lt;K, V&gt;<br>BTreeMap::<span class="hljs-title function_ invoke__">from</span>([(k1, v1), ...])  <span class="hljs-comment">// Rust 1.56+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>HashMap vs BTreeMap 特性对比：</strong></p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>HashMap</th>
+<th>BTreeMap</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Key 约束</td>
+<td><code>Hash + Eq</code></td>
+<td><code>Ord</code></td>
+</tr>
+<tr>
+<td>查找 &#x2F; 插入 &#x2F; 删除</td>
+<td>O(1) 均摊</td>
+<td>O(log n)</td>
+</tr>
+<tr>
+<td>有序遍历</td>
+<td>否（随机顺序）</td>
+<td>是（按 Key 升序）</td>
+</tr>
+<tr>
+<td>范围查询 <code>range()</code></td>
+<td>否</td>
+<td>是</td>
+</tr>
+<tr>
+<td>内存布局</td>
+<td>开放寻址哈希表</td>
+<td>B 树节点紧凑存储</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>快速点查询、计数</td>
+<td>有序输出、范围扫描</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::collections::BTreeMap;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">scores</span>: BTreeMap&lt;<span class="hljs-type">String</span>, <span class="hljs-type">u32</span>&gt; = BTreeMap::<span class="hljs-title function_ invoke__">new</span>();<br>    scores.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-string">&quot;alice&quot;</span>.<span class="hljs-title function_ invoke__">into</span>(), <span class="hljs-number">95</span>);<br>    scores.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-string">&quot;bob&quot;</span>.<span class="hljs-title function_ invoke__">into</span>(), <span class="hljs-number">87</span>);<br>    scores.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-string">&quot;carol&quot;</span>.<span class="hljs-title function_ invoke__">into</span>(), <span class="hljs-number">92</span>);<br><br>    <span class="hljs-comment">// 有序遍历（自动按 Key 升序）</span><br>    <span class="hljs-keyword">for</span> (name, score) <span class="hljs-keyword">in</span> &amp;scores &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;: &#123;&#125;&quot;</span>, name, score);<br>    &#125;<br><br>    <span class="hljs-comment">// 范围查询：&quot;b&quot; 到 &quot;d&quot;（不含 &quot;d&quot;）</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;--- 范围 b..d ---&quot;</span>);<br>    <span class="hljs-keyword">for</span> (k, v) <span class="hljs-keyword">in</span> scores.<span class="hljs-title function_ invoke__">range</span>(<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;b&quot;</span>)..<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;d&quot;</span>)) &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;: &#123;&#125;&quot;</span>, k, v);<br>    &#125;<br><br>    <span class="hljs-comment">// first_key_value / last_key_value：O(log n)</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;最小键: &#123;:?&#125;&quot;</span>, scores.<span class="hljs-title function_ invoke__">first_key_value</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;最大键: &#123;:?&#125;&quot;</span>, scores.<span class="hljs-title function_ invoke__">last_key_value</span>());<br><br>    <span class="hljs-comment">// split_off：从指定 Key 处分裂为两棵树</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">upper</span> = scores.<span class="hljs-title function_ invoke__">split_off</span>(<span class="hljs-string">&quot;c&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;split 前半: &#123;:?&#125;&quot;</span>, scores);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;split 后半: &#123;:?&#125;&quot;</span>, upper);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight avrasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs avrasm"><span class="hljs-symbol">alice:</span> <span class="hljs-number">95</span><br><span class="hljs-symbol">bob:</span> <span class="hljs-number">87</span><br><span class="hljs-symbol">carol:</span> <span class="hljs-number">92</span><br>--- 范围 b..d ---<br><span class="hljs-symbol">bob:</span> <span class="hljs-number">87</span><br><span class="hljs-symbol">carol:</span> <span class="hljs-number">92</span><br>最小键: Some((<span class="hljs-string">&quot;alice&quot;</span>, <span class="hljs-number">95</span>))<br>最大键: Some((<span class="hljs-string">&quot;carol&quot;</span>, <span class="hljs-number">92</span>))<br>split 前半: &#123;<span class="hljs-string">&quot;alice&quot;</span>: <span class="hljs-number">95</span>, <span class="hljs-string">&quot;bob&quot;</span>: <span class="hljs-number">87</span>&#125;<br>split 后半: &#123;<span class="hljs-string">&quot;carol&quot;</span>: <span class="hljs-number">92</span>&#125;<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>BTreeMap::range()</code> 的 Key 类型需与映射的 Key 类型一致（或可 <code>Borrow</code> 转换）。对 <code>BTreeMap&lt;String, _&gt;</code> 用 <code>&amp;str</code> 作为范围端点时，需通过 <code>range::&lt;str, _&gt;(...)</code> 显式指定类型参数，或直接传入 <code>String</code> 值作为边界。</p>
+</blockquote>
+<h2 id="三、集合类集合"><a href="#三、集合类集合" class="headerlink" title="三、集合类集合"></a>三、集合类集合</h2><h3 id="3-1-HashSet-与-BTreeSet"><a href="#3-1-HashSet-与-BTreeSet" class="headerlink" title="3.1 HashSet 与 BTreeSet"></a>3.1 HashSet 与 BTreeSet</h3><p><strong>内部原理</strong></p>
+<p><code>HashSet&lt;T&gt;</code> 就是 <code>HashMap&lt;T, ()&gt;</code> 的零成本包装——Value 固定为单元类型 <code>()</code>，编译器会将其优化掉，不占用额外存储。同理，<code>BTreeSet&lt;T&gt;</code> 包装 <code>BTreeMap&lt;T, ()&gt;</code>。因此两者的性能特征与对应的映射类型完全一致：<code>HashSet</code> 的成员查询均摊 O(1)，<code>BTreeSet</code> 的查询为 O(log n) 但保证有序。</p>
+<p>集合运算（<code>union</code>、<code>intersection</code>、<code>difference</code>、<code>symmetric_difference</code>）均返回<strong>惰性迭代器</strong>，不会立即分配内存；只有调用 <code>.collect()</code> 时才真正求值并分配结果容器。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::collections::HashSet;<br><br>HashSet::<span class="hljs-title function_ invoke__">new</span>() <span class="hljs-punctuation">-&gt;</span> HashSet&lt;T&gt;<br>HashSet::<span class="hljs-title function_ invoke__">from</span>([val1, val2, ...])  <span class="hljs-comment">// Rust 1.56+</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>集合运算方法：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>返回</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>a.union(&amp;b)</code></td>
+<td>惰性迭代器 <code>&amp;T</code></td>
+<td>a ∪ b（两个集合的所有元素）</td>
+</tr>
+<tr>
+<td><code>a.intersection(&amp;b)</code></td>
+<td>惰性迭代器 <code>&amp;T</code></td>
+<td>a ∩ b（同时在两个集合中的元素）</td>
+</tr>
+<tr>
+<td><code>a.difference(&amp;b)</code></td>
+<td>惰性迭代器 <code>&amp;T</code></td>
+<td>a − b（在 a 但不在 b 中的元素）</td>
+</tr>
+<tr>
+<td><code>a.symmetric_difference(&amp;b)</code></td>
+<td>惰性迭代器 <code>&amp;T</code></td>
+<td>(a ∪ b) − (a ∩ b)（恰好在一个集合中的元素）</td>
+</tr>
+<tr>
+<td><code>a.is_subset(&amp;b)</code></td>
+<td><code>bool</code></td>
+<td>a ⊆ b</td>
+</tr>
+<tr>
+<td><code>a.is_superset(&amp;b)</code></td>
+<td><code>bool</code></td>
+<td>a ⊇ b</td>
+</tr>
+<tr>
+<td><code>a.is_disjoint(&amp;b)</code></td>
+<td><code>bool</code></td>
+<td>a ∩ b &#x3D; ∅</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::collections::HashSet;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">a</span>: HashSet&lt;<span class="hljs-type">i32</span>&gt; = [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>].<span class="hljs-title function_ invoke__">into_iter</span>().<span class="hljs-title function_ invoke__">collect</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">b</span>: HashSet&lt;<span class="hljs-type">i32</span>&gt; = [<span class="hljs-number">3</span>, <span class="hljs-number">4</span>, <span class="hljs-number">5</span>, <span class="hljs-number">6</span>].<span class="hljs-title function_ invoke__">into_iter</span>().<span class="hljs-title function_ invoke__">collect</span>();<br><br>    <span class="hljs-comment">// 交集（返回迭代器引用，.copied() 取得所有权）</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">inter</span>: <span class="hljs-type">Vec</span>&lt;_&gt; = a.<span class="hljs-title function_ invoke__">intersection</span>(&amp;b).<span class="hljs-title function_ invoke__">copied</span>().<span class="hljs-title function_ invoke__">collect</span>();<br>    inter.<span class="hljs-title function_ invoke__">sort</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;交集: &#123;:?&#125;&quot;</span>, inter);<br><br>    <span class="hljs-comment">// 差集</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">diff</span>: <span class="hljs-type">Vec</span>&lt;_&gt; = a.<span class="hljs-title function_ invoke__">difference</span>(&amp;b).<span class="hljs-title function_ invoke__">copied</span>().<span class="hljs-title function_ invoke__">collect</span>();<br>    diff.<span class="hljs-title function_ invoke__">sort</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;差集 a-b: &#123;:?&#125;&quot;</span>, diff);<br><br>    <span class="hljs-comment">// 并集</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">union</span>: <span class="hljs-type">Vec</span>&lt;_&gt; = a.<span class="hljs-title function_ invoke__">union</span>(&amp;b).<span class="hljs-title function_ invoke__">copied</span>().<span class="hljs-title function_ invoke__">collect</span>();<br>    <span class="hljs-keyword">union</span>.<span class="hljs-title function_ invoke__">sort</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;并集: &#123;:?&#125;&quot;</span>, <span class="hljs-keyword">union</span>);<br><br>    <span class="hljs-comment">// 对称差</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">sym</span>: <span class="hljs-type">Vec</span>&lt;_&gt; = a.<span class="hljs-title function_ invoke__">symmetric_difference</span>(&amp;b).<span class="hljs-title function_ invoke__">copied</span>().<span class="hljs-title function_ invoke__">collect</span>();<br>    sym.<span class="hljs-title function_ invoke__">sort</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;对称差: &#123;:?&#125;&quot;</span>, sym);<br><br>    <span class="hljs-comment">// 子集 / 不相交判断</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">c</span>: HashSet&lt;<span class="hljs-type">i32</span>&gt; = [<span class="hljs-number">1</span>, <span class="hljs-number">2</span>].<span class="hljs-title function_ invoke__">into_iter</span>().<span class="hljs-title function_ invoke__">collect</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;c 是 a 的子集: &#123;&#125;&quot;</span>, c.<span class="hljs-title function_ invoke__">is_subset</span>(&amp;a));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;a 和 b 不相交: &#123;&#125;&quot;</span>, a.<span class="hljs-title function_ invoke__">is_disjoint</span>(&amp;b));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs less">交集: <span class="hljs-selector-attr">[3, 4]</span><br>差集 <span class="hljs-selector-tag">a</span><span class="hljs-selector-tag">-b</span>: <span class="hljs-selector-attr">[1, 2]</span><br>并集: <span class="hljs-selector-attr">[1, 2, 3, 4, 5, 6]</span><br>对称差: <span class="hljs-selector-attr">[1, 2, 5, 6]</span><br><span class="hljs-selector-tag">c</span> 是 <span class="hljs-selector-tag">a</span> 的子集: <span class="hljs-selector-tag">true</span><br><span class="hljs-selector-tag">a</span> 和 <span class="hljs-selector-tag">b</span> 不相交: <span class="hljs-selector-tag">false</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>集合运算返回的迭代器元素类型是 <code>&amp;T</code>。对于实现了 <code>Copy</code> 的基本类型，在 <code>collect</code> 前加 <code>.copied()</code> 可直接得到 <code>T</code>；对于堆类型需使用 <code>.cloned()</code>。</p>
+</blockquote>
+<p><code>BTreeSet</code> 的 API 与 <code>HashSet</code> 基本一致，额外提供 <code>range()</code>、<code>first()</code>、<code>last()</code> 用于有序访问，使用场景与 <code>BTreeMap</code> vs <code>HashMap</code> 的选择逻辑相同。</p>
+<h2 id="四、迭代器与所有权"><a href="#四、迭代器与所有权" class="headerlink" title="四、迭代器与所有权"></a>四、迭代器与所有权</h2><h3 id="4-1-三种迭代方式"><a href="#4-1-三种迭代方式" class="headerlink" title="4.1 三种迭代方式"></a>4.1 三种迭代方式</h3><p>集合的迭代方式决定元素的所有权归属，这是 Rust 集合 API 与其他语言最显著的差别之一。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// 不可变借用</span><br>collection.<span class="hljs-title function_ invoke__">iter</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-built_in">Iterator</span>&lt;Item = &amp;T&gt;<br><br><span class="hljs-comment">// 可变借用</span><br>collection.<span class="hljs-title function_ invoke__">iter_mut</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-built_in">Iterator</span>&lt;Item = &amp;<span class="hljs-keyword">mut</span> T&gt;<br><br><span class="hljs-comment">// 消耗集合，转移所有权</span><br>collection.<span class="hljs-title function_ invoke__">into_iter</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-built_in">Iterator</span>&lt;Item = T&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>三种迭代方式对比：</strong></p>
+<table>
+<thead>
+<tr>
+<th>调用方式</th>
+<th>元素类型</th>
+<th>集合所有权</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>v.iter()</code></td>
+<td><code>&amp;T</code></td>
+<td>集合保留</td>
+<td>只读遍历、统计</td>
+</tr>
+<tr>
+<td><code>v.iter_mut()</code></td>
+<td><code>&amp;mut T</code></td>
+<td>集合保留</td>
+<td>就地修改元素</td>
+</tr>
+<tr>
+<td><code>v.into_iter()</code></td>
+<td><code>T</code></td>
+<td>集合消耗</td>
+<td>转换、传递所有权</td>
+</tr>
+<tr>
+<td><code>for x in &amp;v</code></td>
+<td><code>&amp;T</code></td>
+<td>集合保留</td>
+<td><code>iter()</code> 的语法糖</td>
+</tr>
+<tr>
+<td><code>for x in &amp;mut v</code></td>
+<td><code>&amp;mut T</code></td>
+<td>集合保留</td>
+<td><code>iter_mut()</code> 的语法糖</td>
+</tr>
+<tr>
+<td><code>for x in v</code></td>
+<td><code>T</code></td>
+<td>集合消耗</td>
+<td><code>into_iter()</code> 的语法糖</td>
+</tr>
+</tbody></table>
+<p><code>for</code> 循环在底层调用 <code>IntoIterator::into_iter()</code>：对 <code>&amp;V</code> 调用时产生 <code>iter()</code>，对 <code>&amp;mut V</code> 产生 <code>iter_mut()</code>，对 <code>V</code> 本身产生消耗式迭代。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">v</span> = <span class="hljs-built_in">vec!</span>[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>];<br><br>    <span class="hljs-comment">// iter(): 借用，v 之后仍可使用</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">sum</span>: <span class="hljs-type">i32</span> = v.<span class="hljs-title function_ invoke__">iter</span>().<span class="hljs-title function_ invoke__">sum</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;sum=&#123;&#125;, v still valid: &#123;:?&#125;&quot;</span>, sum, v);<br><br>    <span class="hljs-comment">// iter_mut(): 就地修改</span><br>    v.<span class="hljs-title function_ invoke__">iter_mut</span>().for_each(|x| *x *= <span class="hljs-number">2</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;doubled: &#123;:?&#125;&quot;</span>, v);<br><br>    <span class="hljs-comment">// into_iter(): 消耗集合</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">mapped</span>: <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">i32</span>&gt; = v.<span class="hljs-title function_ invoke__">into_iter</span>().<span class="hljs-title function_ invoke__">map</span>(|x| x + <span class="hljs-number">1</span>).<span class="hljs-title function_ invoke__">collect</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;mapped: &#123;:?&#125;&quot;</span>, mapped);<br>    <span class="hljs-comment">// v 在此行之后已失效，编译器会阻止使用</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight apache"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs apache"><span class="hljs-attribute">sum</span>=<span class="hljs-number">6</span>, v still valid:<span class="hljs-meta"> [1, 2, 3]</span><br><span class="hljs-attribute">doubled</span>:<span class="hljs-meta"> [2, 4, 6]</span><br><span class="hljs-attribute">mapped</span>:<span class="hljs-meta"> [3, 5, 7]</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="五、容量管理"><a href="#五、容量管理" class="headerlink" title="五、容量管理"></a>五、容量管理</h2><h3 id="5-1-预分配与收缩"><a href="#5-1-预分配与收缩" class="headerlink" title="5.1 预分配与收缩"></a>5.1 预分配与收缩</h3><p>所有基于堆分配的集合（<code>Vec</code>、<code>VecDeque</code>、<code>HashMap</code>、<code>HashSet</code>）都提供容量管理 API。Rust 的集合<strong>永不自动收缩</strong>：删除元素不会缩减已分配内存，必须显式调用收缩方法。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust">collection.<span class="hljs-title function_ invoke__">with_capacity</span>(n: <span class="hljs-type">usize</span>)       <span class="hljs-comment">// 构建时预分配</span><br>collection.<span class="hljs-title function_ invoke__">reserve</span>(additional: <span class="hljs-type">usize</span>)    <span class="hljs-comment">// 确保还能容纳 additional 个元素</span><br>collection.<span class="hljs-title function_ invoke__">reserve_exact</span>(additional)     <span class="hljs-comment">// 精确预留（不超额，视分配器实现）</span><br>collection.<span class="hljs-title function_ invoke__">shrink_to_fit</span>()               <span class="hljs-comment">// 收缩到与 len 匹配</span><br>collection.<span class="hljs-title function_ invoke__">shrink_to</span>(min_capacity)       <span class="hljs-comment">// 收缩但保留至少 min_capacity（Rust 1.56+）</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>参数说明：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>additional</code></td>
+<td><strong>额外</strong>容量，不是目标总量。<code>len=10</code> 时 <code>reserve(5)</code> 保证 <code>cap ≥ 15</code></td>
+</tr>
+<tr>
+<td><code>min_capacity</code></td>
+<td><code>shrink_to</code> 的下限，不低于当前 <code>len</code></td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-comment">// with_capacity：已知批量写入数量时预分配</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">v</span>: <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">i32</span>&gt; = <span class="hljs-type">Vec</span>::<span class="hljs-title function_ invoke__">with_capacity</span>(<span class="hljs-number">100</span>);<br>    v.<span class="hljs-title function_ invoke__">extend</span>(<span class="hljs-number">0</span>..<span class="hljs-number">10</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;len=&#123;&#125;, cap=&#123;&#125;&quot;</span>, v.<span class="hljs-title function_ invoke__">len</span>(), v.<span class="hljs-title function_ invoke__">capacity</span>());<br><br>    <span class="hljs-comment">// shrink_to_fit：批量写入结束后释放多余容量</span><br>    v.<span class="hljs-title function_ invoke__">shrink_to_fit</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;shrink_to_fit: len=&#123;&#125;, cap=&#123;&#125;&quot;</span>, v.<span class="hljs-title function_ invoke__">len</span>(), v.<span class="hljs-title function_ invoke__">capacity</span>());<br><br>    <span class="hljs-comment">// reserve：额外容量，非目标总量</span><br>    v.<span class="hljs-title function_ invoke__">reserve</span>(<span class="hljs-number">5</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;reserve(5): cap=&#123;&#125;&quot;</span>, v.<span class="hljs-title function_ invoke__">capacity</span>());<br><br>    <span class="hljs-comment">// reserve_exact：尽量精确分配</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">v2</span>: <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">i32</span>&gt; = <span class="hljs-type">Vec</span>::<span class="hljs-title function_ invoke__">with_capacity</span>(<span class="hljs-number">100</span>);<br>    v2.<span class="hljs-title function_ invoke__">extend</span>(<span class="hljs-number">0</span>..<span class="hljs-number">10</span>);<br>    v2.<span class="hljs-title function_ invoke__">reserve_exact</span>(<span class="hljs-number">5</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;reserve_exact(5) on cap=100: cap=&#123;&#125;&quot;</span>, v2.<span class="hljs-title function_ invoke__">capacity</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight routeros"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs routeros"><span class="hljs-attribute">len</span>=10, <span class="hljs-attribute">cap</span>=100<br>shrink_to_fit: <span class="hljs-attribute">len</span>=10, <span class="hljs-attribute">cap</span>=10<br>reserve(5): <span class="hljs-attribute">cap</span>=20<br>reserve_exact(5) on <span class="hljs-attribute">cap</span>=100: <span class="hljs-attribute">cap</span>=100<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>reserve(n)</code> 的参数是<strong>额外</strong>数量而非总量，这是一个常见误解。<code>reserve(5)</code> 在 <code>len=10</code> 时保证 <code>cap ≥ 15</code>，而不是把容量设为 5。<code>reserve_exact</code> 在当前容量已满足时不会收缩（输出中 <code>cap=100</code> 保持不变），仅在容量不足时才精确分配。</p>
+</blockquote>
+<h2 id="六、集合选择指南"><a href="#六、集合选择指南" class="headerlink" title="六、集合选择指南"></a>六、集合选择指南</h2><h3 id="6-1-决策依据与对比表"><a href="#6-1-决策依据与对比表" class="headerlink" title="6.1 决策依据与对比表"></a>6.1 决策依据与对比表</h3><p>选择集合时主要考量三个维度：<strong>访问模式</strong>（随机 vs 顺序 vs 范围）、<strong>操作位置</strong>（头部&#x2F;尾部&#x2F;任意位置）、<strong>Key 约束</strong>（<code>Hash + Eq</code> vs <code>Ord</code>）。</p>
+<p><strong>全集合操作复杂度总表：</strong></p>
+<table>
+<thead>
+<tr>
+<th>集合</th>
+<th>随机访问</th>
+<th>头部操作</th>
+<th>尾部操作</th>
+<th>任意插入</th>
+<th>查找</th>
+<th>有序</th>
+<th>范围查询</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Vec</code></td>
+<td>O(1)</td>
+<td>O(n)</td>
+<td>O(1) 均摊</td>
+<td>O(n)</td>
+<td>O(n)</td>
+<td>否</td>
+<td>否</td>
+</tr>
+<tr>
+<td><code>VecDeque</code></td>
+<td>O(1)</td>
+<td>O(1) 均摊</td>
+<td>O(1) 均摊</td>
+<td>O(n)</td>
+<td>O(n)</td>
+<td>否</td>
+<td>否</td>
+</tr>
+<tr>
+<td><code>LinkedList</code></td>
+<td>O(n)</td>
+<td>O(1)</td>
+<td>O(1)</td>
+<td>O(1)†</td>
+<td>O(n)</td>
+<td>否</td>
+<td>否</td>
+</tr>
+<tr>
+<td><code>HashMap</code></td>
+<td>—</td>
+<td>—</td>
+<td>O(1) 均摊</td>
+<td>—</td>
+<td>O(1) 均摊</td>
+<td>否</td>
+<td>否</td>
+</tr>
+<tr>
+<td><code>BTreeMap</code></td>
+<td>—</td>
+<td>—</td>
+<td>O(log n)</td>
+<td>—</td>
+<td>O(log n)</td>
+<td>是</td>
+<td>是</td>
+</tr>
+<tr>
+<td><code>HashSet</code></td>
+<td>—</td>
+<td>—</td>
+<td>O(1) 均摊</td>
+<td>—</td>
+<td>O(1) 均摊</td>
+<td>否</td>
+<td>否</td>
+</tr>
+<tr>
+<td><code>BTreeSet</code></td>
+<td>—</td>
+<td>—</td>
+<td>O(log n)</td>
+<td>—</td>
+<td>O(log n)</td>
+<td>是</td>
+<td>是</td>
+</tr>
+</tbody></table>
+<p>†<code>LinkedList</code> 任意位置插入需先遍历到目标位置 O(n)，游标 API（<code>nightly</code>）稳定后可 O(1) 就地插入。  </p>
+<p><strong>选型决策：</strong></p>
+<ol>
+<li><p><strong>需要键值对映射</strong> → 映射类</p>
+<ul>
+<li>需要有序遍历 &#x2F; 范围查询，或 Key 无法哈希（如浮点数）→ <code>BTreeMap</code></li>
+<li>只需点查询，Key 实现了 <code>Hash + Eq</code> → <code>HashMap</code>（首选，性能更优）</li>
+</ul>
+</li>
+<li><p><strong>需要唯一值集合</strong> → 集合类</p>
+<ul>
+<li>需要有序 &#x2F; 范围操作 → <code>BTreeSet</code></li>
+<li>只需成员判断 &#x2F; 集合运算 → <code>HashSet</code>（首选）</li>
+</ul>
+</li>
+<li><p><strong>需要序列（按顺序存储）</strong> → 序列类</p>
+<ul>
+<li>只在尾部追加，或需要随机索引 → <code>Vec</code>（首选）</li>
+<li>两端频繁操作（队列 &#x2F; 滑动窗口）→ <code>VecDeque</code></li>
+<li>需要 O(1) <code>append</code>&#x2F;<code>split_off</code>，且元素地址不能变动 → <code>LinkedList</code>（极少用）</li>
+</ul>
+</li>
+</ol>
+<blockquote>
+<p>经验法则：先选 <code>Vec</code> 和 <code>HashMap</code>。只有当性能分析或功能需求（有序性、范围查询、双端操作）明确要求时，才切换到其他类型。</p>
+</blockquote>
+<h2 id="七、实战：多集合协作——文本分析器"><a href="#七、实战：多集合协作——文本分析器" class="headerlink" title="七、实战：多集合协作——文本分析器"></a>七、实战：多集合协作——文本分析器</h2><h3 id="7-1-场景设计"><a href="#7-1-场景设计" class="headerlink" title="7.1 场景设计"></a>7.1 场景设计</h3><p>综合运用 <code>HashMap</code>、<code>HashSet</code>、<code>BTreeMap</code> 实现一个文本分析器：</p>
+<ol>
+<li><code>HashMap</code> + Entry API 统计词频</li>
+<li><code>HashSet</code> 过滤停用词</li>
+<li><code>BTreeMap</code> 按字母序输出完整词频表</li>
+</ol>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::collections::&#123;BTreeMap, HashMap, HashSet&#125;;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">analyze</span>&lt;<span class="hljs-symbol">&#x27;a</span>&gt;(text: &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span>, stop_words: &amp;HashSet&lt;&amp;<span class="hljs-type">str</span>&gt;) &#123;<br>    <span class="hljs-comment">// 1. 统计词频，跳过停用词</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">freq</span>: HashMap&lt;&amp;<span class="hljs-type">str</span>, <span class="hljs-type">u32</span>&gt; = HashMap::<span class="hljs-title function_ invoke__">new</span>();<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">word</span> <span class="hljs-keyword">in</span> text.<span class="hljs-title function_ invoke__">split_whitespace</span>() &#123;<br>        <span class="hljs-keyword">if</span> !stop_words.<span class="hljs-title function_ invoke__">contains</span>(word) &#123;<br>            *freq.<span class="hljs-title function_ invoke__">entry</span>(word).<span class="hljs-title function_ invoke__">or_insert</span>(<span class="hljs-number">0</span>) += <span class="hljs-number">1</span>;<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-comment">// 2. BTreeMap 按字母序输出完整词频表</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">sorted</span>: BTreeMap&lt;&amp;<span class="hljs-type">str</span>, <span class="hljs-type">u32</span>&gt; = freq.<span class="hljs-title function_ invoke__">iter</span>().<span class="hljs-title function_ invoke__">map</span>(|(&amp;k, &amp;v)| (k, v)).<span class="hljs-title function_ invoke__">collect</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;=== 完整词频（字母序）===&quot;</span>);<br>    <span class="hljs-keyword">for</span> (word, count) <span class="hljs-keyword">in</span> &amp;sorted &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  &#123;&#125;: &#123;&#125;&quot;</span>, word, count);<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">text</span> = <span class="hljs-string">&quot;rust is fast rust is safe safe code is good rust code is idiomatic&quot;</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">stop_words</span>: HashSet&lt;&amp;<span class="hljs-type">str</span>&gt; = [<span class="hljs-string">&quot;is&quot;</span>, <span class="hljs-string">&quot;a&quot;</span>, <span class="hljs-string">&quot;the&quot;</span>, <span class="hljs-string">&quot;and&quot;</span>].<span class="hljs-title function_ invoke__">into_iter</span>().<span class="hljs-title function_ invoke__">collect</span>();<br>    <span class="hljs-title function_ invoke__">analyze</span>(text, &amp;stop_words);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-section">=== 完整词频（字母序）===</span><br><span class="hljs-code">  code: 2</span><br><span class="hljs-code">  fast: 1</span><br><span class="hljs-code">  good: 1</span><br><span class="hljs-code">  idiomatic: 1</span><br><span class="hljs-code">  rust: 3</span><br><span class="hljs-code">  safe: 2</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>各步骤知识点对应：</strong></p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>使用的集合 &#x2F; API</th>
+<th>对应章节</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>词频统计</td>
+<td><code>HashMap</code> + Entry API</td>
+<td>二、2.1</td>
+</tr>
+<tr>
+<td>停用词过滤</td>
+<td><code>HashSet::contains</code></td>
+<td>三、3.1</td>
+</tr>
+<tr>
+<td>有序输出</td>
+<td><code>BTreeMap</code> 有序遍历</td>
+<td>二、2.2</td>
+</tr>
+<tr>
+<td>结果收集</td>
+<td><code>into_iter().collect()</code></td>
+<td>四、4.1</td>
+</tr>
+</tbody></table>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E9%9B%86%E5%90%88/" class="print-no-link">#集合</a>
+      
+        <a href="/tags/HashMap/" class="print-no-link">#HashMap</a>
+      
+        <a href="/tags/BTreeMap/" class="print-no-link">#BTreeMap</a>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E7%BB%93%E6%9E%84/" class="print-no-link">#数据结构</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/rust/std-env.html" title="[标准库] std::env 环境变量与进程信息介绍与实战">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">[标准库] std::env 环境变量与进程信息介绍与实战</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/build-rs.html" title="build.rs 构建脚本介绍与实战">
+                        <span class="hidden-mobile">build.rs 构建脚本介绍与实战</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

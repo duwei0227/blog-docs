@@ -1,0 +1,1270 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="asyncio 是 Python 标准库中用于编写单线程并发代码的框架，基于 async/await 语法，适用于 I&amp;#x2F;O 密集型场景（网络请求、文件读写、数据库查询等）。它的核心思想是：当一个任务在等待 I&amp;#x2F;O 时，不阻塞整个程序，而是切换到其他任务继续执行——就像一个服务员同时服务多桌客人，给某桌上菜后不是站在旁边等客人吃完，而是立即去服务下一桌。 一、同步 vs 异步：为">
+  
+  
+  
+  <title>Python asyncio 从入门到实践 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Python asyncio 从入门到实践"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-08 11:00" pubdate>
+          2026年5月8日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          18k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          151 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Python asyncio 从入门到实践</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p><code>asyncio</code> 是 Python 标准库中用于编写<strong>单线程并发代码</strong>的框架，基于 <code>async/await</code> 语法，适用于 I&#x2F;O 密集型场景（网络请求、文件读写、数据库查询等）。它的核心思想是：当一个任务在等待 I&#x2F;O 时，不阻塞整个程序，而是切换到其他任务继续执行——就像一个服务员同时服务多桌客人，给某桌上菜后不是站在旁边等客人吃完，而是立即去服务下一桌。</p>
+<h2 id="一、同步-vs-异步：为什么需要-asyncio"><a href="#一、同步-vs-异步：为什么需要-asyncio" class="headerlink" title="一、同步 vs 异步：为什么需要 asyncio"></a>一、同步 vs 异步：为什么需要 asyncio</h2><p>理解 asyncio 的价值，最直接的方式是对比同步和异步代码在 I&#x2F;O 密集型场景下的性能差异。</p>
+<h3 id="1-1-同步代码的瓶颈"><a href="#1-1-同步代码的瓶颈" class="headerlink" title="1.1 同步代码的瓶颈"></a>1.1 同步代码的瓶颈</h3><p>模拟同时获取三份远程数据（用 <code>time.sleep</code> 模拟网络延迟）：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> time<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">fetch_data_sync</span>(<span class="hljs-params">name, delay</span>):<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;开始获取 <span class="hljs-subst">&#123;name&#125;</span>...&quot;</span>)<br>    time.sleep(delay)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">&#123;name&#125;</span> 获取完成&quot;</span>)<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">f&quot;<span class="hljs-subst">&#123;name&#125;</span> 的数据&quot;</span><br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">main_sync</span>():<br>    start = time.perf_counter()<br>    results = []<br>    results.append(fetch_data_sync(<span class="hljs-string">&quot;用户信息&quot;</span>, <span class="hljs-number">1</span>))<br>    results.append(fetch_data_sync(<span class="hljs-string">&quot;订单列表&quot;</span>, <span class="hljs-number">1</span>))<br>    results.append(fetch_data_sync(<span class="hljs-string">&quot;商品详情&quot;</span>, <span class="hljs-number">1</span>))<br>    elapsed = time.perf_counter() - start<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;\n同步总耗时：<span class="hljs-subst">&#123;elapsed:<span class="hljs-number">.2</span>f&#125;</span> 秒&quot;</span>)<br><br>main_sync()<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs erlang">开始获取 用户信息...<br>用户信息 获取完成<br>开始获取 订单列表...<br>订单列表 获取完成<br>开始获取 商品详情...<br>商品详情 获取完成<br><br>同步总耗时：<span class="hljs-number">3.00</span> 秒<br></code></pre></td></tr></table></figure>
+
+<p>三个任务串行执行，总耗时 &#x3D; 各任务耗时之和。</p>
+<h3 id="1-2-asyncio-并发版本"><a href="#1-2-asyncio-并发版本" class="headerlink" title="1.2 asyncio 并发版本"></a>1.2 asyncio 并发版本</h3><figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><span class="hljs-keyword">import</span> time<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">fetch_data_async</span>(<span class="hljs-params">name, delay</span>):<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;开始获取 <span class="hljs-subst">&#123;name&#125;</span>...&quot;</span>)<br>    <span class="hljs-keyword">await</span> asyncio.sleep(delay)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">&#123;name&#125;</span> 获取完成&quot;</span>)<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">f&quot;<span class="hljs-subst">&#123;name&#125;</span> 的数据&quot;</span><br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main_async</span>():<br>    start = time.perf_counter()<br>    results = <span class="hljs-keyword">await</span> asyncio.gather(<br>        fetch_data_async(<span class="hljs-string">&quot;用户信息&quot;</span>, <span class="hljs-number">1</span>),<br>        fetch_data_async(<span class="hljs-string">&quot;订单列表&quot;</span>, <span class="hljs-number">1</span>),<br>        fetch_data_async(<span class="hljs-string">&quot;商品详情&quot;</span>, <span class="hljs-number">1</span>),<br>    )<br>    elapsed = time.perf_counter() - start<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;\nasyncio 总耗时：<span class="hljs-subst">&#123;elapsed:<span class="hljs-number">.2</span>f&#125;</span> 秒&quot;</span>)<br><br>asyncio.run(main_async())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs erlang">开始获取 用户信息...<br>开始获取 订单列表...<br>开始获取 商品详情...<br>用户信息 获取完成<br>订单列表 获取完成<br>商品详情 获取完成<br><br>asyncio 总耗时：<span class="hljs-number">1.00</span> 秒<br></code></pre></td></tr></table></figure>
+
+<p>三个任务并发执行，总耗时 ≈ 最慢那个任务的耗时。</p>
+<h3 id="1-3-适用场景对比"><a href="#1-3-适用场景对比" class="headerlink" title="1.3 适用场景对比"></a>1.3 适用场景对比</h3><table>
+<thead>
+<tr>
+<th>并发模型</th>
+<th>适用场景</th>
+<th>GIL 影响</th>
+<th>内存开销</th>
+<th>编程复杂度</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>asyncio</code></td>
+<td>大量 I&#x2F;O 等待（网络、数据库）</td>
+<td>无影响（单线程）</td>
+<td>极低</td>
+<td>中（需 async&#x2F;await）</td>
+</tr>
+<tr>
+<td><code>threading</code></td>
+<td>I&#x2F;O 密集，调用同步库</td>
+<td>受限</td>
+<td>中（每线程约 8MB）</td>
+<td>低</td>
+</tr>
+<tr>
+<td><code>multiprocessing</code></td>
+<td>CPU 密集型计算</td>
+<td>绕过 GIL</td>
+<td>高（独立内存空间）</td>
+<td>高</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><code>asyncio</code> 不适合 CPU 密集型任务（图像处理、数值计算等），因为它是单线程的，CPU 密集任务会阻塞整个事件循环。CPU 密集型场景请使用 <code>multiprocessing</code> 或 <code>concurrent.futures.ProcessPoolExecutor</code>。</p>
+</blockquote>
+<h2 id="二、什么是-asyncio"><a href="#二、什么是-asyncio" class="headerlink" title="二、什么是 asyncio"></a>二、什么是 asyncio</h2><h3 id="2-1-事件循环（Event-Loop）"><a href="#2-1-事件循环（Event-Loop）" class="headerlink" title="2.1 事件循环（Event Loop）"></a>2.1 事件循环（Event Loop）</h3><p>事件循环是 asyncio 的核心，是一个持续运行的循环，负责：</p>
+<ol>
+<li>管理所有协程和任务的调度</li>
+<li>监听 I&#x2F;O 事件（网络、文件）</li>
+<li>当某个任务遇到 <code>await</code> 时，暂停该任务并切换到其他就绪任务</li>
+<li>当 I&#x2F;O 完成后，将对应任务标记为就绪并恢复执行</li>
+</ol>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs css">事件循环工作流：<br><br> ┌──────────────────────────────────┐<br> │           事件循环                │<br> │  ┌────────┐   ┌────────┐        │<br> │  │ 任务 <span class="hljs-selector-tag">A</span> │   │ 任务 <span class="hljs-selector-tag">B</span> │  ...   │<br> │  └────┬───┘   └────┬───┘        │<br> │       │ await       │ await      │<br> │       ▼             ▼            │<br> │   等待 <span class="hljs-selector-tag">I</span>/O      等待 <span class="hljs-selector-tag">I</span>/O         │<br> │       │  完成后恢复  │            │<br> └───────┴─────────────┴────────────┘<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-2-协程（Coroutine）"><a href="#2-2-协程（Coroutine）" class="headerlink" title="2.2 协程（Coroutine）"></a>2.2 协程（Coroutine）</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">函数名</span>(<span class="hljs-params">参数, ...</span>):<br>    result = <span class="hljs-keyword">await</span> 可等待对象<br>    <span class="hljs-keyword">return</span> result<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li><code>async def</code>：声明协程函数，调用后返回协程对象，不立即执行</li>
+<li><code>await</code>：挂起当前协程，将控制权交给事件循环；右侧只能是可等待对象（协程、Task、Future）</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">greet</span>(<span class="hljs-params">name</span>):<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Hello, <span class="hljs-subst">&#123;name&#125;</span>!&quot;</span>)<br>    <span class="hljs-keyword">await</span> asyncio.sleep(<span class="hljs-number">0</span>)   <span class="hljs-comment"># 让出控制权，允许其他协程运行</span><br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;Goodbye, <span class="hljs-subst">&#123;name&#125;</span>!&quot;</span>)<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">f&quot;greeted <span class="hljs-subst">&#123;name&#125;</span>&quot;</span><br><br>result = asyncio.run(greet(<span class="hljs-string">&quot;asyncio&quot;</span>))<br><span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;返回值：<span class="hljs-subst">&#123;result&#125;</span>&quot;</span>)<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight autohotkey"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs autohotkey"><span class="hljs-built_in">Hello,</span> asyncio!<br><span class="hljs-built_in">Goodbye,</span> asyncio!<br>返回值：greeted asyncio<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>直接调用 <code>greet(&quot;asyncio&quot;)</code> 只会得到一个协程对象，<strong>不会执行任何代码</strong>。必须用 <code>asyncio.run()</code> 或 <code>await</code> 才能驱动它执行。</p>
+</blockquote>
+<h3 id="2-3-三种可等待对象（Awaitable）"><a href="#2-3-三种可等待对象（Awaitable）" class="headerlink" title="2.3 三种可等待对象（Awaitable）"></a>2.3 三种可等待对象（Awaitable）</h3><p><code>await</code> 右侧只能是以下三种对象：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>说明</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>协程（Coroutine）</strong></td>
+<td><code>async def</code> 函数的返回值</td>
+<td><code>await fetch_data()</code></td>
+</tr>
+<tr>
+<td><strong>任务（Task）</strong></td>
+<td>被事件循环调度的协程包装</td>
+<td><code>await asyncio.create_task(coro())</code></td>
+</tr>
+<tr>
+<td><strong>Future</strong></td>
+<td>低级别的异步结果占位符</td>
+<td>通常由框架内部使用</td>
+</tr>
+</tbody></table>
+<h2 id="三、运行协程"><a href="#三、运行协程" class="headerlink" title="三、运行协程"></a>三、运行协程</h2><h3 id="3-1-asyncio-run"><a href="#3-1-asyncio-run" class="headerlink" title="3.1 asyncio.run()"></a>3.1 asyncio.run()</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">asyncio.run(coro, *, debug=<span class="hljs-literal">False</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<ul>
+<li><code>coro</code>：入口协程对象；不能是已运行或已完成的协程</li>
+<li><code>debug</code>：是否启用调试模式，默认 <code>False</code>；启用后事件循环会记录慢回调（&gt;100ms）、未关闭的协程等</li>
+</ul>
+<p><code>asyncio.run()</code> 是运行异步程序的标准入口（Python 3.7+），它会：</p>
+<ol>
+<li>创建一个新的事件循环</li>
+<li>运行传入的协程直到完成</li>
+<li>关闭事件循环并清理资源</li>
+</ol>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;程序开始&quot;</span>)<br>    <span class="hljs-keyword">await</span> asyncio.sleep(<span class="hljs-number">1</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;程序结束&quot;</span>)<br><br>asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>每个程序只应调用一次 <code>asyncio.run()</code>，且只在顶层使用。不要在协程内部嵌套调用 <code>asyncio.run()</code>。</p>
+</blockquote>
+<h3 id="3-2-asyncio-sleep"><a href="#3-2-asyncio-sleep" class="headerlink" title="3.2 asyncio.sleep()"></a>3.2 asyncio.sleep()</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">await</span> asyncio.sleep(delay, result=<span class="hljs-literal">None</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<ul>
+<li><code>delay</code>：挂起的秒数，可为浮点数；传 <code>0</code> 仅让出控制权而不实际等待</li>
+<li><code>result</code>：协程完成后的返回值，默认 <code>None</code></li>
+</ul>
+<p><code>asyncio.sleep(seconds)</code> 是非阻塞版的 <code>time.sleep()</code>，它让当前协程暂停指定时间，同时<strong>将控制权交还给事件循环</strong>，让其他任务得以运行。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">task</span>(<span class="hljs-params">name, delay</span>):<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">&#123;name&#125;</span> 开始&quot;</span>)<br>    <span class="hljs-keyword">await</span> asyncio.sleep(delay)   <span class="hljs-comment"># 非阻塞等待</span><br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">&#123;name&#125;</span> 结束&quot;</span>)<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    <span class="hljs-comment"># 两个任务交替执行</span><br>    <span class="hljs-keyword">await</span> asyncio.gather(task(<span class="hljs-string">&quot;A&quot;</span>, <span class="hljs-number">1</span>), task(<span class="hljs-string">&quot;B&quot;</span>, <span class="hljs-number">2</span>))<br><br>asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs css"><span class="hljs-selector-tag">A</span> 开始<br><span class="hljs-selector-tag">B</span> 开始<br><span class="hljs-selector-tag">A</span> 结束<br><span class="hljs-selector-tag">B</span> 结束<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>await asyncio.sleep(0)</code> 是一个常用技巧，等待时间为 0 但仍然让出控制权，用于主动将 CPU 交还给事件循环。</p>
+</blockquote>
+<h2 id="四、并发任务"><a href="#四、并发任务" class="headerlink" title="四、并发任务"></a>四、并发任务</h2><h3 id="4-1-asyncio-create-task"><a href="#4-1-asyncio-create-task" class="headerlink" title="4.1 asyncio.create_task()"></a>4.1 asyncio.create_task()</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">task = asyncio.create_task(coro, *, name=<span class="hljs-literal">None</span>, context=<span class="hljs-literal">None</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<ul>
+<li><code>coro</code>：要调度的协程对象</li>
+<li><code>name</code>：任务名称，用于调试（可通过 <code>task.get_name()</code> 读取），默认自动生成 <code>Task-N</code></li>
+<li><code>context</code>：<code>contextvars.Context</code> 实例，指定任务运行的上下文变量环境；默认复制当前上下文</li>
+</ul>
+<p><code>create_task()</code> 将协程包装为 <code>Task</code> 对象并<strong>立即提交给事件循环调度</strong>，不需要等待当前协程挂起。多个 <code>create_task()</code> 调用后，这些任务会并发执行。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><span class="hljs-keyword">import</span> time<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">worker</span>(<span class="hljs-params">name, delay</span>):<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;[<span class="hljs-subst">&#123;name&#125;</span>] 开始，延迟 <span class="hljs-subst">&#123;delay&#125;</span>s&quot;</span>)<br>    <span class="hljs-keyword">await</span> asyncio.sleep(delay)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;[<span class="hljs-subst">&#123;name&#125;</span>] 完成&quot;</span>)<br>    <span class="hljs-keyword">return</span> name<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    start = time.perf_counter()<br><br>    task_a = asyncio.create_task(worker(<span class="hljs-string">&quot;A&quot;</span>, <span class="hljs-number">2</span>))<br>    task_b = asyncio.create_task(worker(<span class="hljs-string">&quot;B&quot;</span>, <span class="hljs-number">1</span>))<br>    task_c = asyncio.create_task(worker(<span class="hljs-string">&quot;C&quot;</span>, <span class="hljs-number">3</span>))<br><br>    results = <span class="hljs-keyword">await</span> asyncio.gather(task_a, task_b, task_c)<br>    elapsed = time.perf_counter() - start<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;\n结果：<span class="hljs-subst">&#123;results&#125;</span>&quot;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;总耗时：<span class="hljs-subst">&#123;elapsed:<span class="hljs-number">.2</span>f&#125;</span> 秒（非 6 秒）&quot;</span>)<br><br>asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs css"><span class="hljs-selector-attr">[A]</span> 开始，延迟 <span class="hljs-number">2s</span><br><span class="hljs-selector-attr">[B]</span> 开始，延迟 <span class="hljs-number">1s</span><br><span class="hljs-selector-attr">[C]</span> 开始，延迟 <span class="hljs-number">3s</span><br><span class="hljs-selector-attr">[B]</span> 完成<br><span class="hljs-selector-attr">[A]</span> 完成<br><span class="hljs-selector-attr">[C]</span> 完成<br><br>结果：<span class="hljs-selector-attr">[<span class="hljs-string">&#x27;A&#x27;</span>, <span class="hljs-string">&#x27;B&#x27;</span>, <span class="hljs-string">&#x27;C&#x27;</span>]</span><br>总耗时：<span class="hljs-number">3.00</span> 秒（非 <span class="hljs-number">6</span> 秒）<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-2-asyncio-gather"><a href="#4-2-asyncio-gather" class="headerlink" title="4.2 asyncio.gather()"></a>4.2 asyncio.gather()</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">results = <span class="hljs-keyword">await</span> asyncio.gather(*aws, return_exceptions=<span class="hljs-literal">False</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<ul>
+<li><code>*aws</code>：一个或多个协程、Task 或 Future；传入裸协程时自动包装为 Task</li>
+<li><code>return_exceptions</code>：<ul>
+<li><code>False</code>（默认）：任意一个抛出异常时立即向调用方传播，其余任务<strong>不会</strong>被自动取消</li>
+<li><code>True</code>：将异常作为普通结果收集到返回列表，不中断其他任务</li>
+</ul>
+</li>
+</ul>
+<p><code>asyncio.gather(*coros_or_tasks)</code> 并发运行多个协程或任务，<strong>按照传入顺序返回结果列表</strong>（与完成顺序无关）。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">fetch</span>(<span class="hljs-params">url_id, delay</span>):<br>    <span class="hljs-keyword">await</span> asyncio.sleep(delay)<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">f&quot;url_<span class="hljs-subst">&#123;url_id&#125;</span> 的响应&quot;</span><br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    <span class="hljs-comment"># 同时发起 3 个&quot;请求&quot;</span><br>    results = <span class="hljs-keyword">await</span> asyncio.gather(<br>        fetch(<span class="hljs-number">1</span>, <span class="hljs-number">3</span>),<br>        fetch(<span class="hljs-number">2</span>, <span class="hljs-number">1</span>),<br>        fetch(<span class="hljs-number">3</span>, <span class="hljs-number">2</span>),<br>    )<br>    <span class="hljs-comment"># 结果顺序与参数顺序一致，而非完成顺序</span><br>    <span class="hljs-keyword">for</span> r <span class="hljs-keyword">in</span> results:<br>        <span class="hljs-built_in">print</span>(r)<br><br>asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc">url<span class="hljs-emphasis">_1 的响应</span><br><span class="hljs-emphasis">url_2 的响应</span><br><span class="hljs-emphasis">url_</span>3 的响应<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-3-asyncio-wait"><a href="#4-3-asyncio-wait" class="headerlink" title="4.3 asyncio.wait()"></a>4.3 asyncio.wait()</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">done, pending = <span class="hljs-keyword">await</span> asyncio.wait(aws, *, timeout=<span class="hljs-literal">None</span>, return_when=asyncio.ALL_COMPLETED)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<ul>
+<li><code>aws</code>：Task 或 Future 的集合；<strong>不接受裸协程</strong>，需先用 <code>create_task()</code> 包装</li>
+<li><code>timeout</code>：最长等待秒数；超时后直接返回当前 <code>done</code> &#x2F; <code>pending</code>，未完成任务<strong>不会</strong>被取消；默认 <code>None</code>（无限等待）</li>
+<li><code>return_when</code>：返回时机，枚举值：<ul>
+<li><code>asyncio.ALL_COMPLETED</code>（默认）：全部完成（或抛出异常）后返回</li>
+<li><code>asyncio.FIRST_COMPLETED</code>：第一个完成或取消后立即返回</li>
+<li><code>asyncio.FIRST_EXCEPTION</code>：第一个抛出异常后返回；若无异常等同于 <code>ALL_COMPLETED</code></li>
+</ul>
+</li>
+</ul>
+<p>与 <code>gather()</code> 的关键区别：返回 <code>(done, pending)</code> 两个集合，让你可以分别处理已完成和仍在运行的任务，也不会自动传播异常。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">task</span>(<span class="hljs-params">name, delay</span>):<br>    <span class="hljs-keyword">await</span> asyncio.sleep(delay)<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">f&quot;<span class="hljs-subst">&#123;name&#125;</span> done&quot;</span><br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    tasks = &#123;<br>        asyncio.create_task(task(<span class="hljs-string">&quot;fast&quot;</span>, <span class="hljs-number">1</span>), name=<span class="hljs-string">&quot;fast&quot;</span>),<br>        asyncio.create_task(task(<span class="hljs-string">&quot;medium&quot;</span>, <span class="hljs-number">2</span>), name=<span class="hljs-string">&quot;medium&quot;</span>),<br>        asyncio.create_task(task(<span class="hljs-string">&quot;slow&quot;</span>, <span class="hljs-number">3</span>), name=<span class="hljs-string">&quot;slow&quot;</span>),<br>    &#125;<br><br>    done, pending = <span class="hljs-keyword">await</span> asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)<br><br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;已完成：&quot;</span>)<br>    <span class="hljs-keyword">for</span> t <span class="hljs-keyword">in</span> done:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;  <span class="hljs-subst">&#123;t.get_name()&#125;</span>: <span class="hljs-subst">&#123;t.result()&#125;</span>&quot;</span>)<br><br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;未完成：&quot;</span>)<br>    <span class="hljs-keyword">for</span> t <span class="hljs-keyword">in</span> pending:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;  <span class="hljs-subst">&#123;t.get_name()&#125;</span>&quot;</span>)<br>        t.cancel()<br><br>asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs bash">已完成：<br>  fast: fast <span class="hljs-keyword">done</span><br>未完成：<br>  medium<br>  slow<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-4-asyncio-TaskGroup（Python-3-11-）"><a href="#4-4-asyncio-TaskGroup（Python-3-11-）" class="headerlink" title="4.4 asyncio.TaskGroup（Python 3.11+）"></a>4.4 asyncio.TaskGroup（Python 3.11+）</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">async</span> <span class="hljs-keyword">with</span> asyncio.TaskGroup() <span class="hljs-keyword">as</span> tg:<br>    task = tg.create_task(coro, *, name=<span class="hljs-literal">None</span>, context=<span class="hljs-literal">None</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<ul>
+<li><code>tg.create_task()</code> 参数与 <code>asyncio.create_task()</code> 相同（<code>coro</code>、<code>name</code>、<code>context</code>）</li>
+<li>退出 <code>async with</code> 块时自动等待组内所有任务完成；任意任务抛出异常则立即取消其余任务，所有异常汇总为 <code>ExceptionGroup</code> 向外传播</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">step</span>(<span class="hljs-params">name, delay, fail=<span class="hljs-literal">False</span></span>):<br>    <span class="hljs-keyword">await</span> asyncio.sleep(delay)<br>    <span class="hljs-keyword">if</span> fail:<br>        <span class="hljs-keyword">raise</span> ValueError(<span class="hljs-string">f&quot;<span class="hljs-subst">&#123;name&#125;</span> 出错了&quot;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">&#123;name&#125;</span> 完成&quot;</span>)<br>    <span class="hljs-keyword">return</span> name<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    <span class="hljs-keyword">try</span>:<br>        <span class="hljs-keyword">async</span> <span class="hljs-keyword">with</span> asyncio.TaskGroup() <span class="hljs-keyword">as</span> tg:<br>            t1 = tg.create_task(step(<span class="hljs-string">&quot;任务1&quot;</span>, <span class="hljs-number">1</span>))<br>            t2 = tg.create_task(step(<span class="hljs-string">&quot;任务2&quot;</span>, <span class="hljs-number">0.5</span>, fail=<span class="hljs-literal">True</span>))<br>            t3 = tg.create_task(step(<span class="hljs-string">&quot;任务3&quot;</span>, <span class="hljs-number">2</span>))<br>    <span class="hljs-keyword">except</span>* ValueError <span class="hljs-keyword">as</span> eg:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;捕获到异常组：<span class="hljs-subst">&#123;eg.exceptions&#125;</span>&quot;</span>)<br><br>asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs stylus">捕获到异常组：(<span class="hljs-built_in">ValueError</span>(<span class="hljs-string">&#x27;任务2 出错了&#x27;</span>),)<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>except*</code> 是 Python 3.11 引入的异常组捕获语法，配合 <code>TaskGroup</code> 使用。<code>TaskGroup</code> 推荐作为 <code>gather()</code> 的现代替代品，错误处理更清晰。</p>
+</blockquote>
+<h3 id="4-5-四种方式对比与选型"><a href="#4-5-四种方式对比与选型" class="headerlink" title="4.5 四种方式对比与选型"></a>4.5 四种方式对比与选型</h3><table>
+<thead>
+<tr>
+<th></th>
+<th><code>create_task()</code></th>
+<th><code>gather()</code></th>
+<th><code>wait()</code></th>
+<th><code>TaskGroup</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>Python 版本</strong></td>
+<td>3.7+</td>
+<td>3.7+</td>
+<td>3.7+</td>
+<td>3.11+</td>
+</tr>
+<tr>
+<td><strong>返回值</strong></td>
+<td>单个 <code>Task</code> 对象</td>
+<td>按入参顺序的结果列表</td>
+<td><code>(done, pending)</code> 两个集合</td>
+<td>通过各 task 对象获取</td>
+</tr>
+<tr>
+<td><strong>结果顺序</strong></td>
+<td>不保证</td>
+<td>与入参顺序一致</td>
+<td>不保证</td>
+<td>不保证</td>
+</tr>
+<tr>
+<td><strong>异常处理</strong></td>
+<td>需手动 <code>await task</code></td>
+<td>默认立即传播；<code>return_exceptions=True</code> 可收集</td>
+<td>不自动传播，需手动检查</td>
+<td>兄弟任务自动取消，<code>ExceptionGroup</code> 统一抛出</td>
+</tr>
+<tr>
+<td><strong>部分完成控制</strong></td>
+<td>❌</td>
+<td>❌</td>
+<td>✅（<code>FIRST_COMPLETED</code>）</td>
+<td>❌</td>
+</tr>
+<tr>
+<td><strong>自动取消兄弟任务</strong></td>
+<td>❌</td>
+<td>❌</td>
+<td>❌</td>
+<td>✅</td>
+</tr>
+<tr>
+<td><strong>典型用途</strong></td>
+<td>后台任务、fire-and-forget</td>
+<td>并发请求、需要有序结果</td>
+<td>竞速（取最快结果）、超时降级</td>
+<td>结构化并发、任一失败全部回滚</td>
+</tr>
+</tbody></table>
+<p><strong>选型建议：</strong></p>
+<ul>
+<li><strong>需要有序结果、任务数固定</strong> → 用 <code>gather()</code>，一行代码搞定，结果与入参顺序对齐。</li>
+<li><strong>只需拿最快那个结果</strong>（竞速），或想在等待过程中做其他事 → 用 <code>wait(FIRST_COMPLETED)</code>，取到结果后手动 <code>cancel()</code> 剩余任务。</li>
+<li><strong>Python 3.11+，任一子任务失败应让整批任务回滚</strong> → 用 <code>TaskGroup</code>，错误边界清晰，推荐作为 <code>gather()</code> 的现代替代。</li>
+<li><strong>长期后台任务</strong>（不需要立刻等待其完成） → 用 <code>create_task()</code> 提交后继续执行，在合适时机再 <code>await</code> 或 <code>cancel()</code>。</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># 竞速示例：取最快完成的结果，其余取消</span><br><span class="hljs-keyword">import</span> asyncio<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">race</span>(<span class="hljs-params">*coros</span>):<br>    tasks = &#123;asyncio.create_task(c) <span class="hljs-keyword">for</span> c <span class="hljs-keyword">in</span> coros&#125;<br>    done, pending = <span class="hljs-keyword">await</span> asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)<br>    <span class="hljs-keyword">for</span> t <span class="hljs-keyword">in</span> pending:<br>        t.cancel()<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">next</span>(<span class="hljs-built_in">iter</span>(done)).result()<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    result = <span class="hljs-keyword">await</span> race(<br>        asyncio.sleep(<span class="hljs-number">3</span>, result=<span class="hljs-string">&quot;慢&quot;</span>),<br>        asyncio.sleep(<span class="hljs-number">1</span>, result=<span class="hljs-string">&quot;快&quot;</span>),<br>        asyncio.sleep(<span class="hljs-number">2</span>, result=<span class="hljs-string">&quot;中&quot;</span>),<br>    )<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;最先完成：<span class="hljs-subst">&#123;result&#125;</span>&quot;</span>)<br><br>asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">最先完成：快<br></code></pre></td></tr></table></figure>
+
+
+
+<h2 id="五、超时与取消"><a href="#五、超时与取消" class="headerlink" title="五、超时与取消"></a>五、超时与取消</h2><h3 id="5-1-asyncio-timeout-（Python-3-11-）"><a href="#5-1-asyncio-timeout-（Python-3-11-）" class="headerlink" title="5.1 asyncio.timeout()（Python 3.11+）"></a>5.1 asyncio.timeout()（Python 3.11+）</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># Python 3.11+</span><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">with</span> asyncio.timeout(delay):<br>    ...<br><br><span class="hljs-comment"># Python 3.7+（兼容写法）</span><br>result = <span class="hljs-keyword">await</span> asyncio.wait_for(aw, timeout)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<ul>
+<li><code>delay</code> &#x2F; <code>timeout</code>：超时秒数，浮点数；<code>None</code> 表示不设超时上限</li>
+<li>超时后：<ul>
+<li><code>asyncio.timeout</code> 抛出内置 <code>TimeoutError</code></li>
+<li><code>asyncio.wait_for</code> 抛出 <code>asyncio.TimeoutError</code>（<code>TimeoutError</code> 的子类）；被等待的任务会被自动取消</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">slow_operation</span>():<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;开始耗时操作...&quot;</span>)<br>    <span class="hljs-keyword">await</span> asyncio.sleep(<span class="hljs-number">5</span>)<br>    <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;完成&quot;</span><br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    <span class="hljs-comment"># 方式一：asyncio.timeout() 上下文管理器（推荐，3.11+）</span><br>    <span class="hljs-keyword">try</span>:<br>        <span class="hljs-keyword">async</span> <span class="hljs-keyword">with</span> asyncio.timeout(<span class="hljs-number">2</span>):<br>            result = <span class="hljs-keyword">await</span> slow_operation()<br>    <span class="hljs-keyword">except</span> TimeoutError:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;操作超时（asyncio.timeout）&quot;</span>)<br><br>    <span class="hljs-comment"># 方式二：asyncio.wait_for()（兼容 3.7+）</span><br>    <span class="hljs-keyword">try</span>:<br>        result = <span class="hljs-keyword">await</span> asyncio.wait_for(slow_operation(), timeout=<span class="hljs-number">2</span>)<br>    <span class="hljs-keyword">except</span> asyncio.TimeoutError:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;操作超时（wait_for）&quot;</span>)<br><br>asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs erlang">开始耗时操作...<br>操作超时（asyncio.timeout）<br>开始耗时操作...<br>操作超时（wait_for）<br></code></pre></td></tr></table></figure>
+
+<h3 id="5-2-Task-取消"><a href="#5-2-Task-取消" class="headerlink" title="5.2 Task 取消"></a>5.2 Task 取消</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python">task.cancel(msg=<span class="hljs-literal">None</span>)<br><span class="hljs-keyword">await</span> task<br>task.cancelled()<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<ul>
+<li><code>task.cancel(msg)</code> — 向任务投递取消请求：<ul>
+<li><code>msg</code>：附加到 <code>CancelledError</code> 的消息字符串（Python 3.9+），默认 <code>None</code></li>
+<li>返回 <code>True</code> 表示请求已成功投递（任务尚未完成）；<code>False</code> 表示任务已完成，取消无效</li>
+</ul>
+</li>
+<li><code>await task</code> — 等待任务真正结束并重新抛出 <code>CancelledError</code>；应始终与 <code>task.cancel()</code> 成对使用</li>
+<li><code>task.cancelled()</code> — 任务被成功取消后返回 <code>True</code></li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">long_task</span>():<br>    <span class="hljs-keyword">try</span>:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;长任务：开始&quot;</span>)<br>        <span class="hljs-keyword">await</span> asyncio.sleep(<span class="hljs-number">10</span>)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;长任务：完成&quot;</span>)<br>    <span class="hljs-keyword">except</span> asyncio.CancelledError:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;长任务：被取消，执行清理...&quot;</span>)<br>        <span class="hljs-keyword">raise</span>  <span class="hljs-comment"># 必须重新抛出，让取消机制正常工作</span><br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    task = asyncio.create_task(long_task())<br>    <span class="hljs-keyword">await</span> asyncio.sleep(<span class="hljs-number">1</span>)<br>    task.cancel()<br>    <span class="hljs-keyword">try</span>:<br>        <span class="hljs-keyword">await</span> task<br>    <span class="hljs-keyword">except</span> asyncio.CancelledError:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;主函数：确认任务已取消&quot;</span>)<br><br>asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight erlang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs erlang">长任务：开始<br>长任务：被取消，执行清理...<br>主函数：确认任务已取消<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>task.cancel()</code> 只是向事件循环<strong>投递一个取消请求</strong>，调用后立即返回，任务并未真正停止。紧随其后的 <code>await task</code> 有三个作用：</p>
+<ol>
+<li>将控制权交还事件循环，让它把 <code>CancelledError</code> 注入任务；</li>
+<li>等待任务的清理代码（<code>except CancelledError</code> 块）执行完毕；</li>
+<li>确认取消结果——若任务捕获了 <code>CancelledError</code> 但未重新 <code>raise</code>，<code>await task</code> 会正常返回而非抛出异常，表明取消被拒绝。</li>
+</ol>
+<p>因此 <code>task.cancel()</code> 与 <code>await task</code> 应始终成对使用：前者发出信号，后者等待确认。</p>
+</blockquote>
+<blockquote>
+<p>捕获 <code>CancelledError</code> 后<strong>必须重新 <code>raise</code></strong>，否则取消操作不会传播，任务会被认为正常完成。</p>
+</blockquote>
+<p><strong>取消对外部 I&#x2F;O 的局限性</strong></p>
+<p><code>task.cancel()</code> 的本质是在下一个 <code>await</code> 处注入 <code>CancelledError</code>，同时关闭本地 socket 连接。但它<strong>无法撤回已经发出的请求</strong>：</p>
+<figure class="highlight gradle"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs gradle">客户端                          服务端<br>  │──── POST <span class="hljs-regexp">/api/</span>pay ─────────►│<br>  │                              │（服务端开始处理）<br>  │  <span class="hljs-keyword">task</span>.cancel()               │<br>  │  本地 socket 关闭 ◄──────────│<br>  │                              │（服务端继续处理，<br>  │                              │  支付可能仍然成功）<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>取消后的实际行为</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>await</code> 之后的代码</td>
+<td>不会执行</td>
+</tr>
+<tr>
+<td>本地 socket</td>
+<td>已关闭 &#x2F; 中止</td>
+</tr>
+<tr>
+<td>已发送到服务端的字节</td>
+<td>服务端照常处理</td>
+</tr>
+<tr>
+<td>服务端的副作用</td>
+<td>无法通过取消回滚</td>
+</tr>
+</tbody></table>
+<p>对于有副作用的操作（支付、写入、发送邮件），取消只保证<strong>本地协程停止等待</strong>，不保证服务端回滚。需要服务端配合幂等设计或补偿事务才能真正”撤销”。</p>
+<h2 id="六、同步原语"><a href="#六、同步原语" class="headerlink" title="六、同步原语"></a>六、同步原语</h2><h3 id="6-1-asyncio-Lock"><a href="#6-1-asyncio-Lock" class="headerlink" title="6.1 asyncio.Lock"></a>6.1 asyncio.Lock</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs python">lock = asyncio.Lock()<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">with</span> lock:         <span class="hljs-comment"># 推荐：自动 acquire / release</span><br>    ...<br><br><span class="hljs-keyword">await</span> lock.acquire()     <span class="hljs-comment"># 手动获取；锁被持有时阻塞</span><br>lock.release()           <span class="hljs-comment"># 手动释放；未持有时抛出 RuntimeError</span><br>lock.locked()            <span class="hljs-comment"># 返回锁当前是否被持有（bool）</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong> 构造函数无参数。</p>
+<p><code>Lock</code> 保证同一时刻只有一个协程持有锁，用于保护共享资源。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><br>counter = <span class="hljs-number">0</span><br>lock = asyncio.Lock()<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">increment</span>(<span class="hljs-params">name, n</span>):<br>    <span class="hljs-keyword">global</span> counter<br>    <span class="hljs-keyword">for</span> _ <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n):<br>        <span class="hljs-keyword">async</span> <span class="hljs-keyword">with</span> lock:<br>            current = counter<br>            <span class="hljs-keyword">await</span> asyncio.sleep(<span class="hljs-number">0</span>)   <span class="hljs-comment"># 模拟读写间隙</span><br>            counter = current + <span class="hljs-number">1</span><br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">&#123;name&#125;</span> 完成，当前 counter = <span class="hljs-subst">&#123;counter&#125;</span>&quot;</span>)<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    <span class="hljs-keyword">await</span> asyncio.gather(<br>        increment(<span class="hljs-string">&quot;协程A&quot;</span>, <span class="hljs-number">5</span>),<br>        increment(<span class="hljs-string">&quot;协程B&quot;</span>, <span class="hljs-number">5</span>),<br>        increment(<span class="hljs-string">&quot;协程C&quot;</span>, <span class="hljs-number">5</span>),<br>    )<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;最终 counter = <span class="hljs-subst">&#123;counter&#125;</span>（期望 15）&quot;</span>)<br><br>asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs abnf">协程A 完成，当前 counter <span class="hljs-operator">=</span> <span class="hljs-number">13</span><br>协程B 完成，当前 counter <span class="hljs-operator">=</span> <span class="hljs-number">14</span><br>协程C 完成，当前 counter <span class="hljs-operator">=</span> <span class="hljs-number">15</span><br>最终 counter <span class="hljs-operator">=</span> <span class="hljs-number">15</span>（期望 <span class="hljs-number">15</span>）<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>去掉 <code>lock</code> 后由于 <code>await asyncio.sleep(0)</code> 让出控制权，三个协程会出现竞态条件，最终 <code>counter</code> 可能小于 15。</p>
+</blockquote>
+<h3 id="6-2-asyncio-Semaphore"><a href="#6-2-asyncio-Semaphore" class="headerlink" title="6.2 asyncio.Semaphore"></a>6.2 asyncio.Semaphore</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs python">sem = asyncio.Semaphore(value=<span class="hljs-number">1</span>)<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">with</span> sem:<br>    ...<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<ul>
+<li><code>value</code>：内部计数器初始值，即最大并发数，默认 <code>1</code>（等同于 <code>Lock</code>）；每次 <code>acquire</code> 计数 -1，<code>release</code> 计数 +1，计数为 0 时 <code>acquire</code> 阻塞</li>
+</ul>
+<p><code>Semaphore</code> 限制<strong>同时运行的协程数量</strong>，常用于限制并发连接数、API 调用频率等场景。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><span class="hljs-keyword">import</span> time<br><br>sem = asyncio.Semaphore(<span class="hljs-number">3</span>)  <span class="hljs-comment"># 最多同时 3 个并发</span><br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">limited_task</span>(<span class="hljs-params">name</span>):<br>    <span class="hljs-keyword">async</span> <span class="hljs-keyword">with</span> sem:<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;[<span class="hljs-subst">&#123;time.strftime(<span class="hljs-string">&#x27;%H:%M:%S&#x27;</span>)&#125;</span>] <span class="hljs-subst">&#123;name&#125;</span> 开始执行&quot;</span>)<br>        <span class="hljs-keyword">await</span> asyncio.sleep(<span class="hljs-number">1</span>)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;[<span class="hljs-subst">&#123;time.strftime(<span class="hljs-string">&#x27;%H:%M:%S&#x27;</span>)&#125;</span>] <span class="hljs-subst">&#123;name&#125;</span> 执行完毕&quot;</span>)<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    tasks = [limited_task(<span class="hljs-string">f&quot;任务<span class="hljs-subst">&#123;i&#125;</span>&quot;</span>) <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(<span class="hljs-number">7</span>)]<br>    <span class="hljs-keyword">await</span> asyncio.gather(*tasks)<br><br>asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果（7 个任务，每批最多 3 个并发）：</p>
+<figure class="highlight ruby"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs ruby">[<span class="hljs-variable constant_">HH</span><span class="hljs-symbol">:MM</span><span class="hljs-symbol">:SS</span>] 任务<span class="hljs-number">0</span> 开始执行<br>[<span class="hljs-variable constant_">HH</span><span class="hljs-symbol">:MM</span><span class="hljs-symbol">:SS</span>] 任务<span class="hljs-number">1</span> 开始执行<br>[<span class="hljs-variable constant_">HH</span><span class="hljs-symbol">:MM</span><span class="hljs-symbol">:SS</span>] 任务<span class="hljs-number">2</span> 开始执行<br>[<span class="hljs-variable constant_">HH</span><span class="hljs-symbol">:MM</span><span class="hljs-symbol">:SS</span>] 任务<span class="hljs-number">0</span> 执行完毕<br>[<span class="hljs-variable constant_">HH</span><span class="hljs-symbol">:MM</span><span class="hljs-symbol">:SS</span>] 任务<span class="hljs-number">1</span> 执行完毕<br>[<span class="hljs-variable constant_">HH</span><span class="hljs-symbol">:MM</span><span class="hljs-symbol">:SS</span>] 任务<span class="hljs-number">2</span> 执行完毕<br>[<span class="hljs-variable constant_">HH</span><span class="hljs-symbol">:MM</span><span class="hljs-symbol">:SS</span>] 任务<span class="hljs-number">3</span> 开始执行<br>[<span class="hljs-variable constant_">HH</span><span class="hljs-symbol">:MM</span><span class="hljs-symbol">:SS</span>] 任务<span class="hljs-number">4</span> 开始执行<br>[<span class="hljs-variable constant_">HH</span><span class="hljs-symbol">:MM</span><span class="hljs-symbol">:SS</span>] 任务<span class="hljs-number">5</span> 开始执行<br>[<span class="hljs-variable constant_">HH</span><span class="hljs-symbol">:MM</span><span class="hljs-symbol">:SS</span>] 任务<span class="hljs-number">3</span> 执行完毕<br>[<span class="hljs-variable constant_">HH</span><span class="hljs-symbol">:MM</span><span class="hljs-symbol">:SS</span>] 任务<span class="hljs-number">4</span> 执行完毕<br>[<span class="hljs-variable constant_">HH</span><span class="hljs-symbol">:MM</span><span class="hljs-symbol">:SS</span>] 任务<span class="hljs-number">5</span> 执行完毕<br>[<span class="hljs-variable constant_">HH</span><span class="hljs-symbol">:MM</span><span class="hljs-symbol">:SS</span>] 任务<span class="hljs-number">6</span> 开始执行<br>[<span class="hljs-variable constant_">HH</span><span class="hljs-symbol">:MM</span><span class="hljs-symbol">:SS</span>] 任务<span class="hljs-number">6</span> 执行完毕<br></code></pre></td></tr></table></figure>
+
+<h3 id="6-3-asyncio-Event"><a href="#6-3-asyncio-Event" class="headerlink" title="6.3 asyncio.Event"></a>6.3 asyncio.Event</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs python">event = asyncio.Event()<br><br>event.<span class="hljs-built_in">set</span>()            <span class="hljs-comment"># 将内部标志置为 True，唤醒所有在 wait() 中阻塞的协程</span><br>event.clear()          <span class="hljs-comment"># 将内部标志重置为 False</span><br><span class="hljs-keyword">await</span> event.wait()     <span class="hljs-comment"># 标志为 True 时立即返回；否则阻塞直到被 set()</span><br>event.is_set()         <span class="hljs-comment"># 返回内部标志当前值（bool）</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong> 构造函数无参数；内部标志初始为 <code>False</code>。</p>
+<p><code>Event</code> 用于协程间的<strong>事件通知</strong>：一个协程等待事件发生，另一个协程在条件满足时触发事件。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><br>event = asyncio.Event()<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">producer</span>():<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;生产者：准备数据中...&quot;</span>)<br>    <span class="hljs-keyword">await</span> asyncio.sleep(<span class="hljs-number">2</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;生产者：数据准备完毕，发出信号&quot;</span>)<br>    event.<span class="hljs-built_in">set</span>()<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">consumer</span>(<span class="hljs-params">name</span>):<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">&#123;name&#125;</span>：等待数据...&quot;</span>)<br>    <span class="hljs-keyword">await</span> event.wait()<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">&#123;name&#125;</span>：收到信号，开始处理&quot;</span>)<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    <span class="hljs-keyword">await</span> asyncio.gather(<br>        producer(),<br>        consumer(<span class="hljs-string">&quot;消费者A&quot;</span>),<br>        consumer(<span class="hljs-string">&quot;消费者B&quot;</span>),<br>    )<br><br>asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs css">生产者：准备数据中...<br>消费者<span class="hljs-selector-tag">A</span>：等待数据...<br>消费者<span class="hljs-selector-tag">B</span>：等待数据...<br>生产者：数据准备完毕，发出信号<br>消费者<span class="hljs-selector-tag">A</span>：收到信号，开始处理<br>消费者<span class="hljs-selector-tag">B</span>：收到信号，开始处理<br></code></pre></td></tr></table></figure>
+
+<h3 id="6-4-asyncio-Queue"><a href="#6-4-asyncio-Queue" class="headerlink" title="6.4 asyncio.Queue"></a>6.4 asyncio.Queue</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs python">queue = asyncio.Queue(maxsize=<span class="hljs-number">0</span>)<br><br><span class="hljs-keyword">await</span> queue.put(item)      <span class="hljs-comment"># 队满时阻塞，直到有空位</span><br>queue.put_nowait(item)     <span class="hljs-comment"># 队满时立即抛出 asyncio.QueueFull</span><br>item = <span class="hljs-keyword">await</span> queue.get()   <span class="hljs-comment"># 队空时阻塞，直到有元素</span><br>queue.task_done()          <span class="hljs-comment"># 标记当前元素已处理，需与 join() 配合</span><br><span class="hljs-keyword">await</span> queue.join()         <span class="hljs-comment"># 阻塞直到队列中所有元素都被 task_done() 确认</span><br>queue.qsize()              <span class="hljs-comment"># 返回当前队列中的元素数量</span><br>queue.empty()              <span class="hljs-comment"># 队列为空返回 True</span><br>queue.full()               <span class="hljs-comment"># 队列已满返回 True（maxsize &gt; 0 时有效）</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<ul>
+<li><code>maxsize</code>：队列最大容量，默认 <code>0</code>（无限制）；大于 <code>0</code> 时队满会使 <code>put()</code> 阻塞，可用于实现背压</li>
+</ul>
+<p><code>Queue</code> 实现协程间的<strong>生产者-消费者</strong>模式，支持背压（通过 <code>maxsize</code> 限制队列长度）。</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">producer</span>(<span class="hljs-params">queue, items</span>):<br>    <span class="hljs-keyword">for</span> item <span class="hljs-keyword">in</span> items:<br>        <span class="hljs-keyword">await</span> asyncio.sleep(<span class="hljs-number">0.3</span>)<br>        <span class="hljs-keyword">await</span> queue.put(item)<br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;生产：<span class="hljs-subst">&#123;item&#125;</span>&quot;</span>)<br>    <span class="hljs-keyword">await</span> queue.put(<span class="hljs-literal">None</span>)  <span class="hljs-comment"># 哨兵值，通知消费者结束</span><br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">consumer</span>(<span class="hljs-params">queue, name</span>):<br>    <span class="hljs-keyword">while</span> <span class="hljs-literal">True</span>:<br>        item = <span class="hljs-keyword">await</span> queue.get()<br>        <span class="hljs-keyword">if</span> item <span class="hljs-keyword">is</span> <span class="hljs-literal">None</span>:<br>            queue.task_done()<br>            <span class="hljs-keyword">break</span><br>        <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;<span class="hljs-subst">&#123;name&#125;</span> 消费：<span class="hljs-subst">&#123;item&#125;</span>&quot;</span>)<br>        <span class="hljs-keyword">await</span> asyncio.sleep(<span class="hljs-number">0.5</span>)<br>        queue.task_done()<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    queue = asyncio.Queue(maxsize=<span class="hljs-number">3</span>)<br>    <span class="hljs-keyword">await</span> asyncio.gather(<br>        producer(queue, [<span class="hljs-string">&quot;苹果&quot;</span>, <span class="hljs-string">&quot;香蕉&quot;</span>, <span class="hljs-string">&quot;橙子&quot;</span>, <span class="hljs-string">&quot;葡萄&quot;</span>, <span class="hljs-string">&quot;芒果&quot;</span>]),<br>        consumer(queue, <span class="hljs-string">&quot;消费者&quot;</span>),<br>    )<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;队列处理完毕&quot;</span>)<br><br>asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs">生产：苹果<br>消费者 消费：苹果<br>生产：香蕉<br>消费者 消费：香蕉<br>生产：橙子<br>生产：葡萄<br>消费者 消费：橙子<br>生产：芒果<br>消费者 消费：葡萄<br>消费者 消费：芒果<br>队列处理完毕<br></code></pre></td></tr></table></figure>
+
+
+
+<h2 id="七、网络-I-O（Streams-API）"><a href="#七、网络-I-O（Streams-API）" class="headerlink" title="七、网络 I&#x2F;O（Streams API）"></a>七、网络 I&#x2F;O（Streams API）</h2><p><code>asyncio.streams</code> 提供高级别的异步网络 I&#x2F;O，基于 <code>StreamReader</code> &#x2F; <code>StreamWriter</code> 抽象 TCP 连接。</p>
+<h3 id="7-1-TCP-服务端"><a href="#7-1-TCP-服务端" class="headerlink" title="7.1 TCP 服务端"></a>7.1 TCP 服务端</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs python">server = <span class="hljs-keyword">await</span> asyncio.start_server(client_connected_cb, host, port, **kwds)<br><span class="hljs-keyword">async</span> <span class="hljs-keyword">with</span> server:<br>    <span class="hljs-keyword">await</span> server.serve_forever()<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<ul>
+<li><code>client_connected_cb</code>：每次新连接时调用的回调，签名为 <code>async def cb(reader: StreamReader, writer: StreamWriter)</code></li>
+<li><code>host</code>：监听地址字符串；<code>None</code> 表示监听所有接口；可传列表同时监听多个地址</li>
+<li><code>port</code>：监听端口号（整数）</li>
+<li><code>server.serve_forever()</code>：持续接受新连接直到被取消或调用 <code>server.close()</code></li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># 服务端核心逻辑</span><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">handle_client</span>(<span class="hljs-params">reader, writer</span>):<br>    data = <span class="hljs-keyword">await</span> reader.read(<span class="hljs-number">1024</span>)<br>    writer.write(<span class="hljs-string">f&quot;Echo: <span class="hljs-subst">&#123;data.decode()&#125;</span>&quot;</span>.encode())<br>    <span class="hljs-keyword">await</span> writer.drain()<br>    writer.close()<br>    <span class="hljs-keyword">await</span> writer.wait_closed()<br><br>server = <span class="hljs-keyword">await</span> asyncio.start_server(handle_client, <span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, <span class="hljs-number">8888</span>)<br><span class="hljs-keyword">async</span> <span class="hljs-keyword">with</span> server:<br>    <span class="hljs-keyword">await</span> server.serve_forever()<br></code></pre></td></tr></table></figure>
+
+<h3 id="7-2-TCP-客户端"><a href="#7-2-TCP-客户端" class="headerlink" title="7.2 TCP 客户端"></a>7.2 TCP 客户端</h3><p><strong>语法：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs python">reader, writer = <span class="hljs-keyword">await</span> asyncio.open_connection(host, port, **kwds)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<ul>
+<li><code>host</code>：目标主机名或 IP 地址字符串</li>
+<li><code>port</code>：目标端口号（整数）</li>
+<li>返回 <code>(StreamReader, StreamWriter)</code> 元组：<ul>
+<li><code>await reader.read(n)</code>：读取至多 <code>n</code> 字节；<code>n=-1</code> 读到 EOF</li>
+<li><code>await reader.readline()</code>：读取一行（含 <code>\n</code>）</li>
+<li><code>writer.write(data)</code>：将数据写入发送缓冲区（非阻塞）</li>
+<li><code>await writer.drain()</code>：等待缓冲区刷新至底层 socket，防止内存无限增长</li>
+<li><code>writer.close()</code> + <code>await writer.wait_closed()</code>：关闭连接并等待完全释放</li>
+</ul>
+</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># 客户端核心逻辑（需要服务端已在运行）</span><br>reader, writer = <span class="hljs-keyword">await</span> asyncio.open_connection(<span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, <span class="hljs-number">8888</span>)<br>writer.write(<span class="hljs-string">b&quot;Hello&quot;</span>)<br><span class="hljs-keyword">await</span> writer.drain()<br>data = <span class="hljs-keyword">await</span> reader.read(<span class="hljs-number">1024</span>)<br>writer.close()<br><span class="hljs-keyword">await</span> writer.wait_closed()<br></code></pre></td></tr></table></figure>
+
+<p><strong>完整可运行示例</strong></p>
+<p>客户端和服务端都依赖对方，无法单独执行。下面的示例在同一个事件循环内同时启动两者，可直接运行：</p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-keyword">import</span> asyncio<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">handle_client</span>(<span class="hljs-params">reader, writer</span>):<br>    addr = writer.get_extra_info(<span class="hljs-string">&#x27;peername&#x27;</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;[服务端] 客户端连接：<span class="hljs-subst">&#123;addr&#125;</span>&quot;</span>)<br>    data = <span class="hljs-keyword">await</span> reader.read(<span class="hljs-number">1024</span>)<br>    message = data.decode()<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;[服务端] 收到：<span class="hljs-subst">&#123;message!r&#125;</span>&quot;</span>)<br>    writer.write(<span class="hljs-string">f&quot;Echo: <span class="hljs-subst">&#123;message&#125;</span>&quot;</span>.encode())<br>    <span class="hljs-keyword">await</span> writer.drain()<br>    writer.close()<br>    <span class="hljs-keyword">await</span> writer.wait_closed()<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">&quot;[服务端] 连接关闭&quot;</span>)<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">tcp_client</span>():<br>    reader, writer = <span class="hljs-keyword">await</span> asyncio.open_connection(<span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, <span class="hljs-number">8888</span>)<br>    message = <span class="hljs-string">&quot;Hello, asyncio Streams!&quot;</span><br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;[客户端] 发送：<span class="hljs-subst">&#123;message!r&#125;</span>&quot;</span>)<br>    writer.write(message.encode())<br>    <span class="hljs-keyword">await</span> writer.drain()<br>    data = <span class="hljs-keyword">await</span> reader.read(<span class="hljs-number">1024</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;[客户端] 收到回显：<span class="hljs-subst">&#123;data.decode()!r&#125;</span>&quot;</span>)<br>    writer.close()<br>    <span class="hljs-keyword">await</span> writer.wait_closed()<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    <span class="hljs-comment"># 先启动服务端，再在同一事件循环中执行客户端</span><br>    server = <span class="hljs-keyword">await</span> asyncio.start_server(handle_client, <span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, <span class="hljs-number">8888</span>)<br>    <span class="hljs-keyword">async</span> <span class="hljs-keyword">with</span> server:<br>        <span class="hljs-keyword">await</span> tcp_client()<br><br>asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight prolog"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs prolog">[服务端] 客户端连接：(<span class="hljs-string">&#x27;127.0.0.1&#x27;</span>, <span class="hljs-number">55034</span>)<br>[客户端] 发送：<span class="hljs-string">&#x27;Hello, asyncio Streams!&#x27;</span><br>[服务端] 收到：<span class="hljs-string">&#x27;Hello, asyncio Streams!&#x27;</span><br>[服务端] 连接关闭<br>[客户端] 收到回显：<span class="hljs-string">&#x27;Echo: Hello, asyncio Streams!&#x27;</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>await writer.drain()</code> 在 <code>write()</code> 之后调用，用于等待写缓冲区清空，避免内存无限增长。<code>writer.close()</code> 后必须 <code>await writer.wait_closed()</code> 才能确保连接完全关闭。</p>
+</blockquote>
+<h2 id="八、asyncio-vs-多线程-vs-多进程"><a href="#八、asyncio-vs-多线程-vs-多进程" class="headerlink" title="八、asyncio vs 多线程 vs 多进程"></a>八、asyncio vs 多线程 vs 多进程</h2><h3 id="8-1-核心对比"><a href="#8-1-核心对比" class="headerlink" title="8.1 核心对比"></a>8.1 核心对比</h3><table>
+<thead>
+<tr>
+<th></th>
+<th>asyncio</th>
+<th>threading</th>
+<th>multiprocessing</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><strong>并发模型</strong></td>
+<td>协程（单线程）</td>
+<td>系统线程</td>
+<td>独立进程</td>
+</tr>
+<tr>
+<td><strong>GIL 影响</strong></td>
+<td>无（单线程）</td>
+<td>受限（I&#x2F;O 期间释放）</td>
+<td>无（独立进程）</td>
+</tr>
+<tr>
+<td><strong>内存开销</strong></td>
+<td>极低（协程约几 KB）</td>
+<td>中（每线程约 8 MB）</td>
+<td>高（进程独立内存）</td>
+</tr>
+<tr>
+<td><strong>适用场景</strong></td>
+<td>大量 I&#x2F;O 并发</td>
+<td>I&#x2F;O + 遗留同步库</td>
+<td>CPU 密集型计算</td>
+</tr>
+<tr>
+<td><strong>上下文切换</strong></td>
+<td>主动让出（<code>await</code>）</td>
+<td>操作系统调度</td>
+<td>操作系统调度</td>
+</tr>
+<tr>
+<td><strong>调试难度</strong></td>
+<td>中</td>
+<td>高（竞态、死锁）</td>
+<td>中</td>
+</tr>
+</tbody></table>
+<h3 id="8-2-如何选择"><a href="#8-2-如何选择" class="headerlink" title="8.2 如何选择"></a>8.2 如何选择</h3><p><strong>用 asyncio：</strong></p>
+<ul>
+<li>需要管理大量并发连接（如 HTTP 服务器、WebSocket、数据库连接池）</li>
+<li>任务瓶颈在 I&#x2F;O 等待，而非 CPU 计算</li>
+<li>使用支持 asyncio 的库（<code>aiohttp</code>、<code>asyncpg</code>、<code>aiofiles</code>）</li>
+</ul>
+<p><strong>用 threading：</strong></p>
+<ul>
+<li>调用不支持 asyncio 的同步第三方库</li>
+<li>已有大量同步代码，迁移成本高</li>
+<li>I&#x2F;O 并发数量较少（几十个线程以内）</li>
+</ul>
+<p><strong>用 multiprocessing：</strong></p>
+<ul>
+<li>图像&#x2F;视频处理、数值计算、机器学习推理等 CPU 密集场景</li>
+<li>需要绕过 GIL 充分利用多核 CPU</li>
+</ul>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs python"><span class="hljs-comment"># asyncio + ProcessPoolExecutor：在 asyncio 中运行 CPU 密集任务</span><br><span class="hljs-keyword">import</span> asyncio<br><span class="hljs-keyword">from</span> concurrent.futures <span class="hljs-keyword">import</span> ProcessPoolExecutor<br><br><span class="hljs-keyword">def</span> <span class="hljs-title function_">cpu_bound</span>(<span class="hljs-params">n</span>):<br>    <span class="hljs-keyword">return</span> <span class="hljs-built_in">sum</span>(i * i <span class="hljs-keyword">for</span> i <span class="hljs-keyword">in</span> <span class="hljs-built_in">range</span>(n))<br><br><span class="hljs-keyword">async</span> <span class="hljs-keyword">def</span> <span class="hljs-title function_">main</span>():<br>    loop = asyncio.get_running_loop()<br>    <span class="hljs-keyword">with</span> ProcessPoolExecutor() <span class="hljs-keyword">as</span> pool:<br>        <span class="hljs-comment"># 在进程池中运行，不阻塞事件循环</span><br>        result = <span class="hljs-keyword">await</span> loop.run_in_executor(pool, cpu_bound, <span class="hljs-number">10_000_000</span>)<br>    <span class="hljs-built_in">print</span>(<span class="hljs-string">f&quot;计算结果：<span class="hljs-subst">&#123;result&#125;</span>&quot;</span>)<br><br><span class="hljs-keyword">if</span> __name__ == <span class="hljs-string">&quot;__main__&quot;</span>:<br>    asyncio.run(main())<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs">计算结果：333333283333335000000<br></code></pre></td></tr></table></figure>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Python/" class="category-chain-item">Python</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/rust/std-alloc.html" title="[标准库] std::alloc 内存分配模块介绍">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">[标准库] std::alloc 内存分配模块介绍</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/error-i18n.html" title="Rust 错误描述国际化">
+                        <span class="hidden-mobile">Rust 错误描述国际化</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

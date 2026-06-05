@@ -1,0 +1,1330 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Rust 不依赖垃圾回收器，却能在编译期保证内存安全——秘密在于所有权（ownership）系统和生命周期（lifetime）机制。所有权决定每一块内存由谁持有、何时释放；借用（borrow）允许在不转移所有权的前提下访问数据；生命周期则是编译器用来验证引用始终有效的标注体系。理解这三者，是写出安全、高效 Rust 代码的核心前提。 一、所有权基础1.1 三条所有权规则Rust 的内存模型由三条不">
+  
+  
+  
+  <title>所有权与生命周期原理与实战 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="所有权与生命周期原理与实战"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-13 14:00" pubdate>
+          2026年5月13日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          14k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          117 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">所有权与生命周期原理与实战</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>Rust 不依赖垃圾回收器，却能在编译期保证内存安全——秘密在于<strong>所有权</strong>（<code>ownership</code>）系统和<strong>生命周期</strong>（<code>lifetime</code>）机制。所有权决定每一块内存由谁持有、何时释放；借用（<code>borrow</code>）允许在不转移所有权的前提下访问数据；生命周期则是编译器用来验证引用始终有效的标注体系。理解这三者，是写出安全、高效 Rust 代码的核心前提。</p>
+<h2 id="一、所有权基础"><a href="#一、所有权基础" class="headerlink" title="一、所有权基础"></a>一、所有权基础</h2><h3 id="1-1-三条所有权规则"><a href="#1-1-三条所有权规则" class="headerlink" title="1.1 三条所有权规则"></a>1.1 三条所有权规则</h3><p>Rust 的内存模型由三条不可违反的规则驱动：</p>
+<table>
+<thead>
+<tr>
+<th>规则</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>每个值都有一个<strong>所有者</strong>（<code>owner</code>）</td>
+<td>值与变量绑定，变量即所有者</td>
+</tr>
+<tr>
+<td>同一时刻只能有<strong>一个所有者</strong></td>
+<td>不允许两个变量同时拥有同一块堆内存</td>
+</tr>
+<tr>
+<td>所有者离开作用域，值被<strong>自动丢弃</strong>（<code>drop</code>）</td>
+<td>编译器在作用域末尾插入析构调用</td>
+</tr>
+</tbody></table>
+<h3 id="1-2-移动语义（Move）"><a href="#1-2-移动语义（Move）" class="headerlink" title="1.2 移动语义（Move）"></a>1.2 移动语义（Move）</h3><p>堆分配类型（如 <code>String</code>、<code>Vec</code>）在赋值或传参时发生<strong>移动</strong>（<code>move</code>）：原变量失效，所有权转移给新变量。栈上的元数据（指针 + 长度 + 容量）被浅拷贝，堆数据本身不复制。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">let</span> <span class="hljs-variable">s2</span> = s1;          <span class="hljs-comment">// s1 的所有权移动给 s2</span><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>(s: <span class="hljs-type">String</span>) &#123; &#125;   <span class="hljs-comment">// 调用 f(s1) 后，s1 失效</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s1</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s2</span> = s1;           <span class="hljs-comment">// s1 移动给 s2，s1 不再有效</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;s2 = &#123;&#125;&quot;</span>, s2);<br>    <span class="hljs-comment">// println!(&quot;&#123;&#125;&quot;, s1); // 编译错误：value borrowed here after move</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs abnf"><span class="hljs-attribute">s2</span> <span class="hljs-operator">=</span> hello<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>移动后使用已失效变量会在编译期报错，而非运行时崩溃——这正是 Rust 内存安全的核心保证。</p>
+</blockquote>
+<h3 id="1-3-Clone-与-Copy"><a href="#1-3-Clone-与-Copy" class="headerlink" title="1.3 Clone 与 Copy"></a>1.3 Clone 与 Copy</h3><p>当需要保留原始变量时，使用 <code>clone()</code> 进行深拷贝：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s1</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s2</span> = s1.<span class="hljs-title function_ invoke__">clone</span>();   <span class="hljs-comment">// 堆数据完整复制</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;s1 = &#123;&#125;, s2 = &#123;&#125;&quot;</span>, s1, s2);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">s1</span> = hello, s2 = hello<br></code></pre></td></tr></table></figure>
+
+<p>实现了 <code>Copy</code> <code>trait</code> 的类型（整数、浮点数、布尔、<code>char</code>、元素均为 <code>Copy</code> 的元组）在赋值时<strong>自动复制</strong>，原变量依然有效：</p>
+<table>
+<thead>
+<tr>
+<th>类型</th>
+<th>是否 Copy</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>i32</code>、<code>u64</code>、<code>f64</code>…</td>
+<td>是</td>
+</tr>
+<tr>
+<td><code>bool</code>、<code>char</code></td>
+<td>是</td>
+</tr>
+<tr>
+<td><code>(i32, bool)</code></td>
+<td>是（元素均为 <code>Copy</code>）</td>
+</tr>
+<tr>
+<td><code>String</code>、<code>Vec&lt;T&gt;</code></td>
+<td>否（堆分配）</td>
+</tr>
+<tr>
+<td><code>&amp;T</code>（不可变引用）</td>
+<td>是</td>
+</tr>
+<tr>
+<td><code>&amp;mut T</code>（可变引用）</td>
+<td>否</td>
+</tr>
+</tbody></table>
+<h3 id="1-4-函数与所有权传递"><a href="#1-4-函数与所有权传递" class="headerlink" title="1.4 函数与所有权传递"></a>1.4 函数与所有权传递</h3><p>函数调用遵循与赋值完全相同的语义：传入 <code>String</code> 会移动所有权，传入 <code>i32</code> 会复制：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">takes_ownership</span>(s: <span class="hljs-type">String</span>) &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;获得所有权: &#123;&#125;&quot;</span>, s);<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">makes_copy</span>(x: <span class="hljs-type">i32</span>) &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;复制整数: &#123;&#125;&quot;</span>, x);<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">x</span> = <span class="hljs-number">5</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">y</span> = x;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;x = &#123;&#125;, y = &#123;&#125;&quot;</span>, x, y);   <span class="hljs-comment">// Copy，两者均有效</span><br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;world&quot;</span>);<br>    <span class="hljs-title function_ invoke__">takes_ownership</span>(s);                   <span class="hljs-comment">// s 的所有权移入函数</span><br>    <span class="hljs-comment">// println!(&quot;&#123;&#125;&quot;, s);                 // 编译错误</span><br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">n</span> = <span class="hljs-number">42</span>;<br>    <span class="hljs-title function_ invoke__">makes_copy</span>(n);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;n 依然有效: &#123;&#125;&quot;</span>, n);        <span class="hljs-comment">// Copy，n 仍可用</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs makefile">x = 5, y = 5<br><span class="hljs-section">获得所有权: world</span><br><span class="hljs-section">复制整数: 42</span><br>n 依然有效: 42<br></code></pre></td></tr></table></figure>
+
+<p>函数也可以通过返回值把所有权交还给调用者：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">give_ownership</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">String</span> &#123;<br>    <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;returned&quot;</span>)<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">take_and_give_back</span>(s: <span class="hljs-type">String</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">String</span> &#123;<br>    s<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s1</span> = <span class="hljs-title function_ invoke__">give_ownership</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s2</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s3</span> = <span class="hljs-title function_ invoke__">take_and_give_back</span>(s2);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;s1 = &#123;&#125;, s3 = &#123;&#125;&quot;</span>, s1, s3);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">s1</span> = returned, s3 = hello<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>每次通过返回值传递所有权很繁琐。实际工程中，借用（<code>borrow</code>）才是首选——既能访问数据，又不转移所有权。</p>
+</blockquote>
+<h2 id="二、借用与引用"><a href="#二、借用与引用" class="headerlink" title="二、借用与引用"></a>二、借用与引用</h2><h3 id="2-1-不可变借用"><a href="#2-1-不可变借用" class="headerlink" title="2.1 不可变借用"></a>2.1 不可变借用</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust">&amp;T<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&amp;T</code></td>
+<td>对类型 <code>T</code> 的不可变引用；不获取所有权，不能修改数据</td>
+</tr>
+</tbody></table>
+<p>借用通过 <code>&amp;</code> 创建引用，函数结束后引用消失，数据所有权仍归原变量：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">calculate_length</span>(s: &amp;<span class="hljs-type">String</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">usize</span> &#123;<br>    s.<span class="hljs-title function_ invoke__">len</span>()<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s1</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">len</span> = <span class="hljs-title function_ invoke__">calculate_length</span>(&amp;s1);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#x27;&#123;&#125;&#x27; 的长度是 &#123;&#125;&quot;</span>, s1, len);  <span class="hljs-comment">// s1 仍然有效</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight 1c"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs 1c">&#x27;hello&#x27; 的长度是 <span class="hljs-number">5</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-2-可变借用"><a href="#2-2-可变借用" class="headerlink" title="2.2 可变借用"></a>2.2 可变借用</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust">&amp;<span class="hljs-keyword">mut</span> T<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&amp;mut T</code></td>
+<td>对类型 <code>T</code> 的可变引用；允许修改数据，原变量必须声明为 <code>mut</code></td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">add_suffix</span>(s: &amp;<span class="hljs-keyword">mut</span> <span class="hljs-type">String</span>) &#123;<br>    s.<span class="hljs-title function_ invoke__">push_str</span>(<span class="hljs-string">&quot; world&quot;</span>);<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">s</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br>    <span class="hljs-title function_ invoke__">add_suffix</span>(&amp;<span class="hljs-keyword">mut</span> s);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, s);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight ebnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs ebnf"><span class="hljs-attribute">hello world</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="2-3-借用规则汇总"><a href="#2-3-借用规则汇总" class="headerlink" title="2.3 借用规则汇总"></a>2.3 借用规则汇总</h3><p>Rust 的借用检查器（<code>borrow checker</code>）在编译期强制执行以下规则：</p>
+<table>
+<thead>
+<tr>
+<th>规则</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>同一作用域内，不可变引用可以有<strong>任意多个</strong></td>
+<td><code>&amp;T</code> 之间不存在竞争</td>
+</tr>
+<tr>
+<td>同一作用域内，可变引用<strong>只能有一个</strong></td>
+<td>防止数据竞争（<code>data race</code>）</td>
+</tr>
+<tr>
+<td>不可变引用与可变引用<strong>不能同时存在</strong></td>
+<td>读写互斥</td>
+</tr>
+<tr>
+<td>引用必须始终有效</td>
+<td>禁止悬垂引用（<code>dangling reference</code>）</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">r1</span> = &amp;s;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">r2</span> = &amp;s;    <span class="hljs-comment">// 多个不可变借用合法</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;r1 = &#123;&#125;, r2 = &#123;&#125;&quot;</span>, r1, r2);<br>    <span class="hljs-comment">// r1、r2 作用域在此结束（NLL：非词法作用域生命周期）</span><br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">r3</span> = &amp;<span class="hljs-keyword">mut</span> <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;mutable&quot;</span>);<br>    r3.<span class="hljs-title function_ invoke__">push_str</span>(<span class="hljs-string">&quot;!&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;r3 = &#123;&#125;&quot;</span>, r3);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight ini"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs ini"><span class="hljs-attr">r1</span> = hello, r2 = hello<br><span class="hljs-attr">r3</span> = mutable!<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>Rust 2018 Edition</code> 引入 <code>NLL</code>（Non-Lexical Lifetimes，非词法作用域生命周期），引用的有效范围缩短为最后一次使用处，而非词法作用域末尾，大幅减少借用冲突。</p>
+</blockquote>
+<h2 id="三、生命周期标注"><a href="#三、生命周期标注" class="headerlink" title="三、生命周期标注"></a>三、生命周期标注</h2><h3 id="3-1-悬垂引用：生命周期解决的问题"><a href="#3-1-悬垂引用：生命周期解决的问题" class="headerlink" title="3.1 悬垂引用：生命周期解决的问题"></a>3.1 悬垂引用：生命周期解决的问题</h3><p>生命周期标注的核心目的是阻止<strong>悬垂引用</strong>（<code>dangling reference</code>）：引用指向的数据已被释放。下面的代码无法编译：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">dangle</span>() <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-type">String</span> &#123;       <span class="hljs-comment">// 编译错误</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>);<br>    &amp;s                         <span class="hljs-comment">// s 在函数结束时被 drop，引用无效</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>编译器报错：<code>missing lifetime specifier</code>。正确做法是直接返回 <code>String</code> 转移所有权，而不是返回引用。</p>
+<h3 id="3-2-函数中的生命周期"><a href="#3-2-函数中的生命周期" class="headerlink" title="3.2 函数中的生命周期"></a>3.2 函数中的生命周期</h3><h4 id="何时必须标注"><a href="#何时必须标注" class="headerlink" title="何时必须标注"></a>何时必须标注</h4><p>只有当函数<strong>返回引用</strong>，且该引用与至少一个输入引用存在关联时，才需要手动标注生命周期。</p>
+<table>
+<thead>
+<tr>
+<th>函数签名特征</th>
+<th>是否需要标注</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>无引用返回值</td>
+<td>否</td>
+<td>编译器无需追踪返回引用的来源</td>
+</tr>
+<tr>
+<td>单个引用参数 + 返回引用</td>
+<td>否</td>
+<td>省略规则二自动将输入生命周期赋给输出</td>
+</tr>
+<tr>
+<td>多个引用参数 + 返回引用</td>
+<td><strong>是</strong></td>
+<td>编译器无法确定返回值绑定哪个参数</td>
+</tr>
+<tr>
+<td>返回引用与所有参数无关</td>
+<td>编译错误</td>
+<td>必然是悬垂引用</td>
+</tr>
+</tbody></table>
+<h4 id="编译器的三步自动推断"><a href="#编译器的三步自动推断" class="headerlink" title="编译器的三步自动推断"></a>编译器的三步自动推断</h4><p>在要求手动标注之前，编译器对函数签名中的所有引用按顺序应用三条<strong>省略规则</strong>（<code>elision rules</code>）。若三条规则全部应用后输出引用的生命周期仍未确定，才报错要求手动标注。</p>
+<p><strong>规则一 — 为每个输入引用赋予独立生命周期</strong></p>
+<p>每个引用参数各自获得一个全新生命周期参数。执行后输出引用的生命周期<strong>仍未确定</strong>，继续规则二：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>(x: &amp;T)           →  <span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>&lt;<span class="hljs-symbol">&#x27;a</span>&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> T)<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>(x: &amp;T, y: &amp;U)   →  <span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>&lt;<span class="hljs-symbol">&#x27;a</span>, <span class="hljs-symbol">&#x27;b</span>&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> T, y: &amp;<span class="hljs-symbol">&#x27;b</span> U)<br></code></pre></td></tr></table></figure>
+
+<p><strong>规则二 — 唯一输入生命周期传递给所有输出</strong></p>
+<p>规则一执行后，若只剩<strong>一个</strong>输入生命周期参数，将它赋给所有输出引用；多个输入时跳过，进入规则三：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>&lt;<span class="hljs-symbol">&#x27;a</span>&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> T) <span class="hljs-punctuation">-&gt;</span> &amp;U   →   <span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>&lt;<span class="hljs-symbol">&#x27;a</span>&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> T) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;a</span> U   ✓<br></code></pre></td></tr></table></figure>
+
+<p><strong>规则三 — <code>&amp;self</code> 的生命周期传递给所有输出</strong></p>
+<p>若参数中有 <code>&amp;self</code> 或 <code>&amp;mut self</code>，将 <code>self</code> 的生命周期赋给所有输出引用：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>&lt;<span class="hljs-symbol">&#x27;a</span>, <span class="hljs-symbol">&#x27;b</span>&gt;(&amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-keyword">self</span>, x: &amp;<span class="hljs-symbol">&#x27;b</span> T) <span class="hljs-punctuation">-&gt;</span> &amp;U   →   <span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>&lt;<span class="hljs-symbol">&#x27;a</span>, <span class="hljs-symbol">&#x27;b</span>&gt;(&amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-keyword">self</span>, x: &amp;<span class="hljs-symbol">&#x27;b</span> T) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;a</span> U   ✓<br></code></pre></td></tr></table></figure>
+
+<p>三条规则执行后结果：</p>
+<table>
+<thead>
+<tr>
+<th>签名（省略形式）</th>
+<th>规则一</th>
+<th>规则二</th>
+<th>规则三</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>fn f(x: &amp;T) -&gt; &amp;U</code></td>
+<td><code>&lt;&#39;a&gt;</code></td>
+<td>唯一输入 → 输出得 <code>&#39;a</code></td>
+<td>—</td>
+<td>✓ 自动推断</td>
+</tr>
+<tr>
+<td><code>fn f(x: &amp;T, y: &amp;U) -&gt; &amp;V</code></td>
+<td><code>&lt;&#39;a,&#39;b&gt;</code></td>
+<td>两个输入，跳过</td>
+<td>无 <code>self</code>，跳过</td>
+<td>✗ 报错</td>
+</tr>
+<tr>
+<td><code>fn f(&amp;self) -&gt; &amp;T</code></td>
+<td><code>&lt;&#39;a&gt;</code></td>
+<td>唯一输入 → 输出得 <code>&#39;a</code></td>
+<td>—</td>
+<td>✓ 自动推断</td>
+</tr>
+<tr>
+<td><code>fn f(&amp;self, x: &amp;T) -&gt; &amp;U</code></td>
+<td><code>&lt;&#39;a,&#39;b&gt;</code></td>
+<td>两个输入，跳过</td>
+<td>输出得 <code>self</code> 的 <code>&#39;a</code></td>
+<td>✓ 自动推断</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>三条规则全部失败（如”多个输入引用 + 无 <code>self</code> + 有引用返回值”）时，编译器报 <code>missing lifetime specifier</code>，必须手动标注。3.4 节有每条规则的完整可运行示例。</p>
+</blockquote>
+<h4 id="同一生命周期：-a-约束两个参数"><a href="#同一生命周期：-a-约束两个参数" class="headerlink" title="同一生命周期：&#39;a 约束两个参数"></a>同一生命周期：<code>&#39;a</code> 约束两个参数</h4><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">func</span>&lt;<span class="hljs-symbol">&#x27;a</span>&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> T, y: &amp;<span class="hljs-symbol">&#x27;a</span> T) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;a</span> T<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>标注</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>&#39;a</code></td>
+<td>生命周期参数名（惯例用单引号加小写字母）；描述约束关系，不改变实际存活时长</td>
+</tr>
+<tr>
+<td><code>x: &amp;&#39;a T</code></td>
+<td><code>x</code> 的引用生命周期至少为 <code>&#39;a</code></td>
+</tr>
+<tr>
+<td><code>y: &amp;&#39;a T</code></td>
+<td><code>y</code> 的引用生命周期至少为 <code>&#39;a</code></td>
+</tr>
+<tr>
+<td><code>-&gt; &amp;&#39;a T</code></td>
+<td>返回引用的存活时间 ≤ <code>x</code> 与 <code>y</code> 中<strong>较短</strong>的那个</td>
+</tr>
+</tbody></table>
+<p>当 <code>x</code> 和 <code>y</code> 的实际生命周期不同时，编译器将 <code>&#39;a</code> <strong>收紧</strong>（<code>constrain</code>）为两者的交集——即较短的那个：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">longest</span>&lt;<span class="hljs-symbol">&#x27;a</span>&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span>, y: &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span> &#123;<br>    <span class="hljs-keyword">if</span> x.<span class="hljs-title function_ invoke__">len</span>() &gt; y.<span class="hljs-title function_ invoke__">len</span>() &#123;<br>        x<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        y<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s1</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;long string&quot;</span>);<br>    &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">s2</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;xyz&quot;</span>);<br>        <span class="hljs-comment">// &#x27;a 被收紧为 s2 的生命周期（较短），result 必须在此作用域内使用</span><br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">result</span> = <span class="hljs-title function_ invoke__">longest</span>(s1.<span class="hljs-title function_ invoke__">as_str</span>(), s2.<span class="hljs-title function_ invoke__">as_str</span>());<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;最长的字符串: &#123;&#125;&quot;</span>, result);<br>    &#125;<br>    <span class="hljs-comment">// 若在此处使用 result → 编译拒绝，因为 &#x27;a 不覆盖 s2 drop 之后</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs csharp">最长的字符串: <span class="hljs-built_in">long</span> <span class="hljs-built_in">string</span><br></code></pre></td></tr></table></figure>
+
+<h4 id="不同生命周期：返回值只绑定其中一个参数"><a href="#不同生命周期：返回值只绑定其中一个参数" class="headerlink" title="不同生命周期：返回值只绑定其中一个参数"></a>不同生命周期：返回值只绑定其中一个参数</h4><p>若返回值<strong>只可能来自某一个参数</strong>，可以为两个参数赋予独立的生命周期，让返回值只跟目标参数绑定，不受另一参数作用域约束：</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">func</span>&lt;<span class="hljs-symbol">&#x27;a</span>, <span class="hljs-symbol">&#x27;b</span>&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> T, y: &amp;<span class="hljs-symbol">&#x27;b</span> T) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;a</span> T<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">first</span>&lt;<span class="hljs-symbol">&#x27;a</span>, <span class="hljs-symbol">&#x27;b</span>&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span>, _y: &amp;<span class="hljs-symbol">&#x27;b</span> <span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span> &#123;<br>    x   <span class="hljs-comment">// 返回值只与 x 绑定，与 _y 无关</span><br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s1</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;first&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">result</span>;<br>    &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">s2</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;second&quot;</span>);<br>        result = <span class="hljs-title function_ invoke__">first</span>(s1.<span class="hljs-title function_ invoke__">as_str</span>(), s2.<span class="hljs-title function_ invoke__">as_str</span>());<br>    &#125; <span class="hljs-comment">// s2 在此 drop，但 result 生命周期绑定 s1，仍然有效</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;结果: &#123;&#125;&quot;</span>, result);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight applescript"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs applescript">结果: <span class="hljs-keyword">first</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若把上例中的 <code>-&gt; &amp;&#39;a str</code> 改成 <code>-&gt; &amp;&#39;b str</code> 并返回 <code>_y</code>，则 <code>result</code> 的存活范围受 <code>s2</code> 限制，在内层作用域外使用会被编译器拒绝——这正是生命周期标注阻止悬垂引用的机制。</p>
+</blockquote>
+<h4 id="参数引用规则汇总"><a href="#参数引用规则汇总" class="headerlink" title="参数引用规则汇总"></a>参数引用规则汇总</h4><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>签名模板</th>
+<th>典型用途</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>只读，不返回引用</td>
+<td><code>fn f(x: &amp;T)</code></td>
+<td>打印、校验</td>
+</tr>
+<tr>
+<td>只读，返回与输入相关的引用</td>
+<td><code>fn f&lt;&#39;a&gt;(x: &amp;&#39;a T) -&gt; &amp;&#39;a U</code></td>
+<td>字段提取、切片</td>
+</tr>
+<tr>
+<td>多输入，返回其中之一</td>
+<td><code>fn f&lt;&#39;a&gt;(x: &amp;&#39;a T, y: &amp;&#39;a T) -&gt; &amp;&#39;a T</code></td>
+<td>比较、选择</td>
+</tr>
+<tr>
+<td>多输入，返回值只绑定一个</td>
+<td><code>fn f&lt;&#39;a, &#39;b&gt;(x: &amp;&#39;a T, y: &amp;&#39;b U) -&gt; &amp;&#39;a V</code></td>
+<td>转换、格式化</td>
+</tr>
+<tr>
+<td>可变借用 + 返回引用</td>
+<td><code>fn f&lt;&#39;a&gt;(x: &amp;&#39;a mut T) -&gt; &amp;&#39;a U</code></td>
+<td>就地修改后返回引用</td>
+</tr>
+</tbody></table>
+<h3 id="3-3-结构体中的生命周期"><a href="#3-3-结构体中的生命周期" class="headerlink" title="3.3 结构体中的生命周期"></a>3.3 结构体中的生命周期</h3><p>结构体若持有引用字段，必须标注生命周期，声明”该结构体存活时间不超过所引用的数据”：</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Name</span>&lt;<span class="hljs-symbol">&#x27;a</span>&gt; &#123;<br>    field: &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span>,<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-meta">#[derive(Debug)]</span><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Excerpt</span>&lt;<span class="hljs-symbol">&#x27;a</span>&gt; &#123;<br>    content: &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span>,<br>&#125;<br><br><span class="hljs-keyword">impl</span>&lt;<span class="hljs-symbol">&#x27;a</span>&gt; Excerpt&lt;<span class="hljs-symbol">&#x27;a</span>&gt; &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">level</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">i32</span> &#123;<br>        <span class="hljs-number">3</span><br>    &#125;<br><br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">announce</span>(&amp;<span class="hljs-keyword">self</span>, announcement: &amp;<span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-type">str</span> &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;注意: &#123;&#125;&quot;</span>, announcement);<br>        <span class="hljs-keyword">self</span>.content<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">novel</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;Call me Ishmael. Some years ago...&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">first</span> = novel.<span class="hljs-title function_ invoke__">split</span>(<span class="hljs-string">&#x27;.&#x27;</span>).<span class="hljs-title function_ invoke__">next</span>().<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;找不到句号&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">ex</span> = Excerpt &#123; content: first &#125;;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, ex);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;等级: &#123;&#125;&quot;</span>, ex.<span class="hljs-title function_ invoke__">level</span>());<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">part</span> = ex.<span class="hljs-title function_ invoke__">announce</span>(<span class="hljs-string">&quot;重要段落&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;内容: &#123;&#125;&quot;</span>, part);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs makefile">Excerpt &#123; content: <span class="hljs-string">&quot;Call me Ishmael&quot;</span> &#125;<br><span class="hljs-section">等级: 3</span><br><span class="hljs-section">注意: 重要段落</span><br><span class="hljs-section">内容: Call me Ishmael</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>impl</code> 块的生命周期标注 <code>impl&lt;&#39;a&gt; Excerpt&lt;&#39;a&gt;</code> 是必须的，因为 <code>Excerpt</code> 本身携带了生命周期参数。方法内部的省略规则（见 3.4）会进一步减少标注量。</p>
+</blockquote>
+<h3 id="3-4-生命周期省略规则"><a href="#3-4-生命周期省略规则" class="headerlink" title="3.4 生命周期省略规则"></a>3.4 生命周期省略规则</h3><p>大多数场景下编译器能自动推断生命周期，无需显式标注。编译器按顺序应用三条<strong>省略规则</strong>（<code>elision rules</code>）。三条规则应用完毕后，若仍有输出引用的生命周期未确定，则报错——必须手动标注。</p>
+<h4 id="规则一：为每个输入引用分配独立生命周期"><a href="#规则一：为每个输入引用分配独立生命周期" class="headerlink" title="规则一：为每个输入引用分配独立生命周期"></a>规则一：为每个输入引用分配独立生命周期</h4><p>每个引用参数各自获得一个全新的生命周期参数：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>(x: &amp;T)            →  <span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>&lt;<span class="hljs-symbol">&#x27;a</span>&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> T)<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>(x: &amp;T, y: &amp;U)    →  <span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>&lt;<span class="hljs-symbol">&#x27;a</span>, <span class="hljs-symbol">&#x27;b</span>&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> T, y: &amp;<span class="hljs-symbol">&#x27;b</span> U)<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>(x: &amp;T, y: &amp;T)    →  <span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>&lt;<span class="hljs-symbol">&#x27;a</span>, <span class="hljs-symbol">&#x27;b</span>&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> T, y: &amp;<span class="hljs-symbol">&#x27;b</span> T)<br></code></pre></td></tr></table></figure>
+
+<p>这是所有推断的起点。规则一执行后，输出引用的生命周期<strong>仍然未知</strong>，需要规则二或规则三来确定。</p>
+<h4 id="规则二：唯一输入生命周期传递给所有输出"><a href="#规则二：唯一输入生命周期传递给所有输出" class="headerlink" title="规则二：唯一输入生命周期传递给所有输出"></a>规则二：唯一输入生命周期传递给所有输出</h4><p>若规则一执行后只剩下<strong>一个</strong>输入生命周期参数，将它赋给所有输出引用：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>&lt;<span class="hljs-symbol">&#x27;a</span>&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> T) <span class="hljs-punctuation">-&gt;</span> &amp;U    →  <span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>&lt;<span class="hljs-symbol">&#x27;a</span>&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> T) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;a</span> U   ✓<br></code></pre></td></tr></table></figure>
+
+<p>规则一 + 规则二可以推断<strong>单引用参数函数</strong>的完整生命周期：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// 省略形式（用户写的）</span><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">first_word</span>(s: &amp;<span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-type">str</span> &#123;<br>    s.<span class="hljs-title function_ invoke__">split_whitespace</span>().<span class="hljs-title function_ invoke__">next</span>().<span class="hljs-title function_ invoke__">unwrap_or</span>(<span class="hljs-string">&quot;&quot;</span>)<br>&#125;<br><br><span class="hljs-comment">// 编译器展开后（等价）</span><br><span class="hljs-comment">// fn first_word&lt;&#x27;a&gt;(s: &amp;&#x27;a str) -&gt; &amp;&#x27;a str</span><br></code></pre></td></tr></table></figure>
+
+<p>若有<strong>多个</strong>输入引用参数，规则二无法适用（存在歧义），推断移入规则三。</p>
+<h4 id="规则三：方法中-self-的生命周期传递给所有输出"><a href="#规则三：方法中-self-的生命周期传递给所有输出" class="headerlink" title="规则三：方法中 &amp;self 的生命周期传递给所有输出"></a>规则三：方法中 <code>&amp;self</code> 的生命周期传递给所有输出</h4><p>若参数列表中包含 <code>&amp;self</code> 或 <code>&amp;mut self</code>，将 <code>self</code> 的生命周期赋给所有输出引用：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>&lt;<span class="hljs-symbol">&#x27;a</span>, <span class="hljs-symbol">&#x27;b</span>&gt;(&amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-keyword">self</span>, x: &amp;<span class="hljs-symbol">&#x27;b</span> T) <span class="hljs-punctuation">-&gt;</span> &amp;U    →  <span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>&lt;<span class="hljs-symbol">&#x27;a</span>, <span class="hljs-symbol">&#x27;b</span>&gt;(&amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-keyword">self</span>, x: &amp;<span class="hljs-symbol">&#x27;b</span> T) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;a</span> U   ✓<br></code></pre></td></tr></table></figure>
+
+<p>这意味着方法的返回引用默认绑定 <code>self</code>，与其他参数的生命周期无关：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Config</span> &#123;<br>    host: <span class="hljs-type">String</span>,<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">Config</span> &#123;<br>    <span class="hljs-comment">// 省略形式</span><br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">host</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-type">str</span> &#123;<br>        &amp;<span class="hljs-keyword">self</span>.host<br>    &#125;<br>    <span class="hljs-comment">// 展开：fn host&lt;&#x27;a&gt;(&amp;&#x27;a self) -&gt; &amp;&#x27;a str</span><br>    <span class="hljs-comment">// 规则一：&#x27;a（self），规则三：输出绑定 &#x27;a ✓</span><br><br>    <span class="hljs-comment">// 两个引用参数：规则三处理多参数情形</span><br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">pick</span>&lt;<span class="hljs-symbol">&#x27;b</span>&gt;(&amp;<span class="hljs-keyword">self</span>, _<span class="hljs-keyword">override</span>: &amp;<span class="hljs-symbol">&#x27;b</span> <span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-type">str</span> &#123;<br>        &amp;<span class="hljs-keyword">self</span>.host<br>    &#125;<br>    <span class="hljs-comment">// 展开：fn pick&lt;&#x27;a, &#x27;b&gt;(&amp;&#x27;a self, _override: &amp;&#x27;b str) -&gt; &amp;&#x27;a str</span><br>    <span class="hljs-comment">// 规则一：&#x27;a（self）、&#x27;b（_override），规则三：输出绑定 &#x27;a ✓</span><br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">cfg</span> = Config &#123; host: <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;localhost&quot;</span>) &#125;;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;host: &#123;&#125;&quot;</span>, cfg.<span class="hljs-title function_ invoke__">host</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">result</span>;<br>    &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">ov</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;override-host&quot;</span>);<br>        result = cfg.<span class="hljs-title function_ invoke__">pick</span>(&amp;ov);<br>    &#125; <span class="hljs-comment">// ov drop，result 绑定 cfg（self），仍有效</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;pick: &#123;&#125;&quot;</span>, result);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight avrasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs avrasm"><span class="hljs-symbol">host:</span> localhost<br><span class="hljs-symbol">pick:</span> localhost<br></code></pre></td></tr></table></figure>
+
+<h4 id="三条规则都无法解决时：必须手动标注"><a href="#三条规则都无法解决时：必须手动标注" class="headerlink" title="三条规则都无法解决时：必须手动标注"></a>三条规则都无法解决时：必须手动标注</h4><p>多个引用参数 + 无 <code>self</code> + 有引用返回值：三条规则应用完毕后输出生命周期仍未确定，编译器报错 <code>missing lifetime specifier</code>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// 无法编译——编译器无法确定返回值绑定 x 还是 y</span><br><span class="hljs-comment">// fn longest(x: &amp;str, y: &amp;str) -&gt; &amp;str &#123; ... &#125;</span><br><br><span class="hljs-comment">// 必须手动声明：返回值与 x 和 y 的较短生命周期绑定</span><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">longest</span>&lt;<span class="hljs-symbol">&#x27;a</span>&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span>, y: &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span> &#123;<br>    <span class="hljs-keyword">if</span> x.<span class="hljs-title function_ invoke__">len</span>() &gt; y.<span class="hljs-title function_ invoke__">len</span>() &#123; x &#125; <span class="hljs-keyword">else</span> &#123; y &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h4 id="三步推断全景表"><a href="#三步推断全景表" class="headerlink" title="三步推断全景表"></a>三步推断全景表</h4><table>
+<thead>
+<tr>
+<th>省略前签名</th>
+<th>规则一</th>
+<th>规则二</th>
+<th>规则三</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>fn f(x: &amp;T) -&gt; &amp;U</code></td>
+<td><code>fn f&lt;&#39;a&gt;(x: &amp;&#39;a T) -&gt; &amp;U</code></td>
+<td>输出获得 <code>&#39;a</code></td>
+<td>无 <code>self</code></td>
+<td>✓ 自动推断</td>
+</tr>
+<tr>
+<td><code>fn f(x: &amp;T, y: &amp;U) -&gt; &amp;V</code></td>
+<td><code>fn f&lt;&#39;a,&#39;b&gt;(x: &amp;&#39;a T, y: &amp;&#39;b U) -&gt; &amp;V</code></td>
+<td>两个输入，跳过</td>
+<td>无 <code>self</code></td>
+<td>✗ 报错，需手动标注</td>
+</tr>
+<tr>
+<td><code>fn f(&amp;self) -&gt; &amp;T</code></td>
+<td><code>fn f&lt;&#39;a&gt;(&amp;&#39;a self) -&gt; &amp;T</code></td>
+<td>一个输入，<code>&#39;a</code> 赋给输出</td>
+<td>—</td>
+<td>✓ 自动推断</td>
+</tr>
+<tr>
+<td><code>fn f(&amp;self, x: &amp;T) -&gt; &amp;U</code></td>
+<td><code>fn f&lt;&#39;a,&#39;b&gt;(&amp;&#39;a self, x: &amp;&#39;b T) -&gt; &amp;U</code></td>
+<td>两个输入，跳过</td>
+<td>输出获得 <code>&#39;a</code></td>
+<td>✓ 自动推断</td>
+</tr>
+</tbody></table>
+<h2 id="四、-static-生命周期"><a href="#四、-static-生命周期" class="headerlink" title="四、&#39;static 生命周期"></a>四、<code>&#39;static</code> 生命周期</h2><p><code>&#39;static</code> 是最长的生命周期，表示引用在<strong>整个程序运行期间</strong>都有效。字符串字面量默认就是 <code>&amp;&#39;static str</code>，因为它们被编译进二进制的只读段：</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">let</span> <span class="hljs-variable">s</span>: &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span> = <span class="hljs-string">&quot;字面量&quot;</span>;<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">f</span>() <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span> &#123; <span class="hljs-string">&quot;常量&quot;</span> &#125;<br></code></pre></td></tr></table></figure>
+
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">get_greeting</span>() <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span> &#123;<br>    <span class="hljs-string">&quot;Hello, Rust!&quot;</span><br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">print_static</span>(s: &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span>) &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;静态字符串: &#123;&#125;&quot;</span>, s);<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s</span>: &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span> = <span class="hljs-string">&quot;程序运行期间始终有效&quot;</span>;<br>    <span class="hljs-title function_ invoke__">print_static</span>(s);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">get_greeting</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight autohotkey"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs autohotkey"><span class="hljs-title">静态字符串:</span> 程序运行期间始终有效<br><span class="hljs-built_in">Hello,</span> Rust!<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>是否为 <code>&#39;static</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>字符串字面量 <code>&quot;abc&quot;</code></td>
+<td>是</td>
+</tr>
+<tr>
+<td><code>Box::leak</code> 泄漏的堆数据</td>
+<td>是</td>
+</tr>
+<tr>
+<td><code>const</code> &#x2F; <code>static</code> 变量</td>
+<td>是</td>
+</tr>
+<tr>
+<td>函数局部变量的引用</td>
+<td>否</td>
+</tr>
+<tr>
+<td>结构体字段引用（非 <code>&#39;static</code> 标注）</td>
+<td>否</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p>编译器报错提示”add <code>&#39;static</code> bound”时，优先考虑是否真正需要静态生命周期，或者改用 <code>Arc&lt;T&gt;</code> &#x2F; <code>String</code> 等拥有所有权的类型，而非盲目添加 <code>&#39;static</code>。</p>
+</blockquote>
+<h3 id="4-1-何时应该使用-static"><a href="#4-1-何时应该使用-static" class="headerlink" title="4.1 何时应该使用 &#39;static"></a>4.1 何时应该使用 <code>&#39;static</code></h3><p><code>&#39;static</code> 主要有两种含义：</p>
+<ol>
+<li><code>&amp;&#39;static T</code>：这个引用指向的数据在整个程序运行期间都有效。</li>
+<li><code>T: &#39;static</code>：类型 <code>T</code> 内部不包含非静态借用，或者只包含 <code>&#39;static</code> 借用；它并不表示这个值本身一定存活到程序结束。</li>
+</ol>
+<p>主动写 <code>&amp;&#39;static T</code> 的常见场景很少，通常只在下面这些地方出现：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">const</span> APP_NAME: &amp;<span class="hljs-type">str</span> = <span class="hljs-string">&quot;blog-docs&quot;</span>;<br><span class="hljs-keyword">static</span> VERSION: &amp;<span class="hljs-type">str</span> = <span class="hljs-string">&quot;1.0.0&quot;</span>;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">app_name</span>() <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span> &#123;<br>    APP_NAME<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<ul>
+<li>返回字符串字面量、全局常量、全局静态配置等确实随程序存在的数据。</li>
+<li>定义全局只读数据、缓存键、错误码、命令名称等不会动态释放的引用。</li>
+<li>少数场景用 <code>Box::leak</code> 将堆数据泄漏为 <code>&#39;static</code> 引用，例如一次性初始化后全局复用的数据。这个做法会故意跳过释放，应谨慎使用。</li>
+</ul>
+<p>更常见的是 <code>T: &#39;static</code> 约束，尤其在线程、异步任务、回调注册等场景中：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">name</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;Rust&quot;</span>);<br><br>    thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, name);<br>    &#125;);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>thread::spawn</code> 要求闭包满足 <code>&#39;static</code>，因为新线程可能比当前函数活得更久。这里通过 <code>move</code> 把 <code>String</code> 的所有权移入线程，闭包内部不再借用局部变量，因此可以满足 <code>T: &#39;static</code>。</p>
+<h3 id="4-2-是否需要主动使用-static"><a href="#4-2-是否需要主动使用-static" class="headerlink" title="4.2 是否需要主动使用 &#39;static"></a>4.2 是否需要主动使用 <code>&#39;static</code></h3><p>大多数时候不需要。Rust 的生命周期应尽量由编译器推断，只有当 API 边界确实要求长期持有数据时，才考虑 <code>&#39;static</code>。</p>
+<p>不要把 <code>&#39;static</code> 当作解决生命周期报错的默认手段：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">wrong</span>() <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span> &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;temporary&quot;</span>);<br>    &amp;s <span class="hljs-comment">// 错误：s 在函数结束时被释放，不能返回 &#x27;static 引用</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>如果函数需要返回动态生成的数据，应返回拥有所有权的类型：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">right</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">String</span> &#123;<br>    <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;temporary&quot;</span>)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>如果异步任务、线程或回调需要长期使用数据，优先移动所有权或使用共享所有权：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::sync::Arc;<br><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">config</span> = Arc::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;config&quot;</span>));<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">cloned</span> = Arc::<span class="hljs-title function_ invoke__">clone</span>(&amp;config);<br><br>    thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, cloned);<br>    &#125;);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>实战判断顺序：</p>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>推荐做法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>数据本来就是字符串字面量或全局静态数据</td>
+<td>可以使用 <code>&amp;&#39;static str</code> &#x2F; <code>&amp;&#39;static T</code></td>
+</tr>
+<tr>
+<td>函数返回动态创建的数据</td>
+<td>返回 <code>String</code> &#x2F; <code>Vec&lt;T&gt;</code> &#x2F; 自定义拥有所有权的类型</td>
+</tr>
+<tr>
+<td>线程、异步任务、回调要求 <code>T: &#39;static</code></td>
+<td>用 <code>move</code> 转移所有权，或用 <code>Arc&lt;T&gt;</code> 共享所有权</td>
+</tr>
+<tr>
+<td>只是为了消除生命周期报错</td>
+<td>不要优先加 <code>&#39;static</code>，先检查返回值是否借用了局部变量</td>
+</tr>
+<tr>
+<td>结构体需要长期保存外部数据</td>
+<td>优先保存拥有所有权的字段，如 <code>String</code>，而不是 <code>&amp;&#39;static str</code></td>
+</tr>
+</tbody></table>
+<h2 id="五、泛型与生命周期组合"><a href="#五、泛型与生命周期组合" class="headerlink" title="五、泛型与生命周期组合"></a>五、泛型与生命周期组合</h2><p>生命周期参数可以与泛型类型参数同时使用。两者都写在尖括号中，生命周期参数在前：</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">func</span>&lt;<span class="hljs-symbol">&#x27;a</span>, T: Trait&gt;(x: &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span>, y: &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span>, extra: T) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span><br></code></pre></td></tr></table></figure>
+
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::fmt::Display;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">longest_with_announcement</span>&lt;<span class="hljs-symbol">&#x27;a</span>, T&gt;(<br>    x: &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span>,<br>    y: &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span>,<br>    ann: T,<br>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;a</span> <span class="hljs-type">str</span><br><span class="hljs-keyword">where</span><br>    T: Display,<br>&#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;公告: &#123;&#125;&quot;</span>, ann);<br>    <span class="hljs-keyword">if</span> x.<span class="hljs-title function_ invoke__">len</span>() &gt; y.<span class="hljs-title function_ invoke__">len</span>() &#123; x &#125; <span class="hljs-keyword">else</span> &#123; y &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s1</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;long string is long&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">s2</span> = <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;xyz&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">result</span> = <span class="hljs-title function_ invoke__">longest_with_announcement</span>(&amp;s1, &amp;s2, <span class="hljs-string">&quot;今天天气很好&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;最长: &#123;&#125;&quot;</span>, result);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight csharp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs csharp">公告: 今天天气很好<br>最长: <span class="hljs-built_in">long</span> <span class="hljs-built_in">string</span> <span class="hljs-keyword">is</span> <span class="hljs-built_in">long</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="六、常见错误模式速查"><a href="#六、常见错误模式速查" class="headerlink" title="六、常见错误模式速查"></a>六、常见错误模式速查</h2><table>
+<thead>
+<tr>
+<th>错误信息（关键词）</th>
+<th>原因</th>
+<th>修复思路</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>value borrowed here after move</code></td>
+<td>移动后使用原变量</td>
+<td>改用 <code>clone()</code> 或改传引用</td>
+</tr>
+<tr>
+<td><code>cannot borrow as mutable because it is not declared as mutable</code></td>
+<td>未声明 <code>mut</code></td>
+<td>变量声明加 <code>mut</code></td>
+</tr>
+<tr>
+<td><code>cannot borrow as mutable more than once</code></td>
+<td>同时存在多个 <code>&amp;mut</code></td>
+<td>缩短第一个可变借用的作用域</td>
+</tr>
+<tr>
+<td><code>cannot borrow as immutable because it is also borrowed as mutable</code></td>
+<td>可变借用与不可变借用共存</td>
+<td>调整借用顺序或作用域</td>
+</tr>
+<tr>
+<td><code>missing lifetime specifier</code></td>
+<td>函数&#x2F;结构体返回引用但无生命周期标注</td>
+<td>添加 <code>&lt;&#39;a&gt;</code> 标注并标注参数与返回值</td>
+</tr>
+<tr>
+<td><code>returns a reference to data owned by the current function</code></td>
+<td>试图返回局部变量的引用</td>
+<td>返回拥有所有权的类型（<code>String</code>、<code>Vec</code>…）</td>
+</tr>
+<tr>
+<td><code>lifetime may not live long enough</code></td>
+<td>引用的存活范围短于使用范围</td>
+<td>调整生命周期约束或改用拥有所有权的类型</td>
+</tr>
+</tbody></table>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%89%80%E6%9C%89%E6%9D%83/" class="print-no-link">#所有权</a>
+      
+        <a href="/tags/%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F/" class="print-no-link">#生命周期</a>
+      
+        <a href="/tags/%E5%80%9F%E7%94%A8/" class="print-no-link">#借用</a>
+      
+        <a href="/tags/%E5%BC%95%E7%94%A8/" class="print-no-link">#引用</a>
+      
+        <a href="/tags/%E5%86%85%E5%AD%98%E5%AE%89%E5%85%A8/" class="print-no-link">#内存安全</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/rust/trait.html" title="Trait 特征介绍与实战">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Trait 特征介绍与实战</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/struct.html" title="struct 结构体介绍与实战">
+                        <span class="hidden-mobile">struct 结构体介绍与实战</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

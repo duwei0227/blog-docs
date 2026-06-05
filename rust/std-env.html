@@ -1,0 +1,1134 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Rust 进程启动时，操作系统会将当前工作目录、命令行参数和环境变量一并传递给它。std::env 是读写这三类上下文的统一接口：读取 DATABASE_URL 做配置注入、解析命令行标志、查询可执行文件路径，都通过它完成。与 C 的全局 environ 指针相比，std::env 增加了错误处理和 UTF-8 校验，同时保留了返回 OsString 的 _os 系列函数，用于处理平台上可能存在非">
+  
+  
+  
+  <title>[标准库] std::env 环境变量与进程信息介绍与实战 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="[标准库] std::env 环境变量与进程信息介绍与实战"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-28 10:00" pubdate>
+          2026年5月28日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          11k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          95 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">[标准库] std::env 环境变量与进程信息介绍与实战</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>Rust 进程启动时，操作系统会将当前工作目录、命令行参数和环境变量一并传递给它。<code>std::env</code> 是读写这三类上下文的统一接口：读取 <code>DATABASE_URL</code> 做配置注入、解析命令行标志、查询可执行文件路径，都通过它完成。与 C 的全局 <code>environ</code> 指针相比，<code>std::env</code> 增加了错误处理和 <code>UTF-8</code> 校验，同时保留了返回 <code>OsString</code> 的 <code>_os</code> 系列函数，用于处理平台上可能存在非 <code>UTF-8</code> 字节的路径和变量值。</p>
+<h2 id="一、模块概览"><a href="#一、模块概览" class="headerlink" title="一、模块概览"></a>一、模块概览</h2><p><code>std::env</code> 自 <code>Rust 1.0.0</code> 起稳定，核心组件如下：</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>var</code> &#x2F; <code>var_os</code></td>
+<td><code>fn</code></td>
+<td>读取单个环境变量</td>
+</tr>
+<tr>
+<td><code>vars</code> &#x2F; <code>vars_os</code></td>
+<td><code>fn</code></td>
+<td>遍历所有环境变量</td>
+</tr>
+<tr>
+<td><code>set_var</code> &#x2F; <code>remove_var</code></td>
+<td><code>fn</code></td>
+<td>修改环境变量（<code>unsafe</code>，多线程下须注意）</td>
+</tr>
+<tr>
+<td><code>args</code> &#x2F; <code>args_os</code></td>
+<td><code>fn</code></td>
+<td>读取命令行参数</td>
+</tr>
+<tr>
+<td><code>current_dir</code> &#x2F; <code>set_current_dir</code></td>
+<td><code>fn</code></td>
+<td>读写当前工作目录</td>
+</tr>
+<tr>
+<td><code>current_exe</code></td>
+<td><code>fn</code></td>
+<td>获取当前可执行文件完整路径</td>
+</tr>
+<tr>
+<td><code>home_dir</code></td>
+<td><code>fn</code></td>
+<td>获取当前用户 home 目录</td>
+</tr>
+<tr>
+<td><code>temp_dir</code></td>
+<td><code>fn</code></td>
+<td>获取系统临时目录</td>
+</tr>
+<tr>
+<td><code>split_paths</code> &#x2F; <code>join_paths</code></td>
+<td><code>fn</code></td>
+<td>按平台规则拆分 &#x2F; 拼接 <code>PATH</code> 格式字符串</td>
+</tr>
+<tr>
+<td><code>Args</code> &#x2F; <code>ArgsOs</code></td>
+<td><code>struct</code></td>
+<td>命令行参数迭代器</td>
+</tr>
+<tr>
+<td><code>Vars</code> &#x2F; <code>VarsOs</code></td>
+<td><code>struct</code></td>
+<td>环境变量键值对迭代器</td>
+</tr>
+<tr>
+<td><code>VarError</code></td>
+<td><code>enum</code></td>
+<td><code>var()</code> 失败时的错误类型</td>
+</tr>
+<tr>
+<td><code>JoinPathsError</code></td>
+<td><code>struct</code></td>
+<td><code>join_paths()</code> 失败时的错误类型</td>
+</tr>
+<tr>
+<td><code>consts</code></td>
+<td><code>mod</code></td>
+<td>当前目标平台的编译期常量</td>
+</tr>
+</tbody></table>
+<h2 id="二、环境变量读取"><a href="#二、环境变量读取" class="headerlink" title="二、环境变量读取"></a>二、环境变量读取</h2><h3 id="2-1-var-与-var-os"><a href="#2-1-var-与-var-os" class="headerlink" title="2.1 var 与 var_os"></a>2.1 var 与 var_os</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">var</span>&lt;K: <span class="hljs-built_in">AsRef</span>&lt;OsStr&gt;&gt;(key: K) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;<span class="hljs-type">String</span>, VarError&gt;<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">var_os</span>&lt;K: <span class="hljs-built_in">AsRef</span>&lt;OsStr&gt;&gt;(key: K) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Option</span>&lt;OsString&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>key</code></td>
+<td>-</td>
+<td>环境变量名；区分大小写（<code>Windows</code> 上不区分）</td>
+</tr>
+</tbody></table>
+<p><code>VarError</code> 的两个变体：</p>
+<table>
+<thead>
+<tr>
+<th>取值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>NotPresent</code></td>
+<td>变量不存在</td>
+</tr>
+<tr>
+<td><code>NotUnicode(OsString)</code></td>
+<td>变量存在但值不是合法 <code>UTF-8</code>；原始字节保存在 <code>OsString</code> 中</td>
+</tr>
+</tbody></table>
+<p>两个函数的核心区别是编码处理策略：<code>var</code> 强制将变量值转为 <code>UTF-8 String</code>，遇到非法字节时返回 <code>NotUnicode</code>；<code>var_os</code> 绕过编码校验直接返回 <code>Option&lt;OsString&gt;</code>，适合读取可能含非 <code>UTF-8</code> 字节的路径型变量（例如旧版 <code>Linux</code> 上 <code>locale</code> 配置不当的场景）。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">unsafe</span> &#123;<br>        env::<span class="hljs-title function_ invoke__">set_var</span>(<span class="hljs-string">&quot;APP_MODE&quot;</span>, <span class="hljs-string">&quot;production&quot;</span>);<br>        env::<span class="hljs-title function_ invoke__">set_var</span>(<span class="hljs-string">&quot;APP_PORT&quot;</span>, <span class="hljs-string">&quot;8080&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-keyword">match</span> env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;APP_MODE&quot;</span>) &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(val) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;APP_MODE = &#123;val&#125;&quot;</span>),<br>        <span class="hljs-title function_ invoke__">Err</span>(e)  =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;失败: &#123;e&#125;&quot;</span>),<br>    &#125;<br><br>    <span class="hljs-comment">// var_os 不做 UTF-8 校验，直接返回 OsString</span><br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(port) = env::<span class="hljs-title function_ invoke__">var_os</span>(<span class="hljs-string">&quot;APP_PORT&quot;</span>) &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;APP_PORT = &#123;:?&#125;&quot;</span>, port);<br>    &#125;<br><br>    <span class="hljs-keyword">match</span> env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;NONEXISTENT_KEY&quot;</span>) &#123;<br>        <span class="hljs-title function_ invoke__">Err</span>(env::VarError::NotPresent) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;NONEXISTENT_KEY 不存在&quot;</span>),<br>        _ =&gt; &#123;&#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight abnf"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs abnf">APP_MODE <span class="hljs-operator">=</span> production<br>APP_PORT <span class="hljs-operator">=</span> <span class="hljs-string">&quot;8080&quot;</span><br>NONEXISTENT_KEY 不存在<br></code></pre></td></tr></table></figure>
+
+<h3 id="2-2-vars-与-vars-os"><a href="#2-2-vars-与-vars-os" class="headerlink" title="2.2 vars 与 vars_os"></a>2.2 vars 与 vars_os</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">vars</span>() <span class="hljs-punctuation">-&gt;</span> Vars<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">vars_os</span>() <span class="hljs-punctuation">-&gt;</span> VarsOs<br></code></pre></td></tr></table></figure>
+
+<p><code>Vars</code> 实现 <code>Iterator&lt;Item = (String, String)&gt;</code>，<code>VarsOs</code> 实现 <code>Iterator&lt;Item = (OsString, OsString)&gt;</code>，两者均可直接接 <code>filter</code>、<code>map</code>、<code>collect</code> 等链式调用。遍历顺序由操作系统决定，不保证稳定。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">unsafe</span> &#123;<br>        env::<span class="hljs-title function_ invoke__">set_var</span>(<span class="hljs-string">&quot;MY_APP_DEBUG&quot;</span>, <span class="hljs-string">&quot;true&quot;</span>);<br>        env::<span class="hljs-title function_ invoke__">set_var</span>(<span class="hljs-string">&quot;MY_APP_LOG&quot;</span>, <span class="hljs-string">&quot;info&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">app_vars</span>: <span class="hljs-type">Vec</span>&lt;(<span class="hljs-type">String</span>, <span class="hljs-type">String</span>)&gt; = env::<span class="hljs-title function_ invoke__">vars</span>()<br>        .<span class="hljs-title function_ invoke__">filter</span>(|(key, _)| key.<span class="hljs-title function_ invoke__">starts_with</span>(<span class="hljs-string">&quot;MY_APP_&quot;</span>))<br>        .<span class="hljs-title function_ invoke__">collect</span>();<br>    app_vars.<span class="hljs-title function_ invoke__">sort_by_key</span>(|(k, _)| k.<span class="hljs-title function_ invoke__">clone</span>());<br><br>    <span class="hljs-keyword">for</span> (k, v) <span class="hljs-keyword">in</span> &amp;app_vars &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;k&#125; = &#123;v&#125;&quot;</span>);<br>    &#125;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;共找到 &#123;&#125; 个 MY_APP_ 前缀变量&quot;</span>, app_vars.<span class="hljs-title function_ invoke__">len</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight nginx"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs nginx"><span class="hljs-attribute">MY_APP_DEBUG</span> = <span class="hljs-literal">true</span><br>MY_APP_LOG = <span class="hljs-literal">info</span><br>共找到 <span class="hljs-number">2</span> 个 MY_APP_ 前缀变量<br></code></pre></td></tr></table></figure>
+
+<h2 id="三、环境变量修改"><a href="#三、环境变量修改" class="headerlink" title="三、环境变量修改"></a>三、环境变量修改</h2><h3 id="3-1-set-var"><a href="#3-1-set-var" class="headerlink" title="3.1 set_var"></a>3.1 set_var</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">set_var</span>&lt;K: <span class="hljs-built_in">AsRef</span>&lt;OsStr&gt;, V: <span class="hljs-built_in">AsRef</span>&lt;OsStr&gt;&gt;(key: K, value: V)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>key</code></td>
+<td>-</td>
+<td>变量名；不能为空、不能含 <code>=</code> 或 <code>\0</code></td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td>-</td>
+<td>变量值；不能含 <code>\0</code></td>
+</tr>
+</tbody></table>
+<p><code>set_var</code> 在 <code>Rust 1.81.0</code> 中被标注为 <code>unsafe</code>，因为 <code>Unix</code> 的 <code>setenv</code> 不是线程安全的：若其他线程正在调用 <code>getenv</code>（包括标准库内部的 DNS 解析等操作），并发修改 <code>environ</code> 会触发数据竞争，属于未定义行为。<code>Windows</code> 上 <code>SetEnvironmentVariable</code> 是线程安全的，因此不受此限。</p>
+<blockquote>
+<p>最佳实践：在任何额外线程启动前完成所有 <code>set_var</code> 调用；若只需为子进程注入变量，优先使用 <code>Command::env</code> 而非修改当前进程的全局环境。</p>
+</blockquote>
+<h3 id="3-2-remove-var"><a href="#3-2-remove-var" class="headerlink" title="3.2 remove_var"></a>3.2 remove_var</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">unsafe</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">remove_var</span>&lt;K: <span class="hljs-built_in">AsRef</span>&lt;OsStr&gt;&gt;(key: K)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>key</code></td>
+<td>-</td>
+<td>要删除的变量名；不能含 <code>=</code> 或 <code>\0</code></td>
+</tr>
+</tbody></table>
+<p>变量不存在时调用无效果，不会 <code>panic</code>。与 <code>set_var</code> 有相同的线程安全问题。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">unsafe</span> &#123;<br>        env::<span class="hljs-title function_ invoke__">set_var</span>(<span class="hljs-string">&quot;TEMP_TOKEN&quot;</span>, <span class="hljs-string">&quot;secret-123&quot;</span>);<br>    &#125;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;设置后: &#123;:?&#125;&quot;</span>, env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;TEMP_TOKEN&quot;</span>));<br><br>    <span class="hljs-keyword">unsafe</span> &#123;<br>        env::<span class="hljs-title function_ invoke__">remove_var</span>(<span class="hljs-string">&quot;TEMP_TOKEN&quot;</span>);<br>    &#125;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;删除后: &#123;:?&#125;&quot;</span>, env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;TEMP_TOKEN&quot;</span>));<br><br>    <span class="hljs-keyword">unsafe</span> &#123;<br>        env::<span class="hljs-title function_ invoke__">remove_var</span>(<span class="hljs-string">&quot;ALREADY_GONE&quot;</span>);<br>    &#125;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;删除不存在的变量: OK&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight isbl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs isbl">设置后: <span class="hljs-function"><span class="hljs-title">Ok</span>(<span class="hljs-string">&quot;secret-123&quot;</span>)</span><br>删除后: <span class="hljs-function"><span class="hljs-title">Err</span>(<span class="hljs-variable">NotPresent</span>)</span><br>删除不存在的变量: <span class="hljs-variable">OK</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="四、命令行参数"><a href="#四、命令行参数" class="headerlink" title="四、命令行参数"></a>四、命令行参数</h2><h3 id="4-1-args-与-args-os"><a href="#4-1-args-与-args-os" class="headerlink" title="4.1 args 与 args_os"></a>4.1 args 与 args_os</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">args</span>() <span class="hljs-punctuation">-&gt;</span> Args<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">args_os</span>() <span class="hljs-punctuation">-&gt;</span> ArgsOs<br></code></pre></td></tr></table></figure>
+
+<p><code>Args</code> 实现 <code>Iterator&lt;Item = String&gt;</code>，<code>ArgsOs</code> 实现 <code>Iterator&lt;Item = OsString&gt;</code>。两者的第 0 个元素均为程序名（对应 C 的 <code>argv[0]</code>），后续元素为用户传入的参数。</p>
+<p><code>args()</code> 对每个参数做 <code>UTF-8</code> 校验，含非法字节时 <code>panic</code>；<code>args_os()</code> 不校验，适合需要接受任意字节参数的工具（如处理旧文件名的 CLI 程序）。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">args</span>: <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">String</span>&gt; = env::<span class="hljs-title function_ invoke__">args</span>().<span class="hljs-title function_ invoke__">collect</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">exe_name</span> = std::path::Path::<span class="hljs-title function_ invoke__">new</span>(&amp;args[<span class="hljs-number">0</span>])<br>        .<span class="hljs-title function_ invoke__">file_name</span>()<br>        .<span class="hljs-title function_ invoke__">and_then</span>(|n| n.<span class="hljs-title function_ invoke__">to_str</span>())<br>        .<span class="hljs-title function_ invoke__">unwrap_or</span>(<span class="hljs-string">&quot;unknown&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;程序名: &#123;exe_name&#125;&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;参数数量: &#123;&#125;&quot;</span>, args.<span class="hljs-title function_ invoke__">len</span>() - <span class="hljs-number">1</span>);<br>    <span class="hljs-keyword">if</span> args.<span class="hljs-title function_ invoke__">len</span>() == <span class="hljs-number">1</span> &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;（未传入参数）&quot;</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果（<code>cargo run</code>，无额外参数）：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">程序名: base-rust</span><br><span class="hljs-section">参数数量: 0</span><br>（未传入参数）<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>args[0]</code>（程序名）的格式因平台和调用方式而异：直接执行二进制文件时通常是完整路径，通过 <code>exec</code> 族函数启动时可以是任意字符串，不应用于安全判断。</p>
+</blockquote>
+<h2 id="五、文件系统路径查询"><a href="#五、文件系统路径查询" class="headerlink" title="五、文件系统路径查询"></a>五、文件系统路径查询</h2><h3 id="5-1-current-dir-与-set-current-dir"><a href="#5-1-current-dir-与-set-current-dir" class="headerlink" title="5.1 current_dir 与 set_current_dir"></a>5.1 current_dir 与 set_current_dir</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">current_dir</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;PathBuf&gt;<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">set_current_dir</span>&lt;P: <span class="hljs-built_in">AsRef</span>&lt;Path&gt;&gt;(path: P) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;()&gt;<br></code></pre></td></tr></table></figure>
+
+<p><code>current_dir</code> 读取进程的当前工作目录（<code>CWD</code>），<code>set_current_dir</code> 修改它。<code>CWD</code> 是整个进程的全局状态，修改后所有使用相对路径的系统调用行为随即改变。</p>
+<blockquote>
+<p>在多线程程序中，<code>set_current_dir</code> 本身是合法的，但变更 <code>CWD</code> 会立即影响其他线程的相对路径解析，是难以追踪的竞态根源。建议程序启动后固定 <code>CWD</code>，或始终使用绝对路径。</p>
+</blockquote>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">original</span> = env::<span class="hljs-title function_ invoke__">current_dir</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;当前目录: &#123;&#125;&quot;</span>, original.<span class="hljs-title function_ invoke__">display</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">tmp</span> = env::<span class="hljs-title function_ invoke__">temp_dir</span>();<br>    env::<span class="hljs-title function_ invoke__">set_current_dir</span>(&amp;tmp).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;切换后: &#123;&#125;&quot;</span>, env::<span class="hljs-title function_ invoke__">current_dir</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">display</span>());<br><br>    env::<span class="hljs-title function_ invoke__">set_current_dir</span>(&amp;original).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;恢复后: &#123;&#125;&quot;</span>, env::<span class="hljs-title function_ invoke__">current_dir</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">display</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight crystal"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs crystal">当前目录: <span class="hljs-regexp">/home/duwei</span><span class="hljs-regexp">/workspace/rust</span><span class="hljs-regexp">/base-rust</span><br><span class="hljs-regexp">切换后: /tmp</span><br>恢复后: <span class="hljs-regexp">/home/duwei</span><span class="hljs-regexp">/workspace/rust</span><span class="hljs-regexp">/base-rust</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="5-2-current-exe"><a href="#5-2-current-exe" class="headerlink" title="5.2 current_exe"></a>5.2 current_exe</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">current_exe</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;PathBuf&gt;<br></code></pre></td></tr></table></figure>
+
+<p>返回当前进程可执行文件的完整绝对路径，符号链接已解析为真实路径。常见用途是定位与可执行文件同目录的资源文件（配置、模板、插件）。底层实现因平台而异：<code>Linux</code> 读取 <code>/proc/self/exe</code>，<code>macOS</code> 调用 <code>_NSGetExecutablePath</code>，<code>Windows</code> 调用 <code>GetModuleFileName</code>。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">match</span> env::<span class="hljs-title function_ invoke__">current_exe</span>() &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(exe) =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;可执行文件: &#123;&#125;&quot;</span>, exe.<span class="hljs-title function_ invoke__">display</span>());<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文件名: &#123;&#125;&quot;</span>, exe.<span class="hljs-title function_ invoke__">file_name</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">to_string_lossy</span>());<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;所在目录: &#123;&#125;&quot;</span>, exe.<span class="hljs-title function_ invoke__">parent</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">display</span>());<br>        &#125;<br>        <span class="hljs-title function_ invoke__">Err</span>(e) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;获取失败: &#123;e&#125;&quot;</span>),<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs awk">可执行文件: <span class="hljs-regexp">/home/</span>duwei<span class="hljs-regexp">/workspace/</span>rust<span class="hljs-regexp">/base-rust/</span>target<span class="hljs-regexp">/debug/</span>base-rust<br>文件名: base-rust<br>所在目录: <span class="hljs-regexp">/home/</span>duwei<span class="hljs-regexp">/workspace/</span>rust<span class="hljs-regexp">/base-rust/</span>target/debug<br></code></pre></td></tr></table></figure>
+
+<h3 id="5-3-home-dir-与-temp-dir"><a href="#5-3-home-dir-与-temp-dir" class="headerlink" title="5.3 home_dir 与 temp_dir"></a>5.3 home_dir 与 temp_dir</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">home_dir</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Option</span>&lt;PathBuf&gt;<br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">temp_dir</span>() <span class="hljs-punctuation">-&gt;</span> PathBuf<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th><code>Linux</code> 实现</th>
+<th><code>macOS</code> 实现</th>
+<th><code>Windows</code> 实现</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>home_dir</code></td>
+<td>优先读 <code>HOME</code> 环境变量，回退 <code>passwd</code> 条目</td>
+<td>同 <code>Linux</code></td>
+<td><code>USERPROFILE</code> 或 <code>HOMEPATH</code></td>
+</tr>
+<tr>
+<td><code>temp_dir</code></td>
+<td>优先读 <code>TMPDIR</code>，默认 <code>/tmp</code></td>
+<td>优先读 <code>TMPDIR</code>，默认 <code>/tmp</code></td>
+<td><code>GetTempPath</code> API</td>
+</tr>
+</tbody></table>
+<p><code>home_dir</code> 返回 <code>Option</code> 而非 <code>Result</code>，因为在容器或最小化环境中 home 目录可能确实不存在。<code>temp_dir</code> 始终返回路径，但不保证该路径存在或可写，必要时应在写入前自行检查。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">match</span> env::<span class="hljs-title function_ invoke__">home_dir</span>() &#123;<br>        <span class="hljs-title function_ invoke__">Some</span>(home) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Home 目录: &#123;&#125;&quot;</span>, home.<span class="hljs-title function_ invoke__">display</span>()),<br>        <span class="hljs-literal">None</span>       =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Home 目录未定义&quot;</span>),<br>    &#125;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">tmp</span> = env::<span class="hljs-title function_ invoke__">temp_dir</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;临时目录: &#123;&#125;&quot;</span>, tmp.<span class="hljs-title function_ invoke__">display</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;临时目录存在: &#123;&#125;&quot;</span>, tmp.<span class="hljs-title function_ invoke__">exists</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs bash">Home 目录: /home/duwei<br>临时目录: /tmp<br>临时目录存在: <span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="六、PATH-字符串操作"><a href="#六、PATH-字符串操作" class="headerlink" title="六、PATH 字符串操作"></a>六、PATH 字符串操作</h2><h3 id="6-1-split-paths"><a href="#6-1-split-paths" class="headerlink" title="6.1 split_paths"></a>6.1 split_paths</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">split_paths</span>&lt;T: <span class="hljs-built_in">AsRef</span>&lt;OsStr&gt;&gt;(input: T) <span class="hljs-punctuation">-&gt;</span> SplitPaths&lt;<span class="hljs-symbol">&#x27;_</span>&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>input</code></td>
+<td>-</td>
+<td><code>PATH</code> 格式字符串；<code>Unix</code> 以 <code>:</code> 分隔，<code>Windows</code> 以 <code>;</code> 分隔</td>
+</tr>
+</tbody></table>
+<p><code>split_paths</code> 比直接调用 <code>str::split(&#39;:&#39;)</code> 更健壮：<code>Windows</code> 路径中可能含 <code>;</code>，此时需要引号包裹，<code>split_paths</code> 会正确解析引号转义规则，而 <code>str::split</code> 会错误地截断路径。返回的 <code>SplitPaths</code> 是惰性迭代器，每个元素为 <code>PathBuf</code>。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">path_str</span> = <span class="hljs-string">&quot;/usr/local/bin:/usr/bin:/bin&quot;</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">paths</span>: <span class="hljs-type">Vec</span>&lt;_&gt; = env::<span class="hljs-title function_ invoke__">split_paths</span>(path_str).<span class="hljs-title function_ invoke__">collect</span>();<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;PATH 共 &#123;&#125; 条目:&quot;</span>, paths.<span class="hljs-title function_ invoke__">len</span>());<br>    <span class="hljs-keyword">for</span> (i, p) <span class="hljs-keyword">in</span> paths.<span class="hljs-title function_ invoke__">iter</span>().<span class="hljs-title function_ invoke__">enumerate</span>() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  [&#123;&#125;] &#123;&#125;&quot;</span>, i, p.<span class="hljs-title function_ invoke__">display</span>());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight less"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs less"><span class="hljs-selector-tag">PATH</span> 共 <span class="hljs-number">3</span> 条目:<br>  <span class="hljs-selector-attr">[0]</span> /<span class="hljs-selector-tag">usr</span>/<span class="hljs-selector-tag">local</span>/<span class="hljs-selector-tag">bin</span><br>  <span class="hljs-selector-attr">[1]</span> /<span class="hljs-selector-tag">usr</span>/<span class="hljs-selector-tag">bin</span><br>  <span class="hljs-selector-attr">[2]</span> /<span class="hljs-selector-tag">bin</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="6-2-join-paths"><a href="#6-2-join-paths" class="headerlink" title="6.2 join_paths"></a>6.2 join_paths</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">join_paths</span>&lt;I, T&gt;(paths: I) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;OsString, JoinPathsError&gt;<br><span class="hljs-keyword">where</span><br>    I: <span class="hljs-built_in">IntoIterator</span>&lt;Item = T&gt;,<br>    T: <span class="hljs-built_in">AsRef</span>&lt;OsStr&gt;,<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>paths</code></td>
+<td>-</td>
+<td>路径列表；各元素按平台规则拼接为 <code>PATH</code> 格式字符串</td>
+</tr>
+</tbody></table>
+<p><code>join_paths</code> 是 <code>split_paths</code> 的逆操作。若某个路径含有平台分隔符（<code>Unix</code> 的 <code>:</code>，<code>Windows</code> 的 <code>;</code>）且无法转义，则返回 <code>JoinPathsError</code>。常见用法是读取当前 <code>PATH</code>、头部插入新路径、再写回：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">original</span> = <span class="hljs-string">&quot;/usr/local/bin:/usr/bin:/bin&quot;</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">paths</span>: <span class="hljs-type">Vec</span>&lt;_&gt; = env::<span class="hljs-title function_ invoke__">split_paths</span>(original).<span class="hljs-title function_ invoke__">collect</span>();<br>    paths.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-number">0</span>, <span class="hljs-string">&quot;/opt/myapp/bin&quot;</span>.<span class="hljs-title function_ invoke__">into</span>());<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">new_path</span> = env::<span class="hljs-title function_ invoke__">join_paths</span>(&amp;paths).<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, new_path.<span class="hljs-title function_ invoke__">to_string_lossy</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight awk"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs awk"><span class="hljs-regexp">/opt/my</span>app<span class="hljs-regexp">/bin:/u</span>sr<span class="hljs-regexp">/local/</span>bin:<span class="hljs-regexp">/usr/</span>bin:/bin<br></code></pre></td></tr></table></figure>
+
+<h2 id="七、平台常量：consts-子模块"><a href="#七、平台常量：consts-子模块" class="headerlink" title="七、平台常量：consts 子模块"></a>七、平台常量：consts 子模块</h2><p><code>std::env::consts</code> 提供描述当前编译目标的常量，所有值在编译期确定，可用于条件逻辑和平台特定文件名构造。</p>
+<table>
+<thead>
+<tr>
+<th>常量</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>OS</code></td>
+<td><code>&amp;str</code></td>
+<td>操作系统名称，如 <code>&quot;linux&quot;</code>、<code>&quot;macos&quot;</code>、<code>&quot;windows&quot;</code></td>
+</tr>
+<tr>
+<td><code>ARCH</code></td>
+<td><code>&amp;str</code></td>
+<td>CPU 架构，如 <code>&quot;x86_64&quot;</code>、<code>&quot;aarch64&quot;</code>、<code>&quot;riscv64&quot;</code></td>
+</tr>
+<tr>
+<td><code>FAMILY</code></td>
+<td><code>&amp;str</code></td>
+<td>OS 家族，如 <code>&quot;unix&quot;</code>、<code>&quot;windows&quot;</code></td>
+</tr>
+<tr>
+<td><code>DLL_PREFIX</code></td>
+<td><code>&amp;str</code></td>
+<td>动态库文件名前缀；<code>Unix</code> 为 <code>&quot;lib&quot;</code>，<code>Windows</code> 为 <code>&quot;&quot;</code></td>
+</tr>
+<tr>
+<td><code>DLL_SUFFIX</code></td>
+<td><code>&amp;str</code></td>
+<td>动态库文件名后缀（含点），如 <code>&quot;.so&quot;</code>、<code>&quot;.dylib&quot;</code>、<code>&quot;.dll&quot;</code></td>
+</tr>
+<tr>
+<td><code>DLL_EXTENSION</code></td>
+<td><code>&amp;str</code></td>
+<td>动态库扩展名（不含点），如 <code>&quot;so&quot;</code>、<code>&quot;dylib&quot;</code>、<code>&quot;dll&quot;</code></td>
+</tr>
+<tr>
+<td><code>EXE_SUFFIX</code></td>
+<td><code>&amp;str</code></td>
+<td>可执行文件后缀；<code>Windows</code> 为 <code>&quot;.exe&quot;</code>，其他为 <code>&quot;&quot;</code></td>
+</tr>
+<tr>
+<td><code>EXE_EXTENSION</code></td>
+<td><code>&amp;str</code></td>
+<td>可执行文件扩展名（不含点）；<code>Windows</code> 为 <code>&quot;exe&quot;</code>，其他为 <code>&quot;&quot;</code></td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env::consts;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;OS:       &#123;&#125;&quot;</span>, consts::OS);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Arch:     &#123;&#125;&quot;</span>, consts::ARCH);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Family:   &#123;&#125;&quot;</span>, consts::FAMILY);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;DLL 后缀: &#123;&#125;&quot;</span>, consts::DLL_SUFFIX);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;DLL 前缀: &#123;&#125;&quot;</span>, consts::DLL_PREFIX);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Exe 后缀: &#123;:?&#125;&quot;</span>, consts::EXE_SUFFIX);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果（<code>Linux x86_64</code>）：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">OS</span><span class="hljs-punctuation">:</span> <span class="hljs-string">      linux</span><br><span class="hljs-attribute">Arch</span><span class="hljs-punctuation">:</span> <span class="hljs-string">    x86_64</span><br><span class="hljs-attribute">Family</span><span class="hljs-punctuation">:</span> <span class="hljs-string">  unix</span><br><span class="hljs-attribute">DLL 后缀</span><span class="hljs-punctuation">:</span> <span class="hljs-string">.so</span><br><span class="hljs-attribute">DLL 前缀</span><span class="hljs-punctuation">:</span> <span class="hljs-string">lib</span><br><span class="hljs-attribute">Exe 后缀</span><span class="hljs-punctuation">:</span> <span class="hljs-string">&quot;&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p><code>consts</code> 的典型应用是构造跨平台兼容的库文件名：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env::consts;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">lib_name</span>(base: &amp;<span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">String</span> &#123;<br>    <span class="hljs-built_in">format!</span>(<span class="hljs-string">&quot;&#123;&#125;&#123;&#125;&#123;&#125;&quot;</span>, consts::DLL_PREFIX, base, consts::DLL_SUFFIX)<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>在 <code>Linux</code> 上调用 <code>lib_name(&quot;mylib&quot;)</code> 得 <code>&quot;libmylib.so&quot;</code>，<code>Windows</code> 上得 <code>&quot;mylib.dll&quot;</code>。</p>
+<blockquote>
+<p><code>consts</code> 中的值反映的是<strong>编译目标</strong>，不是运行时主机。交叉编译时两者可能不同，不能用它判断当前运行的操作系统。</p>
+</blockquote>
+<h2 id="八、综合实战：环境驱动配置加载"><a href="#八、综合实战：环境驱动配置加载" class="headerlink" title="八、综合实战：环境驱动配置加载"></a>八、综合实战：环境驱动配置加载</h2><p>以下示例综合使用 <code>var</code>、<code>set_var</code>、<code>current_dir</code>、<code>current_exe</code> 和 <code>consts</code>，实现从环境变量加载应用配置的完整流程，未设置的变量自动回退到默认值：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::env;<br><span class="hljs-keyword">use</span> std::env::consts;<br><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">AppConfig</span> &#123;<br>    host: <span class="hljs-type">String</span>,<br>    port: <span class="hljs-type">u16</span>,<br>    debug: <span class="hljs-type">bool</span>,<br>    log_level: <span class="hljs-type">String</span>,<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">AppConfig</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">from_env</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-keyword">Self</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">host</span> = env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;APP_HOST&quot;</span>).<span class="hljs-title function_ invoke__">unwrap_or_else</span>(|_| <span class="hljs-string">&quot;127.0.0.1&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>());<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">port</span> = env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;APP_PORT&quot;</span>)<br>            .<span class="hljs-title function_ invoke__">ok</span>()<br>            .<span class="hljs-title function_ invoke__">and_then</span>(|v| v.<span class="hljs-title function_ invoke__">parse</span>().<span class="hljs-title function_ invoke__">ok</span>())<br>            .<span class="hljs-title function_ invoke__">unwrap_or</span>(<span class="hljs-number">3000u16</span>);<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">debug</span> = env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;APP_DEBUG&quot;</span>)<br>            .<span class="hljs-title function_ invoke__">map</span>(|v| v == <span class="hljs-string">&quot;true&quot;</span> || v == <span class="hljs-string">&quot;1&quot;</span>)<br>            .<span class="hljs-title function_ invoke__">unwrap_or</span>(<span class="hljs-literal">false</span>);<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">log_level</span> = env::<span class="hljs-title function_ invoke__">var</span>(<span class="hljs-string">&quot;APP_LOG_LEVEL&quot;</span>).<span class="hljs-title function_ invoke__">unwrap_or_else</span>(|_| <span class="hljs-string">&quot;info&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>());<br><br>        <span class="hljs-keyword">Self</span> &#123; host, port, debug, log_level &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">unsafe</span> &#123;<br>        env::<span class="hljs-title function_ invoke__">set_var</span>(<span class="hljs-string">&quot;APP_HOST&quot;</span>, <span class="hljs-string">&quot;0.0.0.0&quot;</span>);<br>        env::<span class="hljs-title function_ invoke__">set_var</span>(<span class="hljs-string">&quot;APP_PORT&quot;</span>, <span class="hljs-string">&quot;8080&quot;</span>);<br>        env::<span class="hljs-title function_ invoke__">set_var</span>(<span class="hljs-string">&quot;APP_DEBUG&quot;</span>, <span class="hljs-string">&quot;true&quot;</span>);<br>        <span class="hljs-comment">// APP_LOG_LEVEL 未设置，使用默认值 &quot;info&quot;</span><br>    &#125;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">cfg</span> = AppConfig::<span class="hljs-title function_ invoke__">from_env</span>();<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;=== 应用配置 ===&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Host:      &#123;&#125;&quot;</span>, cfg.host);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Port:      &#123;&#125;&quot;</span>, cfg.port);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Debug:     &#123;&#125;&quot;</span>, cfg.debug);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Log Level: &#123;&#125;&quot;</span>, cfg.log_level);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;\n=== 进程信息 ===&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;工作目录: &#123;&#125;&quot;</span>, env::<span class="hljs-title function_ invoke__">current_dir</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">display</span>());<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">exe</span> = env::<span class="hljs-title function_ invoke__">current_exe</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;可执行文件: &#123;&#125;&quot;</span>, exe.<span class="hljs-title function_ invoke__">file_name</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">to_string_lossy</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;参数数量: &#123;&#125;&quot;</span>, env::<span class="hljs-title function_ invoke__">args</span>().<span class="hljs-title function_ invoke__">count</span>() - <span class="hljs-number">1</span>);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;\n=== 平台信息 ===&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;OS: &#123;&#125; (&#123;&#125;)&quot;</span>, consts::OS, consts::FAMILY);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;Arch: &#123;&#125;&quot;</span>, consts::ARCH);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight asciidoc"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs asciidoc"><span class="hljs-section">=== 应用配置 ===</span><br>Host:      0.0.0.0<br>Port:      8080<br>Debug:     true<br>Log Level: info<br><br><span class="hljs-section">=== 进程信息 ===</span><br>工作目录: /home/duwei/workspace/rust/base-rust<br>可执行文件: base-rust<br>参数数量: 0<br><br><span class="hljs-section">=== 平台信息 ===</span><br>OS: linux (unix)<br>Arch: x86_64<br></code></pre></td></tr></table></figure>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E7%8E%AF%E5%A2%83%E5%8F%98%E9%87%8F/" class="print-no-link">#环境变量</a>
+      
+        <a href="/tags/%E5%91%BD%E4%BB%A4%E8%A1%8C%E5%8F%82%E6%95%B0/" class="print-no-link">#命令行参数</a>
+      
+        <a href="/tags/%E8%B7%A8%E5%B9%B3%E5%8F%B0/" class="print-no-link">#跨平台</a>
+      
+        <a href="/tags/%E8%BF%9B%E7%A8%8B%E4%BF%A1%E6%81%AF/" class="print-no-link">#进程信息</a>
+      
+        <a href="/tags/%E9%85%8D%E7%BD%AE%E5%8A%A0%E8%BD%BD/" class="print-no-link">#配置加载</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/rust/std-fs.html" title="[标准库] std::fs 文件系统操作介绍与实战">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">[标准库] std::fs 文件系统操作介绍与实战</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/std-collections.html" title="[标准库] std::collections 集合类型原理与实战">
+                        <span class="hidden-mobile">[标准库] std::collections 集合类型原理与实战</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

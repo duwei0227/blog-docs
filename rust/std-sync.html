@@ -1,0 +1,1307 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="多线程程序共享内存时，数据竞争是最隐蔽的 bug 来源——两个线程同时读写同一块内存，结果取决于调度时序，既无法重现也无法推理。std::sync 是 Rust 标准库提供的并发同步工具箱：从最低级的原子操作到高层的锁、条件变量、屏障和消息通道，每一种原语都在类型系统层面表达出”谁在什么时候可以访问数据”，让编译器而非运行时来兜底。 一、模块概览std::sync 的核心组件可按用途分为四类：">
+  
+  
+  
+  <title>[标准库] std::sync 并发同步原语介绍与实战 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="[标准库] std::sync 并发同步原语介绍与实战"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-29 16:00" pubdate>
+          2026年5月29日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          18k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          149 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">[标准库] std::sync 并发同步原语介绍与实战</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>多线程程序共享内存时，数据竞争是最隐蔽的 bug 来源——两个线程同时读写同一块内存，结果取决于调度时序，既无法重现也无法推理。<code>std::sync</code> 是 Rust 标准库提供的并发同步工具箱：从最低级的原子操作到高层的锁、条件变量、屏障和消息通道，每一种原语都在类型系统层面表达出”谁在什么时候可以访问数据”，让编译器而非运行时来兜底。</p>
+<h2 id="一、模块概览"><a href="#一、模块概览" class="headerlink" title="一、模块概览"></a>一、模块概览</h2><p><code>std::sync</code> 的核心组件可按用途分为四类：</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Arc&lt;T&gt;</code></td>
+<td><code>struct</code></td>
+<td>原子引用计数，跨线程共享所有权</td>
+</tr>
+<tr>
+<td><code>Weak&lt;T&gt;</code></td>
+<td><code>struct</code></td>
+<td><code>Arc&lt;T&gt;</code> 的弱引用，不阻止释放</td>
+</tr>
+<tr>
+<td><code>Mutex&lt;T&gt;</code></td>
+<td><code>struct</code></td>
+<td>互斥锁，独占访问被保护数据</td>
+</tr>
+<tr>
+<td><code>RwLock&lt;T&gt;</code></td>
+<td><code>struct</code></td>
+<td>读写锁，多读单写</td>
+</tr>
+<tr>
+<td><code>Condvar</code></td>
+<td><code>struct</code></td>
+<td>条件变量，配合 <code>Mutex</code> 等待事件</td>
+</tr>
+<tr>
+<td><code>Barrier</code></td>
+<td><code>struct</code></td>
+<td>屏障，协调 N 个线程同时到达某一点</td>
+</tr>
+<tr>
+<td><code>Once</code></td>
+<td><code>struct</code></td>
+<td>确保全局初始化代码只执行一次</td>
+</tr>
+<tr>
+<td><code>OnceLock&lt;T&gt;</code></td>
+<td><code>struct</code></td>
+<td>可写一次的线程安全单元格</td>
+</tr>
+<tr>
+<td><code>LazyLock&lt;T&gt;</code></td>
+<td><code>struct</code></td>
+<td>懒初始化静态变量，首次访问时执行闭包</td>
+</tr>
+<tr>
+<td><code>atomic</code></td>
+<td>子模块</td>
+<td>无锁原子类型：<code>AtomicBool</code>、<code>AtomicU64</code> 等</td>
+</tr>
+<tr>
+<td><code>mpsc</code></td>
+<td>子模块</td>
+<td>多生产者单消费者消息通道</td>
+</tr>
+<tr>
+<td><code>MutexGuard&lt;T&gt;</code></td>
+<td><code>struct</code></td>
+<td><code>Mutex</code> 的 <code>RAII</code> 守卫，离开作用域自动解锁</td>
+</tr>
+<tr>
+<td><code>RwLockReadGuard&lt;T&gt;</code></td>
+<td><code>struct</code></td>
+<td>持有读锁的守卫</td>
+</tr>
+<tr>
+<td><code>RwLockWriteGuard&lt;T&gt;</code></td>
+<td><code>struct</code></td>
+<td>持有写锁的守卫</td>
+</tr>
+<tr>
+<td><code>PoisonError&lt;T&gt;</code></td>
+<td><code>struct</code></td>
+<td>锁被毒化时返回的错误</td>
+</tr>
+<tr>
+<td><code>TryLockError&lt;T&gt;</code></td>
+<td><code>enum</code></td>
+<td><code>try_lock</code> 的错误类型：<code>WouldBlock</code> 或 <code>Poisoned</code></td>
+</tr>
+</tbody></table>
+<h2 id="二、Arc-—-跨线程共享所有权"><a href="#二、Arc-—-跨线程共享所有权" class="headerlink" title="二、Arc — 跨线程共享所有权"></a>二、Arc — 跨线程共享所有权</h2><p>普通的 <code>Rc&lt;T&gt;</code> 使用非原子的引用计数，克隆和释放都不是线程安全的操作。<code>Arc&lt;T&gt;</code>（<code>Atomically Reference Counted</code>）把引用计数的增减替换为原子操作，从而满足 <code>Send + Sync</code> 约束，可以跨线程传递。</p>
+<h3 id="2-1-Arc-基本用法"><a href="#2-1-Arc-基本用法" class="headerlink" title="2.1 Arc 基本用法"></a>2.1 Arc 基本用法</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">new</span>(data: T) <span class="hljs-punctuation">-&gt;</span> Arc&lt;T&gt;<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">clone</span>(this: &amp;Arc&lt;T&gt;) <span class="hljs-punctuation">-&gt;</span> Arc&lt;T&gt;    <span class="hljs-comment">// 通常写作 Arc::clone(&amp;arc)</span><br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">strong_count</span>(this: &amp;Arc&lt;T&gt;) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">usize</span><br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>data</code></td>
+<td>-</td>
+<td>被共享的值；<code>Arc::new</code> 将其移入堆上</td>
+</tr>
+</tbody></table>
+<p><code>Arc::clone</code> 只是递增引用计数，代价极低（一次原子加操作），不复制内部数据。所有引用都释放后，内部数据才被析构。<code>Arc&lt;T&gt;</code> 本身是不可变的共享引用——若要共享可变数据，必须与 <code>Mutex&lt;T&gt;</code> 或 <code>RwLock&lt;T&gt;</code> 组合，这也是整个 <code>std::sync</code> 最常见的模式。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::sync::&#123;Arc, Mutex&#125;;<br><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">counter</span> = Arc::<span class="hljs-title function_ invoke__">new</span>(Mutex::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">0u32</span>));<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">handles</span> = <span class="hljs-built_in">vec!</span>[];<br><br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">i</span> <span class="hljs-keyword">in</span> <span class="hljs-number">0</span>..<span class="hljs-number">4</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">counter</span> = Arc::<span class="hljs-title function_ invoke__">clone</span>(&amp;counter);<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">handle</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>            <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">val</span> = counter.<span class="hljs-title function_ invoke__">lock</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>            *val += <span class="hljs-number">10</span>;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;thread-&#123;i&#125;: counter = &#123;&#125;&quot;</span>, *val);<br>        &#125;);<br>        handles.<span class="hljs-title function_ invoke__">push</span>(handle);<br>    &#125;<br><br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">h</span> <span class="hljs-keyword">in</span> handles &#123;<br>        h.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    &#125;<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;最终 counter = &#123;&#125;&quot;</span>, *counter.<span class="hljs-title function_ invoke__">lock</span>().<span class="hljs-title function_ invoke__">unwrap</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs cpp">thread<span class="hljs-number">-0</span>: counter = <span class="hljs-number">10</span><br>thread<span class="hljs-number">-1</span>: counter = <span class="hljs-number">20</span><br>thread<span class="hljs-number">-2</span>: counter = <span class="hljs-number">30</span><br>thread<span class="hljs-number">-3</span>: counter = <span class="hljs-number">40</span><br>最终 counter = <span class="hljs-number">40</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>线程间打印顺序由调度决定，实际运行时可能与上方不同；但最终 <code>counter</code> 必然等于 40——这正是 <code>Mutex</code> 提供的保证。</p>
+</blockquote>
+<h3 id="2-2-Weak-—-打破循环引用"><a href="#2-2-Weak-—-打破循环引用" class="headerlink" title="2.2 Weak — 打破循环引用"></a>2.2 Weak — 打破循环引用</h3><p><code>Weak&lt;T&gt;</code> 是 <code>Arc&lt;T&gt;</code> 的弱引用：它不增加强引用计数，因此不阻止数据释放。调用 <code>upgrade()</code> 可尝试升级为 <code>Arc&lt;T&gt;</code>，若数据已释放则返回 <code>None</code>。</p>
+<p>典型用途是父子节点互相引用的树形结构：子节点持有父节点的 <code>Weak</code>，父节点持有子节点的 <code>Arc</code>，从而避免循环引用导致内存永不释放。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">downgrade</span>(this: &amp;Arc&lt;T&gt;) <span class="hljs-punctuation">-&gt;</span> Weak&lt;T&gt;<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">upgrade</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Option</span>&lt;Arc&lt;T&gt;&gt;<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">strong_count</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">usize</span><br></code></pre></td></tr></table></figure>
+
+<h2 id="三、Mutex-—-互斥锁"><a href="#三、Mutex-—-互斥锁" class="headerlink" title="三、Mutex — 互斥锁"></a>三、Mutex — 互斥锁</h2><p><code>Mutex&lt;T&gt;</code>（<code>Mutual Exclusion</code>）确保同一时刻至多有一个线程能访问被保护的数据。与 C&#x2F;C++ 的锁不同，Rust 的 <code>Mutex&lt;T&gt;</code> 把数据直接包裹在锁里——只有成功持有锁，才能拿到数据的引用，让”持锁访问”在类型层面成为必要条件。</p>
+<h3 id="3-1-lock-与-try-lock"><a href="#3-1-lock-与-try-lock" class="headerlink" title="3.1 lock 与 try_lock"></a>3.1 lock 与 try_lock</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">lock</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> LockResult&lt;MutexGuard&lt;<span class="hljs-symbol">&#x27;_</span>, T&gt;&gt;<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">try_lock</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> TryLockResult&lt;MutexGuard&lt;<span class="hljs-symbol">&#x27;_</span>, T&gt;&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>返回值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>lock</code></td>
+<td><code>LockResult&lt;MutexGuard&lt;T&gt;&gt;</code></td>
+<td>阻塞直到获得锁；若锁已毒化返回 <code>Err(PoisonError)</code></td>
+</tr>
+<tr>
+<td><code>try_lock</code></td>
+<td><code>TryLockResult&lt;MutexGuard&lt;T&gt;&gt;</code></td>
+<td>非阻塞；锁被占用时返回 <code>Err(TryLockError::WouldBlock)</code></td>
+</tr>
+</tbody></table>
+<p><code>MutexGuard&lt;T&gt;</code> 实现了 <code>Deref</code> 和 <code>DerefMut</code>，可直接通过 <code>*guard</code> 访问数据。守卫离开作用域时自动解锁，无需手动调用 unlock。</p>
+<h3 id="3-2-锁毒化（Lock-Poisoning）"><a href="#3-2-锁毒化（Lock-Poisoning）" class="headerlink" title="3.2 锁毒化（Lock Poisoning）"></a>3.2 锁毒化（Lock Poisoning）</h3><p>若一个线程在持有 <code>Mutex</code> 锁期间发生 <code>panic</code>，Rust 认为被保护的数据可能处于不一致状态，会将该锁标记为”毒化”（<code>poisoned</code>）。后续任何 <code>lock()</code> 调用都会返回 <code>Err(PoisonError&lt;MutexGuard&lt;T&gt;&gt;)</code>，而非 <code>Ok</code>。</p>
+<p>这是一种防御性设计：与其让下一个线程悄悄读到损坏数据，不如显式报告异常。若确定数据仍然有效，可以通过 <code>into_inner()</code> 从 <code>PoisonError</code> 中取出守卫继续使用：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::sync::&#123;Arc, Mutex&#125;;<br><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-comment">// thread::spawn 要求闭包为 &#x27;static，因此用 Arc 跨线程共享 Mutex</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">m</span> = Arc::<span class="hljs-title function_ invoke__">new</span>(Mutex::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-built_in">vec!</span>[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>]));<br><br>    <span class="hljs-comment">// 模拟持锁 panic</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">m2</span> = Arc::<span class="hljs-title function_ invoke__">clone</span>(&amp;m);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">_</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">_guard</span> = m2.<span class="hljs-title function_ invoke__">lock</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>        <span class="hljs-built_in">panic!</span>(<span class="hljs-string">&quot;持锁时 panic&quot;</span>);<br>    &#125;).<span class="hljs-title function_ invoke__">join</span>(); <span class="hljs-comment">// Err，但我们继续</span><br><br>    <span class="hljs-comment">// 锁已毒化</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">result</span> = m.<span class="hljs-title function_ invoke__">lock</span>();<br>    <span class="hljs-keyword">match</span> result &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(v) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;正常: &#123;:?&#125;&quot;</span>, *v),<br>        <span class="hljs-title function_ invoke__">Err</span>(poison) =&gt; &#123;<br>            <span class="hljs-keyword">let</span> <span class="hljs-variable">v</span> = poison.<span class="hljs-title function_ invoke__">into_inner</span>();<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;锁已毒化，数据仍可用: &#123;:?&#125;&quot;</span>, *v);<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight inform7"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs inform7">锁已毒化，数据仍可用: <span class="hljs-comment">[1, 2, 3]</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>若不想处理毒化逻辑，可以直接 <code>.unwrap_or_else(|e| e.into_inner())</code> 跳过检查；但在高可靠场景下应认真对待毒化错误，它往往意味着某条线程崩溃了。</p>
+</blockquote>
+<h2 id="四、RwLock-—-读写锁"><a href="#四、RwLock-—-读写锁" class="headerlink" title="四、RwLock — 读写锁"></a>四、RwLock — 读写锁</h2><p><code>RwLock&lt;T&gt;</code> 允许任意数量的读者或至多一个写者同时持有锁，二者互斥。当读操作远多于写操作时，<code>RwLock</code> 比 <code>Mutex</code> 有更高的并发吞吐。</p>
+<h3 id="4-1-read-与-write"><a href="#4-1-read-与-write" class="headerlink" title="4.1 read 与 write"></a>4.1 read 与 write</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">read</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> LockResult&lt;RwLockReadGuard&lt;<span class="hljs-symbol">&#x27;_</span>, T&gt;&gt;<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">write</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> LockResult&lt;RwLockWriteGuard&lt;<span class="hljs-symbol">&#x27;_</span>, T&gt;&gt;<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">try_read</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> TryLockResult&lt;RwLockReadGuard&lt;<span class="hljs-symbol">&#x27;_</span>, T&gt;&gt;<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">try_write</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> TryLockResult&lt;RwLockWriteGuard&lt;<span class="hljs-symbol">&#x27;_</span>, T&gt;&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>守卫类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>read</code></td>
+<td><code>RwLockReadGuard&lt;T&gt;</code></td>
+<td>阻塞直到获得读锁；允许多个读者同时持有</td>
+</tr>
+<tr>
+<td><code>write</code></td>
+<td><code>RwLockWriteGuard&lt;T&gt;</code></td>
+<td>阻塞直到获得写锁；独占，期间无读者也无写者</td>
+</tr>
+<tr>
+<td><code>try_read</code></td>
+<td>同上</td>
+<td>非阻塞版</td>
+</tr>
+<tr>
+<td><code>try_write</code></td>
+<td>同上</td>
+<td>非阻塞版</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::collections::HashMap;<br><span class="hljs-keyword">use</span> std::sync::&#123;Arc, RwLock&#125;;<br><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">cache</span>: Arc&lt;RwLock&lt;HashMap&lt;&amp;<span class="hljs-type">str</span>, <span class="hljs-type">u32</span>&gt;&gt;&gt; = Arc::<span class="hljs-title function_ invoke__">new</span>(RwLock::<span class="hljs-title function_ invoke__">new</span>(HashMap::<span class="hljs-title function_ invoke__">new</span>()));<br><br>    <span class="hljs-comment">// 写入初始数据</span><br>    &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">w</span> = cache.<span class="hljs-title function_ invoke__">write</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>        w.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-string">&quot;price_a&quot;</span>, <span class="hljs-number">100</span>);<br>        w.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-string">&quot;price_b&quot;</span>, <span class="hljs-number">200</span>);<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;写入完成: &#123;:?&#125;&quot;</span>, *w);<br>    &#125;<br><br>    <span class="hljs-comment">// 多个读线程并发读取</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">handles</span> = <span class="hljs-built_in">vec!</span>[];<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">i</span> <span class="hljs-keyword">in</span> <span class="hljs-number">0</span>..<span class="hljs-number">3</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">cache</span> = Arc::<span class="hljs-title function_ invoke__">clone</span>(&amp;cache);<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">key</span> = <span class="hljs-keyword">if</span> i % <span class="hljs-number">2</span> == <span class="hljs-number">0</span> &#123; <span class="hljs-string">&quot;price_a&quot;</span> &#125; <span class="hljs-keyword">else</span> &#123; <span class="hljs-string">&quot;price_b&quot;</span> &#125;;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">h</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>            <span class="hljs-keyword">let</span> <span class="hljs-variable">r</span> = cache.<span class="hljs-title function_ invoke__">read</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;reader-&#123;i&#125;: &#123;key&#125; = &#123;:?&#125;&quot;</span>, r.<span class="hljs-title function_ invoke__">get</span>(key));<br>        &#125;);<br>        handles.<span class="hljs-title function_ invoke__">push</span>(h);<br>    &#125;<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">h</span> <span class="hljs-keyword">in</span> handles &#123;<br>        h.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    &#125;<br><br>    <span class="hljs-comment">// 写入更新</span><br>    &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">w</span> = cache.<span class="hljs-title function_ invoke__">write</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>        w.<span class="hljs-title function_ invoke__">insert</span>(<span class="hljs-string">&quot;price_a&quot;</span>, <span class="hljs-number">150</span>);<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;更新 price_a -&gt; 150&quot;</span>);<br>    &#125;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">r</span> = cache.<span class="hljs-title function_ invoke__">read</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;最终 price_a = &#123;:?&#125;&quot;</span>, r.<span class="hljs-title function_ invoke__">get</span>(<span class="hljs-string">&quot;price_a&quot;</span>));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight css"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs css">写入完成: &#123;&quot;price_b&quot;: <span class="hljs-number">200</span>, <span class="hljs-string">&quot;price_a&quot;</span>: <span class="hljs-number">100</span>&#125;<br>reader-<span class="hljs-number">0</span>: price_a = <span class="hljs-built_in">Some</span>(<span class="hljs-number">100</span>)<br>reader-<span class="hljs-number">1</span>: price_b = <span class="hljs-built_in">Some</span>(<span class="hljs-number">200</span>)<br>reader-<span class="hljs-number">2</span>: price_a = <span class="hljs-built_in">Some</span>(<span class="hljs-number">100</span>)<br>更新 price_a -&gt; <span class="hljs-number">150</span><br>最终 price_a = <span class="hljs-built_in">Some</span>(<span class="hljs-number">150</span>)<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-2-Mutex-vs-RwLock-选择"><a href="#4-2-Mutex-vs-RwLock-选择" class="headerlink" title="4.2 Mutex vs RwLock 选择"></a>4.2 Mutex vs RwLock 选择</h3><table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>读写比例相近</td>
+<td><code>Mutex</code></td>
+<td><code>RwLock</code> 的读写调度开销并无优势</td>
+</tr>
+<tr>
+<td>读多写少（如缓存、配置）</td>
+<td><code>RwLock</code></td>
+<td>多读者并发，吞吐明显更高</td>
+</tr>
+<tr>
+<td>写操作需要读取旧值再写入</td>
+<td><code>Mutex</code></td>
+<td><code>RwLock</code> 无法将读锁升级为写锁，升级必须释放读锁再重新竞争写锁，容易引发 <code>TOCTOU</code> 问题</td>
+</tr>
+<tr>
+<td>保护的数据类型实现了 <code>Copy</code></td>
+<td>考虑 <code>atomic</code></td>
+<td>若只是整数计数，原子操作更轻量</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><code>RwLock</code> 在 <code>Linux</code> 上由 <code>pthreads</code> <code>rwlock</code> 实现；写者饥饿（<code>writer starvation</code>）是已知问题——若读者持续涌入，写者可能长期无法获得锁。写操作频率较高的场景应优先考虑 <code>Mutex</code>。</p>
+</blockquote>
+<h2 id="五、Condvar-—-条件变量"><a href="#五、Condvar-—-条件变量" class="headerlink" title="五、Condvar — 条件变量"></a>五、Condvar — 条件变量</h2><p><code>Condvar</code> 解决”等待某个条件成立”的问题。线程持有 <code>Mutex</code> 后，发现条件不满足，调用 <code>wait</code> 将锁释放并阻塞；当其他线程修改了数据、条件可能成立时，调用 <code>notify_one</code> 或 <code>notify_all</code> 唤醒等待的线程。</p>
+<h3 id="5-1-wait-与-notify"><a href="#5-1-wait-与-notify" class="headerlink" title="5.1 wait 与 notify"></a>5.1 wait 与 notify</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">wait</span>&lt;<span class="hljs-symbol">&#x27;a</span>, T&gt;(&amp;<span class="hljs-keyword">self</span>, guard: MutexGuard&lt;<span class="hljs-symbol">&#x27;a</span>, T&gt;) <span class="hljs-punctuation">-&gt;</span> LockResult&lt;MutexGuard&lt;<span class="hljs-symbol">&#x27;a</span>, T&gt;&gt;<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">wait_timeout</span>&lt;<span class="hljs-symbol">&#x27;a</span>, T&gt;(&amp;<span class="hljs-keyword">self</span>, guard: MutexGuard&lt;<span class="hljs-symbol">&#x27;a</span>, T&gt;, dur: Duration)<br>    <span class="hljs-punctuation">-&gt;</span> LockResult&lt;(MutexGuard&lt;<span class="hljs-symbol">&#x27;a</span>, T&gt;, WaitTimeoutResult)&gt;<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">notify_one</span>(&amp;<span class="hljs-keyword">self</span>)<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">notify_all</span>(&amp;<span class="hljs-keyword">self</span>)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>wait(guard)</code></td>
+<td>释放 <code>guard</code> 持有的锁并阻塞；唤醒后重新持锁，返回新守卫</td>
+</tr>
+<tr>
+<td><code>wait_timeout(guard, dur)</code></td>
+<td>同上，但最多等待 <code>dur</code>；返回值中 <code>WaitTimeoutResult::timed_out()</code> 表示是否超时</td>
+</tr>
+<tr>
+<td><code>notify_one</code></td>
+<td>唤醒至多一个等待中的线程</td>
+</tr>
+<tr>
+<td><code>notify_all</code></td>
+<td>唤醒所有等待中的线程</td>
+</tr>
+</tbody></table>
+<p><code>Condvar</code> 必须始终与同一个 <code>Mutex</code> 配合使用；传给 <code>wait</code> 的守卫来自哪个 <code>Mutex</code>，唤醒后也必须重新持有同一把锁。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::sync::&#123;Arc, Condvar, Mutex&#125;;<br><span class="hljs-keyword">use</span> std::thread;<br><span class="hljs-keyword">use</span> std::time::Duration;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-comment">// (队列, 条件变量)</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">pair</span> = Arc::<span class="hljs-title function_ invoke__">new</span>((Mutex::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-type">Vec</span>::&lt;<span class="hljs-type">i32</span>&gt;::<span class="hljs-title function_ invoke__">new</span>()), Condvar::<span class="hljs-title function_ invoke__">new</span>()));<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">pair_producer</span> = Arc::<span class="hljs-title function_ invoke__">clone</span>(&amp;pair);<br><br>    <span class="hljs-comment">// 生产者线程</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">producer</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>        <span class="hljs-keyword">let</span> (lock, cvar) = &amp;*pair_producer;<br>        <span class="hljs-keyword">for</span> <span class="hljs-variable">i</span> <span class="hljs-keyword">in</span> <span class="hljs-number">1</span>..=<span class="hljs-number">3</span> &#123;<br>            thread::<span class="hljs-title function_ invoke__">sleep</span>(Duration::<span class="hljs-title function_ invoke__">from_millis</span>(<span class="hljs-number">20</span>));<br>            <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">q</span> = lock.<span class="hljs-title function_ invoke__">lock</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>            q.<span class="hljs-title function_ invoke__">push</span>(i * <span class="hljs-number">10</span>);<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;生产者: 放入 &#123;&#125;&quot;</span>, i * <span class="hljs-number">10</span>);<br>            cvar.<span class="hljs-title function_ invoke__">notify_one</span>();<br>        &#125;<br>    &#125;);<br><br>    <span class="hljs-comment">// 消费者在主线程，消费 3 条消息</span><br>    <span class="hljs-keyword">let</span> (lock, cvar) = &amp;*pair;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">consumed</span> = <span class="hljs-number">0</span>;<br>    <span class="hljs-keyword">while</span> consumed &lt; <span class="hljs-number">3</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">q</span> = lock.<span class="hljs-title function_ invoke__">lock</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>        <span class="hljs-keyword">while</span> q.<span class="hljs-title function_ invoke__">is_empty</span>() &#123;<br>            q = cvar.<span class="hljs-title function_ invoke__">wait</span>(q).<span class="hljs-title function_ invoke__">unwrap</span>();<br>        &#125;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">item</span> = q.<span class="hljs-title function_ invoke__">remove</span>(<span class="hljs-number">0</span>);<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;消费者: 取出 &#123;item&#125;&quot;</span>);<br>        consumed += <span class="hljs-number">1</span>;<br>    &#125;<br><br>    producer.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;生产/消费完成&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">生产者: 放入 10</span><br><span class="hljs-section">消费者: 取出 10</span><br><span class="hljs-section">生产者: 放入 20</span><br><span class="hljs-section">消费者: 取出 20</span><br><span class="hljs-section">生产者: 放入 30</span><br><span class="hljs-section">消费者: 取出 30</span><br>生产/消费完成<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>wait</code> 存在虚假唤醒（<code>spurious wakeup</code>）：即使没有 <code>notify</code>，线程也可能返回。因此唤醒后必须用 <code>while</code> 循环重新检查条件，而不是 <code>if</code>。本例中 <code>while q.is_empty()</code> 就是这个目的。</p>
+</blockquote>
+<h2 id="六、Barrier-—-线程屏障"><a href="#六、Barrier-—-线程屏障" class="headerlink" title="六、Barrier — 线程屏障"></a>六、Barrier — 线程屏障</h2><p><code>Barrier</code> 让 N 个线程在某个同步点相互等待，所有线程到达后再同时继续执行。典型用途是并行算法中的阶段切换：确保每个线程都完成了上一阶段的工作，再一起进入下一阶段。</p>
+<h3 id="6-1-wait-与-is-leader"><a href="#6-1-wait-与-is-leader" class="headerlink" title="6.1 wait 与 is_leader"></a>6.1 wait 与 is_leader</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">new</span>(n: <span class="hljs-type">usize</span>) <span class="hljs-punctuation">-&gt;</span> Barrier<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">wait</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> BarrierWaitResult<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数&#x2F;方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>n</code>（<code>new</code>）</td>
+<td>需要同步的线程数；第 <code>n</code> 个调用 <code>wait</code> 的线程会解除所有阻塞</td>
+</tr>
+<tr>
+<td><code>wait</code></td>
+<td>阻塞直到 <code>n</code> 个线程均调用了 <code>wait</code>；返回 <code>BarrierWaitResult</code></td>
+</tr>
+<tr>
+<td><code>is_leader()</code></td>
+<td>在同一轮等待中恰好有一个线程返回 <code>true</code>，可用于执行只需一次的汇总操作</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::sync::&#123;Arc, Barrier&#125;;<br><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">n</span> = <span class="hljs-number">4</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">barrier</span> = Arc::<span class="hljs-title function_ invoke__">new</span>(Barrier::<span class="hljs-title function_ invoke__">new</span>(n));<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">handles</span> = <span class="hljs-built_in">vec!</span>[];<br><br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">i</span> <span class="hljs-keyword">in</span> <span class="hljs-number">0</span>..n &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">b</span> = Arc::<span class="hljs-title function_ invoke__">clone</span>(&amp;barrier);<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">h</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;worker-&#123;i&#125;: 准备就绪&quot;</span>);<br>            <span class="hljs-keyword">let</span> <span class="hljs-variable">result</span> = b.<span class="hljs-title function_ invoke__">wait</span>();<br>            <span class="hljs-keyword">if</span> result.<span class="hljs-title function_ invoke__">is_leader</span>() &#123;<br>                <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;worker-&#123;i&#125;: 我是 leader，所有线程已到达屏障&quot;</span>);<br>            &#125;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;worker-&#123;i&#125;: 开始执行主任务&quot;</span>);<br>        &#125;);<br>        handles.<span class="hljs-title function_ invoke__">push</span>(h);<br>    &#125;<br><br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">h</span> <span class="hljs-keyword">in</span> handles &#123;<br>        h.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    &#125;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;所有 worker 完成&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果（线程打印顺序由调度决定）：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">worker-0: 准备就绪</span><br><span class="hljs-section">worker-1: 准备就绪</span><br><span class="hljs-section">worker-3: 准备就绪</span><br><span class="hljs-section">worker-2: 准备就绪</span><br><span class="hljs-section">worker-2: 我是 leader，所有线程已到达屏障</span><br><span class="hljs-section">worker-1: 开始执行主任务</span><br><span class="hljs-section">worker-0: 开始执行主任务</span><br><span class="hljs-section">worker-3: 开始执行主任务</span><br><span class="hljs-section">worker-2: 开始执行主任务</span><br>所有 worker 完成<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>Barrier</code> 是可重用的：N 个线程全部到达一次后，屏障自动重置，可直接用于下一轮同步，无需重新创建。</p>
+</blockquote>
+<h2 id="七、一次性初始化"><a href="#七、一次性初始化" class="headerlink" title="七、一次性初始化"></a>七、一次性初始化</h2><h3 id="7-1-OnceLock-—-可写一次的单元格"><a href="#7-1-OnceLock-—-可写一次的单元格" class="headerlink" title="7.1 OnceLock — 可写一次的单元格"></a>7.1 OnceLock — 可写一次的单元格</h3><p><code>OnceLock&lt;T&gt;</code> 自 <code>Rust 1.70.0</code> 稳定，是线程安全版本的 <code>OnceCell&lt;T&gt;</code>。它允许任何代码路径尝试写入，但只有第一次 <code>set</code> 成功，后续均被拒绝。</p>
+<p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">new</span>() <span class="hljs-punctuation">-&gt;</span> OnceLock&lt;T&gt;<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">get</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Option</span>&lt;&amp;T&gt;<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">set</span>(&amp;<span class="hljs-keyword">self</span>, value: T) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;(), T&gt;<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">get_or_init</span>&lt;F: <span class="hljs-title function_ invoke__">FnOnce</span>() <span class="hljs-punctuation">-&gt;</span> T&gt;(&amp;<span class="hljs-keyword">self</span>, f: F) <span class="hljs-punctuation">-&gt;</span> &amp;T<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">get_or_try_init</span>&lt;F, E&gt;(&amp;<span class="hljs-keyword">self</span>, f: F) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;&amp;T, E&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>get</code></td>
+<td>返回值的引用；未初始化时返回 <code>None</code></td>
+</tr>
+<tr>
+<td><code>set(value)</code></td>
+<td>首次调用写入 <code>value</code> 并返回 <code>Ok(())</code>；已初始化则返回 <code>Err(value)</code></td>
+</tr>
+<tr>
+<td><code>get_or_init(f)</code></td>
+<td>若未初始化则调用 <code>f</code> 并写入；已初始化直接返回现有值的引用</td>
+</tr>
+</tbody></table>
+<h3 id="7-2-LazyLock-—-懒初始化静态变量"><a href="#7-2-LazyLock-—-懒初始化静态变量" class="headerlink" title="7.2 LazyLock — 懒初始化静态变量"></a>7.2 LazyLock — 懒初始化静态变量</h3><p><code>LazyLock&lt;T&gt;</code> 自 <code>Rust 1.80.0</code> 稳定，专为静态变量设计：在声明时提供一个初始化闭包，首次通过 <code>Deref</code> 访问时执行，线程安全地保证只执行一次。与 <code>OnceLock</code> 的区别在于初始化逻辑固定在声明处，无法从外部注入不同的初始值。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::sync::&#123;LazyLock, OnceLock&#125;;<br><br><span class="hljs-comment">// OnceLock：运行时一次性初始化，常用于全局静态变量</span><br><span class="hljs-keyword">static</span> APP_NAME: OnceLock&lt;<span class="hljs-type">String</span>&gt; = OnceLock::<span class="hljs-title function_ invoke__">new</span>();<br><br><span class="hljs-comment">// LazyLock：懒初始化，首次访问时执行闭包</span><br><span class="hljs-keyword">static</span> PRIMES: LazyLock&lt;<span class="hljs-type">Vec</span>&lt;<span class="hljs-type">u32</span>&gt;&gt; = LazyLock::<span class="hljs-title function_ invoke__">new</span>(|| &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  [LazyLock] 初始化质数表...&quot;</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">primes</span> = <span class="hljs-built_in">vec!</span>[];<br>    <span class="hljs-symbol">&#x27;outer</span>: <span class="hljs-keyword">for</span> <span class="hljs-variable">n</span> <span class="hljs-keyword">in</span> <span class="hljs-number">2u32</span>..=<span class="hljs-number">30</span> &#123;<br>        <span class="hljs-keyword">for</span> <span class="hljs-variable">p</span> <span class="hljs-keyword">in</span> &amp;primes &#123;<br>            <span class="hljs-keyword">if</span> n % p == <span class="hljs-number">0</span> &#123;<br>                <span class="hljs-keyword">continue</span> <span class="hljs-symbol">&#x27;outer</span>;<br>            &#125;<br>        &#125;<br>        primes.<span class="hljs-title function_ invoke__">push</span>(n);<br>    &#125;<br>    primes<br>&#125;);<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-comment">// OnceLock：第一次 set 成功，后续均失败</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;第一次 set: &#123;:?&#125;&quot;</span>, APP_NAME.<span class="hljs-title function_ invoke__">set</span>(<span class="hljs-string">&quot;my-service&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>()));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;第二次 set: &#123;:?&#125;&quot;</span>, APP_NAME.<span class="hljs-title function_ invoke__">set</span>(<span class="hljs-string">&quot;other&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>()));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;APP_NAME = &#123;:?&#125;&quot;</span>, APP_NAME.<span class="hljs-title function_ invoke__">get</span>().<span class="hljs-title function_ invoke__">unwrap</span>());<br><br>    <span class="hljs-comment">// get_or_init：若未初始化则执行闭包，线程安全</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">val</span> = APP_NAME.<span class="hljs-title function_ invoke__">get_or_init</span>(|| <span class="hljs-string">&quot;fallback&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;get_or_init（已初始化）= &#123;:?&#125;&quot;</span>, val);<br><br>    <span class="hljs-comment">// LazyLock：首次 deref 触发初始化</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;\n第一次访问 PRIMES:&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  30 以内的质数: &#123;:?&#125;&quot;</span>, *PRIMES);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;第二次访问 PRIMES（不再初始化）:&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  质数个数: &#123;&#125;&quot;</span>, PRIMES.<span class="hljs-title function_ invoke__">len</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight stylus"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs stylus">第一次 set: <span class="hljs-built_in">Ok</span>(())<br>第二次 set: <span class="hljs-built_in">Err</span>(<span class="hljs-string">&quot;other&quot;</span>)<br>APP_NAME = <span class="hljs-string">&quot;my-service&quot;</span><br>get_or_init（已初始化）= <span class="hljs-string">&quot;my-service&quot;</span><br><br>第一次访问 PRIMES:<br>  <span class="hljs-selector-attr">[LazyLock]</span> 初始化质数表...<br>  <span class="hljs-number">30</span> 以内的质数: <span class="hljs-selector-attr">[2, 3, 5, 7, 11, 13, 17, 19, 23, 29]</span><br>第二次访问 PRIMES（不再初始化）:<br>  质数个数: <span class="hljs-number">10</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="7-3-OnceLock-vs-LazyLock-vs-Once-选择"><a href="#7-3-OnceLock-vs-LazyLock-vs-Once-选择" class="headerlink" title="7.3 OnceLock vs LazyLock vs Once 选择"></a>7.3 OnceLock vs LazyLock vs Once 选择</h3><table>
+<thead>
+<tr>
+<th>类型</th>
+<th>稳定版本</th>
+<th>初始化逻辑</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Once</code></td>
+<td><code>1.0.0</code></td>
+<td>任意代码路径调用 <code>call_once</code></td>
+<td>无返回值的全局初始化，如注册日志</td>
+</tr>
+<tr>
+<td><code>OnceLock&lt;T&gt;</code></td>
+<td><code>1.70.0</code></td>
+<td>任意代码路径 <code>set</code> &#x2F; <code>get_or_init</code></td>
+<td>运行时决定初始值的全局变量</td>
+</tr>
+<tr>
+<td><code>LazyLock&lt;T&gt;</code></td>
+<td><code>1.80.0</code></td>
+<td>声明时固定的闭包，首次 <code>deref</code> 触发</td>
+<td>编译期知道初始化逻辑的静态变量</td>
+</tr>
+</tbody></table>
+<h2 id="八、原子操作（atomic）"><a href="#八、原子操作（atomic）" class="headerlink" title="八、原子操作（atomic）"></a>八、原子操作（atomic）</h2><p><code>std::sync::atomic</code> 提供无锁并发原语，适用于简单数值类型的读写、计数器、标志位等场景。原子操作在单条 CPU 指令层面保证不可分割，不需要操作系统层面的锁，开销远低于 <code>Mutex</code>。</p>
+<h3 id="8-1-原子类型一览"><a href="#8-1-原子类型一览" class="headerlink" title="8.1 原子类型一览"></a>8.1 原子类型一览</h3><table>
+<thead>
+<tr>
+<th>类型</th>
+<th>稳定版本</th>
+<th>对应的基础类型</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>AtomicBool</code></td>
+<td><code>1.0.0</code></td>
+<td><code>bool</code></td>
+</tr>
+<tr>
+<td><code>AtomicI8</code> &#x2F; <code>AtomicU8</code></td>
+<td><code>1.34.0</code></td>
+<td><code>i8</code> &#x2F; <code>u8</code></td>
+</tr>
+<tr>
+<td><code>AtomicI16</code> &#x2F; <code>AtomicU16</code></td>
+<td><code>1.34.0</code></td>
+<td><code>i16</code> &#x2F; <code>u16</code></td>
+</tr>
+<tr>
+<td><code>AtomicI32</code> &#x2F; <code>AtomicU32</code></td>
+<td><code>1.34.0</code></td>
+<td><code>i32</code> &#x2F; <code>u32</code></td>
+</tr>
+<tr>
+<td><code>AtomicI64</code> &#x2F; <code>AtomicU64</code></td>
+<td><code>1.34.0</code></td>
+<td><code>i64</code> &#x2F; <code>u64</code></td>
+</tr>
+<tr>
+<td><code>AtomicIsize</code> &#x2F; <code>AtomicUsize</code></td>
+<td><code>1.0.0</code></td>
+<td><code>isize</code> &#x2F; <code>usize</code></td>
+</tr>
+<tr>
+<td><code>AtomicPtr&lt;T&gt;</code></td>
+<td><code>1.0.0</code></td>
+<td><code>*mut T</code></td>
+</tr>
+</tbody></table>
+<h3 id="8-2-内存顺序（Ordering）"><a href="#8-2-内存顺序（Ordering）" class="headerlink" title="8.2 内存顺序（Ordering）"></a>8.2 内存顺序（Ordering）</h3><p>原子操作的每一次调用都需要指定内存顺序，控制编译器和 CPU 在该操作前后的内存可见性约束。</p>
+<table>
+<thead>
+<tr>
+<th><code>Ordering</code> 值</th>
+<th>说明</th>
+<th>适用场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Relaxed</code></td>
+<td>只保证原子性，不提供跨线程的顺序约束</td>
+<td>纯计数器、无需同步其他内存的场景</td>
+</tr>
+<tr>
+<td><code>Acquire</code></td>
+<td>此操作之后的读写不会被重排到此操作之前</td>
+<td>读取端：接收”数据已就绪”的信号</td>
+</tr>
+<tr>
+<td><code>Release</code></td>
+<td>此操作之前的读写不会被重排到此操作之后</td>
+<td>写入端：发出”数据已就绪”的信号</td>
+</tr>
+<tr>
+<td><code>AcqRel</code></td>
+<td><code>Acquire</code> + <code>Release</code> 的组合</td>
+<td>读-改-写操作（如 <code>fetch_add</code>）的同步点</td>
+</tr>
+<tr>
+<td><code>SeqCst</code></td>
+<td>全局顺序一致，最强约束，最高开销</td>
+<td>需要在所有线程视角下看到相同操作顺序</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><code>Acquire</code>&#x2F;<code>Release</code> 配对是最常见的”生产&#x2F;消费”模式：写入端用 <code>Release</code> 发布数据，读取端用 <code>Acquire</code> 消费信号，保证消费端能看到写入端在 <code>store</code> 之前完成的所有写入。</p>
+</blockquote>
+<h3 id="8-3-常用操作"><a href="#8-3-常用操作" class="headerlink" title="8.3 常用操作"></a>8.3 常用操作</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">load</span>(&amp;<span class="hljs-keyword">self</span>, order: Ordering) <span class="hljs-punctuation">-&gt;</span> T<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">store</span>(&amp;<span class="hljs-keyword">self</span>, val: T, order: Ordering)<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">fetch_add</span>(&amp;<span class="hljs-keyword">self</span>, val: T, order: Ordering) <span class="hljs-punctuation">-&gt;</span> T<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">fetch_sub</span>(&amp;<span class="hljs-keyword">self</span>, val: T, order: Ordering) <span class="hljs-punctuation">-&gt;</span> T<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">compare_exchange</span>(<br>    &amp;<span class="hljs-keyword">self</span>, current: T, new: T,<br>    success: Ordering, failure: Ordering<br>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Result</span>&lt;T, T&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>返回值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>load</code></td>
+<td><code>T</code></td>
+<td>读取当前值</td>
+</tr>
+<tr>
+<td><code>store</code></td>
+<td><code>()</code></td>
+<td>写入新值</td>
+</tr>
+<tr>
+<td><code>fetch_add</code></td>
+<td>旧值 <code>T</code></td>
+<td>加法并返回操作前的值</td>
+</tr>
+<tr>
+<td><code>fetch_sub</code></td>
+<td>旧值 <code>T</code></td>
+<td>减法并返回操作前的值</td>
+</tr>
+<tr>
+<td><code>compare_exchange(cur, new, succ, fail)</code></td>
+<td><code>Ok(旧值)</code> 或 <code>Err(当前值)</code></td>
+<td>若当前值 &#x3D;&#x3D; <code>cur</code> 则原子替换为 <code>new</code>；成功用 <code>succ</code> 顺序，失败用 <code>fail</code> 顺序</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::sync::Arc;<br><span class="hljs-keyword">use</span> std::sync::atomic::&#123;AtomicU64, Ordering&#125;;<br><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">counter</span> = Arc::<span class="hljs-title function_ invoke__">new</span>(AtomicU64::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">0</span>));<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">handles</span> = <span class="hljs-built_in">vec!</span>[];<br><br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">_</span> <span class="hljs-keyword">in</span> <span class="hljs-number">0</span>..<span class="hljs-number">4</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">c</span> = Arc::<span class="hljs-title function_ invoke__">clone</span>(&amp;counter);<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">h</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>            <span class="hljs-keyword">for</span> <span class="hljs-variable">_</span> <span class="hljs-keyword">in</span> <span class="hljs-number">0</span>..<span class="hljs-number">1000</span> &#123;<br>                c.<span class="hljs-title function_ invoke__">fetch_add</span>(<span class="hljs-number">1</span>, Ordering::Relaxed);<br>            &#125;<br>        &#125;);<br>        handles.<span class="hljs-title function_ invoke__">push</span>(h);<br>    &#125;<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">h</span> <span class="hljs-keyword">in</span> handles &#123;<br>        h.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    &#125;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;计数结果: &#123;&#125;&quot;</span>, counter.<span class="hljs-title function_ invoke__">load</span>(Ordering::SeqCst));<br><br>    <span class="hljs-comment">// compare_exchange：无锁 CAS 操作</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">flag</span> = AtomicU64::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">0</span>);<br>    <span class="hljs-keyword">match</span> flag.<span class="hljs-title function_ invoke__">compare_exchange</span>(<span class="hljs-number">0</span>, <span class="hljs-number">1</span>, Ordering::Acquire, Ordering::Relaxed) &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(prev) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;CAS 成功：旧值 = &#123;prev&#125;，新值 = 1&quot;</span>),<br>        <span class="hljs-title function_ invoke__">Err</span>(cur) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;CAS 失败：当前值 = &#123;cur&#125;&quot;</span>),<br>    &#125;<br>    <span class="hljs-keyword">match</span> flag.<span class="hljs-title function_ invoke__">compare_exchange</span>(<span class="hljs-number">0</span>, <span class="hljs-number">2</span>, Ordering::Acquire, Ordering::Relaxed) &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(prev) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;CAS 成功：旧值 = &#123;prev&#125;，新值 = 2&quot;</span>),<br>        <span class="hljs-title function_ invoke__">Err</span>(cur) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;CAS 失败：当前值 = &#123;cur&#125;&quot;</span>),<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight objectivec"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs objectivec">计数结果: <span class="hljs-number">4000</span><br><span class="hljs-built_in">CAS</span> 成功：旧值 = <span class="hljs-number">0</span>，新值 = <span class="hljs-number">1</span><br><span class="hljs-built_in">CAS</span> 失败：当前值 = <span class="hljs-number">1</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>compare_exchange_weak</code> 是 <code>compare_exchange</code> 的弱版本：在某些平台（如 <code>ARM</code>）上可能虚假失败（值匹配但仍返回 <code>Err</code>），但性能更好。通常在循环重试的 <code>CAS</code> 中使用弱版本，单次检查用强版本。</p>
+</blockquote>
+<h2 id="九、消息通道（mpsc）"><a href="#九、消息通道（mpsc）" class="headerlink" title="九、消息通道（mpsc）"></a>九、消息通道（mpsc）</h2><p><code>std::sync::mpsc</code>（<code>Multi-Producer, Single-Consumer</code>）提供基于消息传递的线程间通信。与共享内存加锁相比，通道让数据在线程间转移所有权，接收端不需要担心发送端是否仍在修改数据。</p>
+<h3 id="9-1-channel-与-sync-channel"><a href="#9-1-channel-与-sync-channel" class="headerlink" title="9.1 channel 与 sync_channel"></a>9.1 channel 与 sync_channel</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">channel</span>&lt;T&gt;() <span class="hljs-punctuation">-&gt;</span> (Sender&lt;T&gt;, Receiver&lt;T&gt;)<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">sync_channel</span>&lt;T&gt;(bound: <span class="hljs-type">usize</span>) <span class="hljs-punctuation">-&gt;</span> (SyncSender&lt;T&gt;, Receiver&lt;T&gt;)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>函数</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>channel</code></td>
+<td>无界通道</td>
+<td><code>Sender::send</code> 永不阻塞；若接收端已关闭，发送返回 <code>Err</code></td>
+</tr>
+<tr>
+<td><code>sync_channel(bound)</code></td>
+<td>有界通道</td>
+<td>缓冲区满时 <code>SyncSender::send</code> 阻塞；<code>bound = 0</code> 表示需要双方同时就位的同步通道</td>
+</tr>
+</tbody></table>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::sync::mpsc;<br><span class="hljs-keyword">use</span> std::thread;<br><span class="hljs-keyword">use</span> std::time::Duration;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-comment">// 单生产者单消费者</span><br>    <span class="hljs-keyword">let</span> (tx, rx) = mpsc::channel::&lt;<span class="hljs-type">String</span>&gt;();<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">producer</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>        <span class="hljs-keyword">for</span> <span class="hljs-variable">i</span> <span class="hljs-keyword">in</span> <span class="hljs-number">1</span>..=<span class="hljs-number">3</span> &#123;<br>            <span class="hljs-keyword">let</span> <span class="hljs-variable">msg</span> = <span class="hljs-built_in">format!</span>(<span class="hljs-string">&quot;消息-&#123;i&#125;&quot;</span>);<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;生产者发送: &#123;msg&#125;&quot;</span>);<br>            tx.<span class="hljs-title function_ invoke__">send</span>(msg).<span class="hljs-title function_ invoke__">unwrap</span>();<br>            thread::<span class="hljs-title function_ invoke__">sleep</span>(Duration::<span class="hljs-title function_ invoke__">from_millis</span>(<span class="hljs-number">10</span>));<br>        &#125;<br>    &#125;);<br><br>    <span class="hljs-comment">// recv 阻塞直到收到一条消息或 sender 断开</span><br>    <span class="hljs-keyword">while</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Ok</span>(msg) = rx.<span class="hljs-title function_ invoke__">recv</span>() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;消费者收到: &#123;msg&#125;&quot;</span>);<br>    &#125;<br>    producer.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br><br>    <span class="hljs-comment">// 多生产者：clone tx 给多个线程</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;\n--- 多生产者 ---&quot;</span>);<br>    <span class="hljs-keyword">let</span> (tx2, rx2) = mpsc::channel::&lt;(<span class="hljs-type">usize</span>, <span class="hljs-type">i32</span>)&gt;();<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">handles</span> = <span class="hljs-built_in">vec!</span>[];<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">i</span> <span class="hljs-keyword">in</span> <span class="hljs-number">0</span>..<span class="hljs-number">3</span> &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">tx</span> = tx2.<span class="hljs-title function_ invoke__">clone</span>();<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">h</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>            <span class="hljs-keyword">let</span> <span class="hljs-variable">val</span> = (i + <span class="hljs-number">1</span>) <span class="hljs-keyword">as</span> <span class="hljs-type">i32</span> * <span class="hljs-number">100</span>;<br>            tx.<span class="hljs-title function_ invoke__">send</span>((i, val)).<span class="hljs-title function_ invoke__">unwrap</span>();<br>        &#125;);<br>        handles.<span class="hljs-title function_ invoke__">push</span>(h);<br>    &#125;<br>    <span class="hljs-title function_ invoke__">drop</span>(tx2); <span class="hljs-comment">// 必须 drop 最后一个 sender，rx.recv() 才会在消息耗尽后返回 Err</span><br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">results</span>: <span class="hljs-type">Vec</span>&lt;_&gt; = rx2.<span class="hljs-title function_ invoke__">iter</span>().<span class="hljs-title function_ invoke__">collect</span>();<br>    results.<span class="hljs-title function_ invoke__">sort_by_key</span>(|r| r.<span class="hljs-number">0</span>);<br>    <span class="hljs-keyword">for</span> (id, val) <span class="hljs-keyword">in</span> results &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  worker-&#123;id&#125; 发送: &#123;val&#125;&quot;</span>);<br>    &#125;<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">h</span> <span class="hljs-keyword">in</span> handles &#123;<br>        h.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">生产者发送</span><span class="hljs-punctuation">:</span> <span class="hljs-string">消息-1</span><br><span class="hljs-attribute">消费者收到</span><span class="hljs-punctuation">:</span> <span class="hljs-string">消息-1</span><br><span class="hljs-attribute">生产者发送</span><span class="hljs-punctuation">:</span> <span class="hljs-string">消息-2</span><br><span class="hljs-attribute">消费者收到</span><span class="hljs-punctuation">:</span> <span class="hljs-string">消息-2</span><br><span class="hljs-attribute">生产者发送</span><span class="hljs-punctuation">:</span> <span class="hljs-string">消息-3</span><br><span class="hljs-attribute">消费者收到</span><span class="hljs-punctuation">:</span> <span class="hljs-string">消息-3</span><br><br><span class="hljs-attribute">--- 多生产者 ---</span><br><span class="hljs-attribute">  worker-0 发送</span><span class="hljs-punctuation">:</span> <span class="hljs-string">100</span><br>  <span class="hljs-attribute">worker-1 发送</span><span class="hljs-punctuation">:</span> <span class="hljs-string">200</span><br>  <span class="hljs-attribute">worker-2 发送</span><span class="hljs-punctuation">:</span> <span class="hljs-string">300</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>多生产者场景中，<code>Sender</code> 可以任意 <code>clone</code>，每个线程持有一个独立的副本。<code>Receiver</code> 不可克隆——消费者必须是唯一的。当所有 <code>Sender</code> 都被 <code>drop</code> 后，<code>rx.recv()</code> 返回 <code>Err(RecvError)</code>，<code>while let Ok</code> 循环自然结束。忘记 <code>drop(tx2)</code> 是多生产者场景最常见的死锁来源。</p>
+</blockquote>
+<h2 id="十、综合实战"><a href="#十、综合实战" class="headerlink" title="十、综合实战"></a>十、综合实战</h2><p>以下示例实现一个并行日志分析器，综合运用本文介绍的多种同步原语：</p>
+<ul>
+<li><code>LazyLock</code> 持有全局关键词配置</li>
+<li><code>Barrier</code> 确保所有 <code>worker</code> 同时开始</li>
+<li><code>AtomicU64</code> 无锁统计处理总行数</li>
+<li><code>Arc&lt;RwLock&lt;...&gt;&gt;</code> 缓存已处理分块信息（多读少写）</li>
+<li><code>Arc&lt;Mutex&lt;...&gt;&gt;</code> 汇总错误日志（独占写入）</li>
+<li><code>mpsc</code> 将各 <code>worker</code> 的发现传回主线程</li>
+</ul>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::sync::&#123;Arc, Barrier, LazyLock, Mutex, RwLock&#125;;<br><span class="hljs-keyword">use</span> std::sync::atomic::&#123;AtomicU64, Ordering&#125;;<br><span class="hljs-keyword">use</span> std::sync::mpsc;<br><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">static</span> KEYWORD: LazyLock&lt;<span class="hljs-type">String</span>&gt; = LazyLock::<span class="hljs-title function_ invoke__">new</span>(|| <span class="hljs-string">&quot;ERROR&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>());<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">analyze_chunk</span>(chunk: &amp;[&amp;<span class="hljs-type">str</span>]) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">String</span>&gt; &#123;<br>    chunk<br>        .<span class="hljs-title function_ invoke__">iter</span>()<br>        .<span class="hljs-title function_ invoke__">filter</span>(|line| line.<span class="hljs-title function_ invoke__">contains</span>(KEYWORD.<span class="hljs-title function_ invoke__">as_str</span>()))<br>        .<span class="hljs-title function_ invoke__">map</span>(|s| s.<span class="hljs-title function_ invoke__">to_string</span>())<br>        .<span class="hljs-title function_ invoke__">collect</span>()<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">logs</span>: <span class="hljs-type">Vec</span>&lt;&amp;<span class="hljs-type">str</span>&gt; = <span class="hljs-built_in">vec!</span>[<br>        <span class="hljs-string">&quot;INFO  app started&quot;</span>,<br>        <span class="hljs-string">&quot;ERROR disk full&quot;</span>,<br>        <span class="hljs-string">&quot;WARN  high cpu&quot;</span>,<br>        <span class="hljs-string">&quot;ERROR network timeout&quot;</span>,<br>        <span class="hljs-string">&quot;INFO  request ok&quot;</span>,<br>        <span class="hljs-string">&quot;ERROR db connection lost&quot;</span>,<br>        <span class="hljs-string">&quot;INFO  shutdown&quot;</span>,<br>        <span class="hljs-string">&quot;WARN  cache miss&quot;</span>,<br>    ];<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">chunk_size</span> = <span class="hljs-number">2</span>;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">chunks</span>: <span class="hljs-type">Vec</span>&lt;&amp;[&amp;<span class="hljs-type">str</span>]&gt; = logs.<span class="hljs-title function_ invoke__">chunks</span>(chunk_size).<span class="hljs-title function_ invoke__">collect</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">n</span> = chunks.<span class="hljs-title function_ invoke__">len</span>();<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">barrier</span> = Arc::<span class="hljs-title function_ invoke__">new</span>(Barrier::<span class="hljs-title function_ invoke__">new</span>(n));<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">total_lines</span> = Arc::<span class="hljs-title function_ invoke__">new</span>(AtomicU64::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">0</span>));<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">processed_files</span>: Arc&lt;RwLock&lt;<span class="hljs-type">Vec</span>&lt;<span class="hljs-type">String</span>&gt;&gt;&gt; = Arc::<span class="hljs-title function_ invoke__">new</span>(RwLock::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-type">Vec</span>::<span class="hljs-title function_ invoke__">new</span>()));<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">errors</span>: Arc&lt;Mutex&lt;<span class="hljs-type">Vec</span>&lt;<span class="hljs-type">String</span>&gt;&gt;&gt; = Arc::<span class="hljs-title function_ invoke__">new</span>(Mutex::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-type">Vec</span>::<span class="hljs-title function_ invoke__">new</span>()));<br>    <span class="hljs-keyword">let</span> (tx, rx) = mpsc::channel::&lt;(<span class="hljs-type">usize</span>, <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">String</span>&gt;)&gt;();<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">handles</span> = <span class="hljs-built_in">vec!</span>[];<br>    <span class="hljs-keyword">for</span> (i, chunk) <span class="hljs-keyword">in</span> chunks.<span class="hljs-title function_ invoke__">into_iter</span>().<span class="hljs-title function_ invoke__">enumerate</span>() &#123;<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">barrier</span> = Arc::<span class="hljs-title function_ invoke__">clone</span>(&amp;barrier);<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">total</span> = Arc::<span class="hljs-title function_ invoke__">clone</span>(&amp;total_lines);<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">files</span> = Arc::<span class="hljs-title function_ invoke__">clone</span>(&amp;processed_files);<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">errs</span> = Arc::<span class="hljs-title function_ invoke__">clone</span>(&amp;errors);<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">tx</span> = tx.<span class="hljs-title function_ invoke__">clone</span>();<br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">chunk</span>: <span class="hljs-type">Vec</span>&lt;&amp;<span class="hljs-type">str</span>&gt; = chunk.<span class="hljs-title function_ invoke__">to_vec</span>();<br><br>        <span class="hljs-keyword">let</span> <span class="hljs-variable">h</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>            barrier.<span class="hljs-title function_ invoke__">wait</span>(); <span class="hljs-comment">// 所有 worker 同时开始</span><br>            total.<span class="hljs-title function_ invoke__">fetch_add</span>(chunk.<span class="hljs-title function_ invoke__">len</span>() <span class="hljs-keyword">as</span> <span class="hljs-type">u64</span>, Ordering::Relaxed);<br>            files.<span class="hljs-title function_ invoke__">write</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">push</span>(<span class="hljs-built_in">format!</span>(<span class="hljs-string">&quot;chunk-&#123;i&#125;&quot;</span>));<br>            <span class="hljs-keyword">let</span> <span class="hljs-variable">found</span> = <span class="hljs-title function_ invoke__">analyze_chunk</span>(&amp;chunk);<br>            <span class="hljs-keyword">if</span> !found.<span class="hljs-title function_ invoke__">is_empty</span>() &#123;<br>                errs.<span class="hljs-title function_ invoke__">lock</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">extend</span>(found.<span class="hljs-title function_ invoke__">clone</span>());<br>            &#125;<br>            tx.<span class="hljs-title function_ invoke__">send</span>((i, found)).<span class="hljs-title function_ invoke__">unwrap</span>();<br>        &#125;);<br>        handles.<span class="hljs-title function_ invoke__">push</span>(h);<br>    &#125;<br>    <span class="hljs-title function_ invoke__">drop</span>(tx);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">results</span>: <span class="hljs-type">Vec</span>&lt;(<span class="hljs-type">usize</span>, <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">String</span>&gt;)&gt; = rx.<span class="hljs-title function_ invoke__">iter</span>().<span class="hljs-title function_ invoke__">collect</span>();<br>    results.<span class="hljs-title function_ invoke__">sort_by_key</span>(|r| r.<span class="hljs-number">0</span>);<br><br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">h</span> <span class="hljs-keyword">in</span> handles &#123;<br>        h.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    &#125;<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;=== 日志分析报告 ===&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;总行数: &#123;&#125;&quot;</span>, total_lines.<span class="hljs-title function_ invoke__">load</span>(Ordering::SeqCst));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;ERROR 汇总（共 &#123;&#125; 条）:&quot;</span>, errors.<span class="hljs-title function_ invoke__">lock</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">len</span>());<br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">line</span> <span class="hljs-keyword">in</span> errors.<span class="hljs-title function_ invoke__">lock</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">iter</span>() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  &#123;line&#125;&quot;</span>);<br>    &#125;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;各 chunk 发现的 ERROR:&quot;</span>);<br>    <span class="hljs-keyword">for</span> (i, found) <span class="hljs-keyword">in</span> &amp;results &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;  chunk-&#123;i&#125;: &#123;&#125; 条&quot;</span>, found.<span class="hljs-title function_ invoke__">len</span>());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果（<code>ERROR 汇总</code> 顺序因线程调度而异）：</p>
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs subunit">=== 日志分析报告 ===<br>总行数: 8<br><span class="hljs-keyword">ERROR </span>汇总（共 3 条）:<br>  ERROR db connection lost<br>  ERROR network timeout<br>  ERROR disk full<br>各 chunk 发现的 ERROR:<br>  chunk<span class="hljs-string">-0</span>: 1 条<br>  chunk<span class="hljs-string">-1</span>: 1 条<br>  chunk<span class="hljs-string">-2</span>: 1 条<br>  chunk<span class="hljs-string">-3</span>: 0 条<br></code></pre></td></tr></table></figure>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Mutex/" class="print-no-link">#Mutex</a>
+      
+        <a href="/tags/RwLock/" class="print-no-link">#RwLock</a>
+      
+        <a href="/tags/Arc/" class="print-no-link">#Arc</a>
+      
+        <a href="/tags/Condvar/" class="print-no-link">#Condvar</a>
+      
+        <a href="/tags/%E5%8E%9F%E5%AD%90%E6%93%8D%E4%BD%9C/" class="print-no-link">#原子操作</a>
+      
+        <a href="/tags/%E6%B6%88%E6%81%AF%E9%80%9A%E9%81%93/" class="print-no-link">#消息通道</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/other/picbed.html" title="Typora配置GitHub图床">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Typora配置GitHub图床</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/std-thread.html" title="[标准库] std::thread 线程管理介绍与实战">
+                        <span class="hidden-mobile">[标准库] std::thread 线程管理介绍与实战</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

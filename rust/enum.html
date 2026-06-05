@@ -1,0 +1,1207 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="枚举（enum）和模式匹配（pattern matching）是 Rust 表达“有限状态”和“分支处理”的核心工具。enum 让一个类型可以拥有多个互斥变体，match 则要求你把这些变体处理完整。两者配合后，很多原本依赖空值、错误码、类型标记字段的逻辑，都可以交给编译器检查。 一、枚举基础1.1 为什么需要枚举当一个值只可能处于几个明确状态之一时，枚举比字符串、整数常量或多个布尔字段更安全。">
+  
+  
+  
+  <title>枚举和模式匹配介绍与实战 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="枚举和模式匹配介绍与实战"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-14 10:45" pubdate>
+          2026年5月14日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          15k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          127 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">枚举和模式匹配介绍与实战</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>枚举（<code>enum</code>）和模式匹配（<code>pattern matching</code>）是 Rust 表达“有限状态”和“分支处理”的核心工具。<code>enum</code> 让一个类型可以拥有多个互斥变体，<code>match</code> 则要求你把这些变体处理完整。两者配合后，很多原本依赖空值、错误码、类型标记字段的逻辑，都可以交给编译器检查。</p>
+<h2 id="一、枚举基础"><a href="#一、枚举基础" class="headerlink" title="一、枚举基础"></a>一、枚举基础</h2><h3 id="1-1-为什么需要枚举"><a href="#1-1-为什么需要枚举" class="headerlink" title="1.1 为什么需要枚举"></a>1.1 为什么需要枚举</h3><p>当一个值只可能处于几个明确状态之一时，枚举比字符串、整数常量或多个布尔字段更安全。</p>
+<p>例如 HTTP 请求方法只有有限几种：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">HttpMethod</span> &#123;<br>    Get,<br>    Post,<br>    Put,<br>    Delete,<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>HttpMethod</code> 是一个类型，<code>Get</code>、<code>Post</code>、<code>Put</code>、<code>Delete</code> 是它的变体（variant）。同一时刻，一个 <code>HttpMethod</code> 值只能是其中一个变体。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-meta">#[derive(Debug)]</span><br><span class="hljs-keyword">enum</span> <span class="hljs-title class_">HttpMethod</span> &#123;<br>    Get,<br>    Post,<br>    Put,<br>    Delete,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">method</span> = HttpMethod::Post;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;method = &#123;:?&#125;&quot;</span>, method);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">method = Post<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意：变体通过 <code>EnumName::VariantName</code> 访问。枚举变体不是字符串，也不是整数常量，而是受类型系统检查的值。</p>
+</blockquote>
+<h3 id="1-2-枚举比常量更适合表达状态"><a href="#1-2-枚举比常量更适合表达状态" class="headerlink" title="1.2 枚举比常量更适合表达状态"></a>1.2 枚举比常量更适合表达状态</h3><p>如果用字符串表达状态，拼写错误只能在运行时暴露：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">handle_status</span>(status: &amp;<span class="hljs-type">str</span>) &#123;<br>    <span class="hljs-keyword">if</span> status == <span class="hljs-string">&quot;success&quot;</span> &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;成功&quot;</span>);<br>    &#125; <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> status == <span class="hljs-string">&quot;failed&quot;</span> &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;失败&quot;</span>);<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;未知状态: &#123;status&#125;&quot;</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>使用枚举后，状态集合由类型定义，不能随意写出一个不存在的状态：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">TaskStatus</span> &#123;<br>    Pending,<br>    Running,<br>    Success,<br>    Failed,<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<table>
+<thead>
+<tr>
+<th>表达方式</th>
+<th>优点</th>
+<th>缺点</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>字符串</td>
+<td>简单、适合外部输入</td>
+<td>容易拼错，分支无法穷尽检查</td>
+</tr>
+<tr>
+<td>整数常量</td>
+<td>存储紧凑</td>
+<td>可读性差，非法值难以避免</td>
+</tr>
+<tr>
+<td>多个布尔字段</td>
+<td>写法直观</td>
+<td>容易出现互斥状态同时为真的问题</td>
+</tr>
+<tr>
+<td>枚举</td>
+<td>类型安全、状态互斥、可穷尽匹配</td>
+<td>需要先建模变体</td>
+</tr>
+</tbody></table>
+<p>实际项目中，内部业务状态优先使用枚举；只有在读取配置、HTTP 参数、数据库字段时，才先接收字符串或数字，再转换为枚举。</p>
+<h2 id="二、带数据的枚举变体"><a href="#二、带数据的枚举变体" class="headerlink" title="二、带数据的枚举变体"></a>二、带数据的枚举变体</h2><p>枚举变体不仅能表示“是哪一种”，还可以携带不同结构的数据。这是 Rust 枚举比很多语言中的普通枚举更强的地方。</p>
+<h3 id="2-1-每个变体可以携带不同数据"><a href="#2-1-每个变体可以携带不同数据" class="headerlink" title="2.1 每个变体可以携带不同数据"></a>2.1 每个变体可以携带不同数据</h3><p>假设消息系统中有三类消息：文本、图片、退出信号。它们需要的数据并不相同：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-meta">#[derive(Debug)]</span><br><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Message</span> &#123;<br>    <span class="hljs-title function_ invoke__">Text</span>(<span class="hljs-type">String</span>),<br>    Image &#123; url: <span class="hljs-type">String</span>, width: <span class="hljs-type">u32</span>, height: <span class="hljs-type">u32</span> &#125;,<br>    Quit,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">text</span> = Message::<span class="hljs-title function_ invoke__">Text</span>(<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>));<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">image</span> = Message::Image &#123;<br>        url: <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;https://example.com/a.png&quot;</span>),<br>        width: <span class="hljs-number">640</span>,<br>        height: <span class="hljs-number">480</span>,<br>    &#125;;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">quit</span> = Message::Quit;<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, text);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, image);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, quit);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">Text(&quot;hello&quot;)<br>Image &#123; url: &quot;https://example.com/a.png&quot;, width: 640, height: 480 &#125;<br>Quit<br></code></pre></td></tr></table></figure>
+
+<p>同一个 <code>enum</code> 中可以混合使用三种变体形式：</p>
+<table>
+<thead>
+<tr>
+<th>变体形式</th>
+<th>示例</th>
+<th>适合场景</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>单元变体</td>
+<td><code>Quit</code></td>
+<td>只表达状态，不需要额外数据</td>
+</tr>
+<tr>
+<td>元组变体</td>
+<td><code>Text(String)</code></td>
+<td>数据字段较少，字段含义明显</td>
+</tr>
+<tr>
+<td>结构体变体</td>
+<td><code>Image { url, width, height }</code></td>
+<td>字段较多，需要名字增强可读性</td>
+</tr>
+</tbody></table>
+<h3 id="2-2-枚举可以定义方法"><a href="#2-2-枚举可以定义方法" class="headerlink" title="2.2 枚举可以定义方法"></a>2.2 枚举可以定义方法</h3><p>和 <code>struct</code> 一样，<code>enum</code> 也可以通过 <code>impl</code> 块定义方法：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Message</span> &#123;<br>    <span class="hljs-title function_ invoke__">Text</span>(<span class="hljs-type">String</span>),<br>    Image &#123; url: <span class="hljs-type">String</span>, width: <span class="hljs-type">u32</span>, height: <span class="hljs-type">u32</span> &#125;,<br>    Quit,<br>&#125;<br><br><span class="hljs-keyword">impl</span> <span class="hljs-title class_">Message</span> &#123;<br>    <span class="hljs-keyword">fn</span> <span class="hljs-title function_">name</span>(&amp;<span class="hljs-keyword">self</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span> &#123;<br>        <span class="hljs-keyword">match</span> <span class="hljs-keyword">self</span> &#123;<br>            Message::<span class="hljs-title function_ invoke__">Text</span>(_) =&gt; <span class="hljs-string">&quot;text&quot;</span>,<br>            Message::Image &#123; .. &#125; =&gt; <span class="hljs-string">&quot;image&quot;</span>,<br>            Message::Quit =&gt; <span class="hljs-string">&quot;quit&quot;</span>,<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">msg</span> = Message::<span class="hljs-title function_ invoke__">Text</span>(<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;消息类型: &#123;&#125;&quot;</span>, msg.<span class="hljs-title function_ invoke__">name</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">消息类型: text<br></code></pre></td></tr></table></figure>
+
+<p>这里的 <code>name(&amp;self)</code> 只读取消息类型，不需要取得所有权，所以接收者使用 <code>&amp;self</code>。<code>match self</code> 时，匹配的是 <code>&amp;Message</code>，因此分支中的数据默认也是借用方式处理。</p>
+<h2 id="三、Option：用枚举替代空值"><a href="#三、Option：用枚举替代空值" class="headerlink" title="三、Option&lt;T&gt;：用枚举替代空值"></a>三、<code>Option&lt;T&gt;</code>：用枚举替代空值</h2><p>Rust 标准库没有传统意义上的 <code>null</code>。当一个值可能不存在时，通常使用 <code>Option&lt;T&gt;</code>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Option</span>&lt;T&gt; &#123;<br>    <span class="hljs-literal">None</span>,<br>    <span class="hljs-title function_ invoke__">Some</span>(T),<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>实际代码不需要自己定义 <code>Option&lt;T&gt;</code>，它已经在标准库预导入范围内，可以直接使用 <code>Some</code> 和 <code>None</code>。</p>
+<h3 id="3-1-基础用法"><a href="#3-1-基础用法" class="headerlink" title="3.1 基础用法"></a>3.1 基础用法</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">find_user_name</span>(id: <span class="hljs-type">u32</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Option</span>&lt;<span class="hljs-type">String</span>&gt; &#123;<br>    <span class="hljs-keyword">if</span> id == <span class="hljs-number">1</span> &#123;<br>        <span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;Alice&quot;</span>))<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-literal">None</span><br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">name</span> = <span class="hljs-title function_ invoke__">find_user_name</span>(<span class="hljs-number">1</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;查询结果: &#123;:?&#125;&quot;</span>, name);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">missing</span> = <span class="hljs-title function_ invoke__">find_user_name</span>(<span class="hljs-number">2</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;查询结果: &#123;:?&#125;&quot;</span>, missing);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">查询结果: Some(&quot;Alice&quot;)<br>查询结果: None<br></code></pre></td></tr></table></figure>
+
+<p><code>Option&lt;String&gt;</code> 的含义是：要么有一个 <code>String</code>，要么没有值。调用者必须显式处理这两种情况，不能像可空引用那样直接使用内部值。</p>
+<h3 id="3-2-Option-不能直接当作-T-使用"><a href="#3-2-Option-不能直接当作-T-使用" class="headerlink" title="3.2 Option&lt;T&gt; 不能直接当作 T 使用"></a>3.2 <code>Option&lt;T&gt;</code> 不能直接当作 <code>T</code> 使用</h3><p>下面的代码不能直接运行：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// 不能直接运行：Option&lt;i32&gt; 和 i32 是不同类型</span><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">x</span>: <span class="hljs-type">Option</span>&lt;<span class="hljs-type">i32</span>&gt; = <span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-number">5</span>);<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">y</span> = x + <span class="hljs-number">1</span>;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;y&#125;&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>原因是 <code>x</code> 可能是 <code>None</code>。如果编译器允许直接加法，那么 <code>None + 1</code> 的行为就会变得不明确。</p>
+<p>正确做法是先把 <code>Some</code> 和 <code>None</code> 拆开：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">add_one</span>(value: <span class="hljs-type">Option</span>&lt;<span class="hljs-type">i32</span>&gt;) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">Option</span>&lt;<span class="hljs-type">i32</span>&gt; &#123;<br>    <span class="hljs-keyword">match</span> value &#123;<br>        <span class="hljs-title function_ invoke__">Some</span>(n) =&gt; <span class="hljs-title function_ invoke__">Some</span>(n + <span class="hljs-number">1</span>),<br>        <span class="hljs-literal">None</span> =&gt; <span class="hljs-literal">None</span>,<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, <span class="hljs-title function_ invoke__">add_one</span>(<span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-number">5</span>)));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, <span class="hljs-title function_ invoke__">add_one</span>(<span class="hljs-literal">None</span>));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">Some(6)<br>None<br></code></pre></td></tr></table></figure>
+
+<h2 id="四、match-表达式"><a href="#四、match-表达式" class="headerlink" title="四、match 表达式"></a>四、<code>match</code> 表达式</h2><p><code>match</code> 是 Rust 最重要的模式匹配语法。它根据值的形状选择分支，并且要求所有可能情况都被覆盖。</p>
+<h3 id="4-1-基础语法"><a href="#4-1-基础语法" class="headerlink" title="4.1 基础语法"></a>4.1 基础语法</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">match</span> value &#123;<br>    pattern1 =&gt; expression1,<br>    pattern2 =&gt; expression2,<br>    pattern3 =&gt; &#123;<br>        statement;<br>        expression<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>match</code> 是表达式，每个分支都要产生同一种返回类型。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Coin</span> &#123;<br>    Penny,<br>    Nickel,<br>    Dime,<br>    Quarter,<br>&#125;<br><br><span class="hljs-comment">// 所有权会发生 move </span><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">value_in_cents</span>(coin: Coin) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">u8</span> &#123;<br>    <span class="hljs-keyword">match</span> coin &#123;<br>        Coin::Penny =&gt; <span class="hljs-number">1</span>,<br>        Coin::Nickel =&gt; <span class="hljs-number">5</span>,<br>        Coin::Dime =&gt; <span class="hljs-number">10</span>,<br>        Coin::Quarter =&gt; <span class="hljs-number">25</span>,<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">coin</span> = Coin::Dime;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;面值: &#123;&#125; cents&quot;</span>, <span class="hljs-title function_ invoke__">value_in_cents</span>(coin));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">面值: 10 cents<br></code></pre></td></tr></table></figure>
+
+<h3 id="4-2-分支可以执行多行代码"><a href="#4-2-分支可以执行多行代码" class="headerlink" title="4.2 分支可以执行多行代码"></a>4.2 分支可以执行多行代码</h3><p>当分支逻辑不止一个表达式时，使用代码块：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Coin</span> &#123;<br>    Penny,<br>    Nickel,<br>    Dime,<br>    Quarter,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">value_in_cents</span>(coin: Coin) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">u8</span> &#123;<br>    <span class="hljs-keyword">match</span> coin &#123;<br>        Coin::Penny =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;这是一枚小面值硬币&quot;</span>);<br>            <span class="hljs-number">1</span><br>        &#125;<br>        Coin::Nickel =&gt; <span class="hljs-number">5</span>,<br>        Coin::Dime =&gt; <span class="hljs-number">10</span>,<br>        Coin::Quarter =&gt; <span class="hljs-number">25</span>,<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">value</span> = <span class="hljs-title function_ invoke__">value_in_cents</span>(Coin::Penny);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;面值: &#123;value&#125;&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">这是一枚小面值硬币<br>面值: 1<br></code></pre></td></tr></table></figure>
+
+<p>注意代码块最后一行没有分号，因为它是该分支的返回值。</p>
+<h3 id="4-3-match-必须穷尽所有情况"><a href="#4-3-match-必须穷尽所有情况" class="headerlink" title="4.3 match 必须穷尽所有情况"></a>4.3 <code>match</code> 必须穷尽所有情况</h3><p>如果遗漏某个变体，编译器会报错：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// 不能直接运行：遗漏了 Coin::Quarter</span><br><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Coin</span> &#123;<br>    Penny,<br>    Nickel,<br>    Dime,<br>    Quarter,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">value_in_cents</span>(coin: Coin) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">u8</span> &#123;<br>    <span class="hljs-keyword">match</span> coin &#123;<br>        Coin::Penny =&gt; <span class="hljs-number">1</span>,<br>        Coin::Nickel =&gt; <span class="hljs-number">5</span>,<br>        Coin::Dime =&gt; <span class="hljs-number">10</span>,<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>match</code> 的穷尽性检查能避免“新增状态后忘记改分支”的问题。对于业务状态、协议类型、错误分类，这个特性非常有价值。</p>
+<h3 id="4-4-通配符和兜底分支"><a href="#4-4-通配符和兜底分支" class="headerlink" title="4.4 _ 通配符和兜底分支"></a>4.4 <code>_</code> 通配符和兜底分支</h3><p>如果只关心部分情况，可以使用 <code>_</code> 匹配剩余所有值：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">describe_number</span>(n: <span class="hljs-type">u8</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span> &#123;<br>    <span class="hljs-keyword">match</span> n &#123;<br>        <span class="hljs-number">0</span> =&gt; <span class="hljs-string">&quot;zero&quot;</span>,<br>        <span class="hljs-number">1</span> =&gt; <span class="hljs-string">&quot;one&quot;</span>,<br>        _ =&gt; <span class="hljs-string">&quot;many&quot;</span>,<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">describe_number</span>(<span class="hljs-number">0</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">describe_number</span>(<span class="hljs-number">7</span>));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">zero<br>many<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>注意：<code>_</code> 很方便，但也会吞掉未来新增的情况。对业务枚举做重构时，如果希望编译器提醒所有需要修改的位置，应尽量显式列出每个变体。</p>
+</blockquote>
+<h2 id="五、在模式中绑定数据"><a href="#五、在模式中绑定数据" class="headerlink" title="五、在模式中绑定数据"></a>五、在模式中绑定数据</h2><p>模式匹配不仅能判断变体，还能把变体中的数据绑定到变量。</p>
+<h3 id="5-1-匹配枚举中的字段"><a href="#5-1-匹配枚举中的字段" class="headerlink" title="5.1 匹配枚举中的字段"></a>5.1 匹配枚举中的字段</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Message</span> &#123;<br>    <span class="hljs-title function_ invoke__">Text</span>(<span class="hljs-type">String</span>),<br>    Image &#123; url: <span class="hljs-type">String</span>, width: <span class="hljs-type">u32</span>, height: <span class="hljs-type">u32</span> &#125;,<br>    Quit,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">handle_message</span>(msg: Message) &#123;<br>    <span class="hljs-keyword">match</span> msg &#123;<br>        Message::<span class="hljs-title function_ invoke__">Text</span>(content) =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文本消息: &#123;content&#125;&quot;</span>);<br>        &#125;<br>        Message::Image &#123; url, width, height &#125; =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;图片消息: &#123;url&#125;, 尺寸: &#123;width&#125;x&#123;height&#125;&quot;</span>);<br>        &#125;<br>        Message::Quit =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;退出&quot;</span>);<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-title function_ invoke__">handle_message</span>(Message::<span class="hljs-title function_ invoke__">Text</span>(<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>)));<br>    <span class="hljs-title function_ invoke__">handle_message</span>(Message::Image &#123;<br>        url: <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;/tmp/a.png&quot;</span>),<br>        width: <span class="hljs-number">320</span>,<br>        height: <span class="hljs-number">200</span>,<br>    &#125;);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">文本消息: hello<br>图片消息: /tmp/a.png, 尺寸: 320x200<br></code></pre></td></tr></table></figure>
+
+<p>在 <code>Message::Text(content)</code> 中，<code>content</code> 会取得内部 <code>String</code> 的所有权。因为 <code>handle_message</code> 本身接收 <code>msg: Message</code>，所以移动内部数据是合理的。</p>
+<h3 id="5-2-借用匹配，避免移动数据"><a href="#5-2-借用匹配，避免移动数据" class="headerlink" title="5.2 借用匹配，避免移动数据"></a>5.2 借用匹配，避免移动数据</h3><p>如果匹配后还想继续使用原值，应匹配引用，或在模式中使用 <code>ref</code>。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-meta">#[derive(Debug)]</span><br><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Message</span> &#123;<br>    <span class="hljs-title function_ invoke__">Text</span>(<span class="hljs-type">String</span>),<br>    Quit,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">print_message</span>(msg: &amp;Message) &#123;<br>    <span class="hljs-keyword">match</span> msg &#123;<br>        Message::<span class="hljs-title function_ invoke__">Text</span>(content) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;文本: &#123;content&#125;&quot;</span>),<br>        Message::Quit =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;退出&quot;</span>),<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">msg</span> = Message::<span class="hljs-title function_ invoke__">Text</span>(<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>));<br>    <span class="hljs-title function_ invoke__">print_message</span>(&amp;msg);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;原消息仍可使用: &#123;:?&#125;&quot;</span>, msg);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">文本: hello<br>原消息仍可使用: Text(&quot;hello&quot;)<br></code></pre></td></tr></table></figure>
+
+<p><code>print_message</code> 接收 <code>&amp;Message</code>，所以 <code>content</code> 的类型是 <code>&amp;String</code>，不会移动内部字符串。</p>
+<h3 id="5-3-使用-忽略不关心的字段"><a href="#5-3-使用-忽略不关心的字段" class="headerlink" title="5.3 使用 .. 忽略不关心的字段"></a>5.3 使用 <code>..</code> 忽略不关心的字段</h3><p>结构体变体字段很多时，可以只匹配关心的字段：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Event</span> &#123;<br>    MouseClick &#123; x: <span class="hljs-type">i32</span>, y: <span class="hljs-type">i32</span>, button: <span class="hljs-type">String</span> &#125;,<br>    KeyPress &#123; key: <span class="hljs-type">char</span> &#125;,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">event</span> = Event::MouseClick &#123;<br>        x: <span class="hljs-number">120</span>,<br>        y: <span class="hljs-number">80</span>,<br>        button: <span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;left&quot;</span>),<br>    &#125;;<br><br>    <span class="hljs-keyword">match</span> event &#123;<br>        Event::MouseClick &#123; x, y, .. &#125; =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;点击坐标: (&#123;x&#125;, &#123;y&#125;)&quot;</span>);<br>        &#125;<br>        Event::KeyPress &#123; key &#125; =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;按键: &#123;key&#125;&quot;</span>);<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">点击坐标: (120, 80)<br></code></pre></td></tr></table></figure>
+
+<p><code>..</code> 表示忽略剩余字段，适合字段较多但分支只需要部分信息的场景。</p>
+<p>对于结构体变体，<code>..</code> 不要求只能忽略尾部字段。只要字段有名字，就可以直接写出任意关心的字段，其余字段统一交给 <code>..</code>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Message</span> &#123;<br>    Data &#123; a: <span class="hljs-type">i32</span>, b: <span class="hljs-type">i32</span>, c: <span class="hljs-type">i32</span>, d: <span class="hljs-type">i32</span> &#125;,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">msg</span> = Message::Data &#123;<br>        a: <span class="hljs-number">1</span>,<br>        b: <span class="hljs-number">2</span>,<br>        c: <span class="hljs-number">3</span>,<br>        d: <span class="hljs-number">4</span>,<br>    &#125;;<br><br>    <span class="hljs-keyword">match</span> msg &#123;<br>        Message::Data &#123; a, c, .. &#125; =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;a = &#123;a&#125;, c = &#123;c&#125;&quot;</span>);<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">a = 1, c = 3<br></code></pre></td></tr></table></figure>
+
+<p>这里的 <code>Message::Data { a, c, .. }</code> 只绑定 <code>a</code> 和 <code>c</code>，<code>b</code>、<code>d</code> 都会被忽略。因为字段是具名字段，匹配时不依赖字段声明顺序。</p>
+<p>如果是元组变体，字段没有名字，只能按位置匹配。此时想取第 1 个和第 3 个字段，通常使用 <code>_</code> 忽略中间和末尾字段：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Message</span> &#123;<br>    <span class="hljs-title function_ invoke__">Data</span>(<span class="hljs-type">i32</span>, <span class="hljs-type">i32</span>, <span class="hljs-type">i32</span>, <span class="hljs-type">i32</span>),<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">msg</span> = Message::<span class="hljs-title function_ invoke__">Data</span>(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>);<br><br>    <span class="hljs-keyword">match</span> msg &#123;<br>        Message::<span class="hljs-title function_ invoke__">Data</span>(a, _, c, _) =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;a = &#123;a&#125;, c = &#123;c&#125;&quot;</span>);<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">a = 1, c = 3<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><strong>说明</strong>：<code>..</code> 在同一个模式中只能出现一次，适合忽略一段连续的剩余内容；如果要在元组变体中跳过多个不连续位置，使用 <code>_</code> 更清晰。</p>
+</blockquote>
+<h2 id="六、if-let-与-while-let"><a href="#六、if-let-与-while-let" class="headerlink" title="六、if let 与 while let"></a>六、<code>if let</code> 与 <code>while let</code></h2><p>当只关心一个模式，其他情况直接忽略时，<code>match</code> 会显得啰嗦。此时可以使用 <code>if let</code>。</p>
+<h3 id="6-1-if-let-简化单分支匹配"><a href="#6-1-if-let-简化单分支匹配" class="headerlink" title="6.1 if let 简化单分支匹配"></a>6.1 <code>if let</code> 简化单分支匹配</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">value</span> = <span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-number">3</span>);<br><br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(n) = value &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;取到值: &#123;n&#125;&quot;</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">取到值: 3<br></code></pre></td></tr></table></figure>
+
+<p>上面代码等价于：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">value</span> = <span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-number">3</span>);<br><br>    <span class="hljs-keyword">match</span> value &#123;<br>        <span class="hljs-title function_ invoke__">Some</span>(n) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;取到值: &#123;n&#125;&quot;</span>),<br>        <span class="hljs-literal">None</span> =&gt; (),<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>选择规则很简单：</p>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>推荐写法</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>必须处理所有分支</td>
+<td><code>match</code></td>
+</tr>
+<tr>
+<td>只关心一个分支</td>
+<td><code>if let</code></td>
+</tr>
+<tr>
+<td>只关心一个分支，但还要处理其他情况</td>
+<td><code>if let ... else</code></td>
+</tr>
+<tr>
+<td>循环中持续取出某种模式</td>
+<td><code>while let</code></td>
+</tr>
+</tbody></table>
+<h3 id="6-2-if-let-else"><a href="#6-2-if-let-else" class="headerlink" title="6.2 if let ... else"></a>6.2 <code>if let ... else</code></h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">parse_port</span>(input: <span class="hljs-type">Option</span>&lt;<span class="hljs-type">u16</span>&gt;) &#123;<br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(port) = input &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;端口: &#123;port&#125;&quot;</span>);<br>    &#125; <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;未提供端口，使用默认值&quot;</span>);<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-title function_ invoke__">parse_port</span>(<span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-number">8080</span>));<br>    <span class="hljs-title function_ invoke__">parse_port</span>(<span class="hljs-literal">None</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">端口: 8080<br>未提供端口，使用默认值<br></code></pre></td></tr></table></figure>
+
+<p>如果 <code>else</code> 分支也变复杂，或者后续可能增加更多情况，应改回 <code>match</code>，可读性会更好。</p>
+<h3 id="6-3-while-let-处理循环匹配"><a href="#6-3-while-let-处理循环匹配" class="headerlink" title="6.3 while let 处理循环匹配"></a>6.3 <code>while let</code> 处理循环匹配</h3><p><code>while let</code> 常用于持续从栈、队列、迭代器中取值：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">stack</span> = <span class="hljs-built_in">vec!</span>[<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>];<br><br>    <span class="hljs-keyword">while</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(value) = stack.<span class="hljs-title function_ invoke__">pop</span>() &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;弹出: &#123;value&#125;&quot;</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">弹出: 3<br>弹出: 2<br>弹出: 1<br></code></pre></td></tr></table></figure>
+
+<p><code>Vec::pop()</code> 返回 <code>Option&lt;T&gt;</code>：有元素时返回 <code>Some(value)</code>，空数组时返回 <code>None</code>，循环结束。</p>
+<h2 id="七、常见模式写法"><a href="#七、常见模式写法" class="headerlink" title="七、常见模式写法"></a>七、常见模式写法</h2><p>模式匹配并不只用于枚举，也可以用于字面量、范围、元组、结构体、引用等形状。</p>
+<h3 id="7-1-多个模式使用"><a href="#7-1-多个模式使用" class="headerlink" title="7.1 多个模式使用 |"></a>7.1 多个模式使用 <code>|</code></h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">is_weekend</span>(day: &amp;<span class="hljs-type">str</span>) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">bool</span> &#123;<br>    <span class="hljs-keyword">match</span> day &#123;<br>        <span class="hljs-string">&quot;Saturday&quot;</span> | <span class="hljs-string">&quot;Sunday&quot;</span> =&gt; <span class="hljs-literal">true</span>,<br>        _ =&gt; <span class="hljs-literal">false</span>,<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">is_weekend</span>(<span class="hljs-string">&quot;Saturday&quot;</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">is_weekend</span>(<span class="hljs-string">&quot;Monday&quot;</span>));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">true<br>false<br></code></pre></td></tr></table></figure>
+
+<h3 id="7-2-范围模式"><a href="#7-2-范围模式" class="headerlink" title="7.2 范围模式"></a>7.2 范围模式</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">grade</span>(score: <span class="hljs-type">u8</span>) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span> &#123;<br>    <span class="hljs-keyword">match</span> score &#123;<br>        <span class="hljs-number">90</span>..=<span class="hljs-number">100</span> =&gt; <span class="hljs-string">&quot;A&quot;</span>,<br>        <span class="hljs-number">80</span>..=<span class="hljs-number">89</span> =&gt; <span class="hljs-string">&quot;B&quot;</span>,<br>        <span class="hljs-number">60</span>..=<span class="hljs-number">79</span> =&gt; <span class="hljs-string">&quot;C&quot;</span>,<br>        _ =&gt; <span class="hljs-string">&quot;D&quot;</span>,<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">grade</span>(<span class="hljs-number">95</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">grade</span>(<span class="hljs-number">72</span>));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">A<br>C<br></code></pre></td></tr></table></figure>
+
+<p><code>..=</code> 是闭区间范围模式，包含两端的值。</p>
+<h3 id="7-3-匹配守卫"><a href="#7-3-匹配守卫" class="headerlink" title="7.3 匹配守卫"></a>7.3 匹配守卫</h3><p>匹配守卫（<code>match guard</code>）是在模式后增加 <code>if</code> 条件：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">describe</span>(value: <span class="hljs-type">Option</span>&lt;<span class="hljs-type">i32</span>&gt;) <span class="hljs-punctuation">-&gt;</span> &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span> &#123;<br>    <span class="hljs-keyword">match</span> value &#123;<br>        <span class="hljs-title function_ invoke__">Some</span>(n) <span class="hljs-keyword">if</span> n &gt; <span class="hljs-number">0</span> =&gt; <span class="hljs-string">&quot;positive&quot;</span>,<br>        <span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-number">0</span>) =&gt; <span class="hljs-string">&quot;zero&quot;</span>,<br>        <span class="hljs-title function_ invoke__">Some</span>(_) =&gt; <span class="hljs-string">&quot;negative&quot;</span>,<br>        <span class="hljs-literal">None</span> =&gt; <span class="hljs-string">&quot;none&quot;</span>,<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">describe</span>(<span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-number">10</span>)));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">describe</span>(<span class="hljs-title function_ invoke__">Some</span>(-<span class="hljs-number">3</span>)));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">describe</span>(<span class="hljs-literal">None</span>));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">positive<br>negative<br>none<br></code></pre></td></tr></table></figure>
+
+<p>匹配守卫适合表达“结构匹配成功后，还要满足额外条件”的分支。但守卫太多时，说明逻辑可能需要拆成函数。</p>
+<h3 id="7-4-绑定匹配到的值"><a href="#7-4-绑定匹配到的值" class="headerlink" title="7.4 @ 绑定匹配到的值"></a>7.4 <code>@</code> 绑定匹配到的值</h3><p><code>@</code> 可以在判断范围的同时，把匹配到的值绑定到变量：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">age</span> = <span class="hljs-number">18</span>;<br><br>    <span class="hljs-keyword">match</span> age &#123;<br>        n @ <span class="hljs-number">0</span>..=<span class="hljs-number">17</span> =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;未成年人: &#123;n&#125;&quot;</span>),<br>        n @ <span class="hljs-number">18</span>..=<span class="hljs-number">59</span> =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;成年人: &#123;n&#125;&quot;</span>),<br>        n =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;老年人: &#123;n&#125;&quot;</span>),<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs text">成年人: 18<br></code></pre></td></tr></table></figure>
+
+<h2 id="八、实战示例：请求解析结果建模"><a href="#八、实战示例：请求解析结果建模" class="headerlink" title="八、实战示例：请求解析结果建模"></a>八、实战示例：请求解析结果建模</h2><p>下面用枚举建模一个简单的请求解析流程。目标是区分“解析成功”“缺少字段”“字段格式错误”三种情况。</p>
+<h3 id="8-1-定义结果枚举"><a href="#8-1-定义结果枚举" class="headerlink" title="8.1 定义结果枚举"></a>8.1 定义结果枚举</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-meta">#[derive(Debug)]</span><br><span class="hljs-keyword">struct</span> <span class="hljs-title class_">Request</span> &#123;<br>    user_id: <span class="hljs-type">u64</span>,<br>    action: <span class="hljs-type">String</span>,<br>&#125;<br><br><span class="hljs-meta">#[derive(Debug)]</span><br><span class="hljs-keyword">enum</span> <span class="hljs-title class_">ParseResult</span> &#123;<br>    <span class="hljs-title function_ invoke__">Ok</span>(Request),<br>    <span class="hljs-title function_ invoke__">MissingField</span>(&amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span>),<br>    InvalidField &#123; field: &amp;<span class="hljs-symbol">&#x27;static</span> <span class="hljs-type">str</span>, reason: <span class="hljs-type">String</span> &#125;,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">parse_request</span>(user_id: <span class="hljs-type">Option</span>&lt;&amp;<span class="hljs-type">str</span>&gt;, action: <span class="hljs-type">Option</span>&lt;&amp;<span class="hljs-type">str</span>&gt;) <span class="hljs-punctuation">-&gt;</span> ParseResult &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(user_id) = user_id <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-keyword">return</span> ParseResult::<span class="hljs-title function_ invoke__">MissingField</span>(<span class="hljs-string">&quot;user_id&quot;</span>);<br>    &#125;;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(action) = action <span class="hljs-keyword">else</span> &#123;<br>        <span class="hljs-keyword">return</span> ParseResult::<span class="hljs-title function_ invoke__">MissingField</span>(<span class="hljs-string">&quot;action&quot;</span>);<br>    &#125;;<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">user_id</span> = <span class="hljs-keyword">match</span> user_id.parse::&lt;<span class="hljs-type">u64</span>&gt;() &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(id) =&gt; id,<br>        <span class="hljs-title function_ invoke__">Err</span>(err) =&gt; &#123;<br>            <span class="hljs-keyword">return</span> ParseResult::InvalidField &#123;<br>                field: <span class="hljs-string">&quot;user_id&quot;</span>,<br>                reason: err.<span class="hljs-title function_ invoke__">to_string</span>(),<br>            &#125;;<br>        &#125;<br>    &#125;;<br><br>    ParseResult::<span class="hljs-title function_ invoke__">Ok</span>(Request &#123;<br>        user_id,<br>        action: action.<span class="hljs-title function_ invoke__">to_string</span>(),<br>    &#125;)<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">print_result</span>(result: ParseResult) &#123;<br>    <span class="hljs-keyword">match</span> result &#123;<br>        ParseResult::<span class="hljs-title function_ invoke__">Ok</span>(request) =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;解析成功: user_id=&#123;&#125;, action=&#123;&#125;&quot;</span>, request.user_id, request.action);<br>        &#125;<br>        ParseResult::<span class="hljs-title function_ invoke__">MissingField</span>(field) =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;缺少字段: &#123;field&#125;&quot;</span>);<br>        &#125;<br>        ParseResult::InvalidField &#123; field, reason &#125; =&gt; &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;字段格式错误: &#123;field&#125;, 原因: &#123;reason&#125;&quot;</span>);<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-title function_ invoke__">print_result</span>(<span class="hljs-title function_ invoke__">parse_request</span>(<span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-string">&quot;42&quot;</span>), <span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-string">&quot;login&quot;</span>)));<br>    <span class="hljs-title function_ invoke__">print_result</span>(<span class="hljs-title function_ invoke__">parse_request</span>(<span class="hljs-literal">None</span>, <span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-string">&quot;login&quot;</span>)));<br>    <span class="hljs-title function_ invoke__">print_result</span>(<span class="hljs-title function_ invoke__">parse_request</span>(<span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-string">&quot;abc&quot;</span>), <span class="hljs-title function_ invoke__">Some</span>(<span class="hljs-string">&quot;login&quot;</span>)));<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs text">解析成功: user_id=42, action=login<br>缺少字段: user_id<br>字段格式错误: user_id, 原因: invalid digit found in string<br></code></pre></td></tr></table></figure>
+
+<p>这个例子中有几个设计点：</p>
+<table>
+<thead>
+<tr>
+<th>设计</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>ParseResult::Ok(Request)</code></td>
+<td>成功时携带完整解析后的请求对象</td>
+</tr>
+<tr>
+<td><code>MissingField(&amp;&#39;static str)</code></td>
+<td>缺少字段只需要字段名，字符串字面量即可</td>
+</tr>
+<tr>
+<td><code>InvalidField { field, reason }</code></td>
+<td>字段错误需要字段名和具体原因，结构体变体更清晰</td>
+</tr>
+<tr>
+<td><code>let Some(x) = ... else</code></td>
+<td>先处理失败路径，让主流程保持靠左</td>
+</tr>
+<tr>
+<td><code>match result</code></td>
+<td>输出时必须穷尽所有解析结果</td>
+</tr>
+</tbody></table>
+<blockquote>
+<p><strong>提示</strong>：真实项目中，解析失败通常会使用 <code>Result&lt;T, E&gt;</code>。当错误类型有多个清晰分类时，<code>E</code> 本身经常就是一个枚举。</p>
+</blockquote>
+<h2 id="九、常见陷阱与最佳实践"><a href="#九、常见陷阱与最佳实践" class="headerlink" title="九、常见陷阱与最佳实践"></a>九、常见陷阱与最佳实践</h2><h3 id="9-1-不要滥用-掩盖业务变体"><a href="#9-1-不要滥用-掩盖业务变体" class="headerlink" title="9.1 不要滥用 _ 掩盖业务变体"></a>9.1 不要滥用 <code>_</code> 掩盖业务变体</h3><figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">enum</span> <span class="hljs-title class_">OrderStatus</span> &#123;<br>    Created,<br>    Paid,<br>    Shipped,<br>    Canceled,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">can_cancel</span>(status: OrderStatus) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">bool</span> &#123;<br>    <span class="hljs-keyword">match</span> status &#123;<br>        OrderStatus::Created | OrderStatus::Paid =&gt; <span class="hljs-literal">true</span>,<br>        _ =&gt; <span class="hljs-literal">false</span>,<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这段代码可以工作，但如果未来新增 <code>Refunding</code>、<code>PaymentFailed</code> 等状态，<code>_</code> 会默认返回 <code>false</code>，编译器不会提醒你重新判断业务规则。</p>
+<p>更适合业务状态的写法是显式列出：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">can_cancel</span>(status: OrderStatus) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">bool</span> &#123;<br>    <span class="hljs-keyword">match</span> status &#123;<br>        OrderStatus::Created =&gt; <span class="hljs-literal">true</span>,<br>        OrderStatus::Paid =&gt; <span class="hljs-literal">true</span>,<br>        OrderStatus::Shipped =&gt; <span class="hljs-literal">false</span>,<br>        OrderStatus::Canceled =&gt; <span class="hljs-literal">false</span>,<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<h3 id="9-2-注意匹配时的所有权移动"><a href="#9-2-注意匹配时的所有权移动" class="headerlink" title="9.2 注意匹配时的所有权移动"></a>9.2 注意匹配时的所有权移动</h3><p>匹配拥有所有权的值时，非 <code>Copy</code> 字段可能被移动：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-comment">// 不能直接运行：content 被移动后，msg 不能再整体使用</span><br><span class="hljs-meta">#[derive(Debug)]</span><br><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Message</span> &#123;<br>    <span class="hljs-title function_ invoke__">Text</span>(<span class="hljs-type">String</span>),<br>    Quit,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">msg</span> = Message::<span class="hljs-title function_ invoke__">Text</span>(<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>));<br><br>    <span class="hljs-keyword">match</span> msg &#123;<br>        Message::<span class="hljs-title function_ invoke__">Text</span>(content) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;content&#125;&quot;</span>),<br>        Message::Quit =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;quit&quot;</span>),<br>    &#125;<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, msg);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>如果匹配后仍要使用原值，应匹配引用：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-meta">#[derive(Debug)]</span><br><span class="hljs-keyword">enum</span> <span class="hljs-title class_">Message</span> &#123;<br>    <span class="hljs-title function_ invoke__">Text</span>(<span class="hljs-type">String</span>),<br>    Quit,<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">msg</span> = Message::<span class="hljs-title function_ invoke__">Text</span>(<span class="hljs-type">String</span>::<span class="hljs-title function_ invoke__">from</span>(<span class="hljs-string">&quot;hello&quot;</span>));<br><br>    <span class="hljs-keyword">match</span> &amp;msg &#123;<br>        Message::<span class="hljs-title function_ invoke__">Text</span>(content) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;content&#125;&quot;</span>),<br>        Message::Quit =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;quit&quot;</span>),<br>    &#125;<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;:?&#125;&quot;</span>, msg);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs text">hello<br>Text(&quot;hello&quot;)<br></code></pre></td></tr></table></figure>
+
+<h3 id="9-3-if-let-不会做穷尽性提醒"><a href="#9-3-if-let-不会做穷尽性提醒" class="headerlink" title="9.3 if let 不会做穷尽性提醒"></a>9.3 <code>if let</code> 不会做穷尽性提醒</h3><p><code>if let</code> 只处理你写出的模式，其他情况会被忽略：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">value</span>: <span class="hljs-type">Option</span>&lt;<span class="hljs-type">i32</span>&gt; = <span class="hljs-literal">None</span>;<br><br>    <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(n) = value &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;值: &#123;n&#125;&quot;</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>这段代码在 <code>None</code> 时什么都不做。如果 <code>None</code> 代表重要业务分支，应使用 <code>match</code> 或 <code>if let ... else</code>。</p>
+<h3 id="9-4-枚举命名要表达领域含义"><a href="#9-4-枚举命名要表达领域含义" class="headerlink" title="9.4 枚举命名要表达领域含义"></a>9.4 枚举命名要表达领域含义</h3><p>不要把所有枚举都命名成 <code>Type</code>、<code>Kind</code>、<code>Status</code>，除非上下文已经很明确。更好的命名应体现领域：</p>
+<table>
+<thead>
+<tr>
+<th>不推荐</th>
+<th>推荐</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>Status</code></td>
+<td><code>OrderStatus</code></td>
+</tr>
+<tr>
+<td><code>Kind</code></td>
+<td><code>MessageKind</code></td>
+</tr>
+<tr>
+<td><code>Type</code></td>
+<td><code>PaymentMethod</code></td>
+</tr>
+<tr>
+<td><code>ResultType</code></td>
+<td><code>ParseResult</code></td>
+</tr>
+</tbody></table>
+<p>清晰命名能让 <code>match</code> 分支自解释，减少额外注释。</p>
+<h2 id="十、速查表"><a href="#十、速查表" class="headerlink" title="十、速查表"></a>十、速查表</h2><h3 id="10-1-枚举与匹配语法"><a href="#10-1-枚举与匹配语法" class="headerlink" title="10.1 枚举与匹配语法"></a>10.1 枚举与匹配语法</h3><table>
+<thead>
+<tr>
+<th>语法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>enum E { A, B }</code></td>
+<td>定义枚举</td>
+</tr>
+<tr>
+<td><code>E::A</code></td>
+<td>构造枚举变体</td>
+</tr>
+<tr>
+<td><code>A(T)</code></td>
+<td>元组变体，携带位置字段</td>
+</tr>
+<tr>
+<td><code>A { x: T }</code></td>
+<td>结构体变体，携带命名字段</td>
+</tr>
+<tr>
+<td><code>match value { ... }</code></td>
+<td>穷尽匹配</td>
+</tr>
+<tr>
+<td><code>_</code></td>
+<td>匹配任意值但不绑定</td>
+</tr>
+<tr>
+<td><code>..</code></td>
+<td>忽略剩余字段；具名字段可写成 <code>{ a, c, .. }</code></td>
+</tr>
+<tr>
+<td><code>a..=b</code></td>
+<td>闭区间范围模式</td>
+</tr>
+<tr>
+<td><code>pattern if condition</code></td>
+<td>匹配守卫</td>
+</tr>
+<tr>
+<td><code>name @ pattern</code></td>
+<td>匹配同时绑定值</td>
+</tr>
+<tr>
+<td><code>if let pattern = value</code></td>
+<td>单模式匹配</td>
+</tr>
+<tr>
+<td><code>while let pattern = value</code></td>
+<td>循环单模式匹配</td>
+</tr>
+</tbody></table>
+<h3 id="10-2-选择建议"><a href="#10-2-选择建议" class="headerlink" title="10.2 选择建议"></a>10.2 选择建议</h3><table>
+<thead>
+<tr>
+<th>需求</th>
+<th>推荐方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>表达有限互斥状态</td>
+<td><code>enum</code></td>
+</tr>
+<tr>
+<td>某些状态需要携带不同数据</td>
+<td>带数据的枚举变体</td>
+</tr>
+<tr>
+<td>值可能不存在</td>
+<td><code>Option&lt;T&gt;</code></td>
+</tr>
+<tr>
+<td>操作可能成功或失败</td>
+<td><code>Result&lt;T, E&gt;</code>，其中 <code>E</code> 可用枚举建模</td>
+</tr>
+<tr>
+<td>必须覆盖所有情况</td>
+<td><code>match</code></td>
+</tr>
+<tr>
+<td>只关心一个成功分支</td>
+<td><code>if let</code></td>
+</tr>
+<tr>
+<td>循环取出 <code>Option</code> 中的值</td>
+<td><code>while let</code></td>
+</tr>
+<tr>
+<td>匹配后还要继续使用原值</td>
+<td>匹配引用，例如 <code>match &amp;value</code></td>
+</tr>
+</tbody></table>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>枚举用于建模“一个值可能是几种形态之一”，模式匹配用于安全地拆开这些形态。Rust 把二者和类型系统结合起来，使状态遗漏、空值误用、错误分支遗漏这类问题尽量在编译期暴露。</p>
+<p>实际开发中可以遵循几个简单原则：</p>
+<ol>
+<li>内部业务状态优先用 <code>enum</code>，不要长期依赖字符串或整数常量。</li>
+<li>值可能不存在时使用 <code>Option&lt;T&gt;</code>，不要用特殊值模拟空值。</li>
+<li>分支必须完整处理时使用 <code>match</code>，只关心单个分支时使用 <code>if let</code>。</li>
+<li>业务枚举尽量显式列出变体，谨慎使用 <code>_</code>。</li>
+<li>匹配包含 <code>String</code>、<code>Vec&lt;T&gt;</code> 等非 <code>Copy</code> 数据的枚举时，先判断是否需要借用匹配。</li>
+</ol>
+<p>掌握枚举和模式匹配后，Rust 代码会更像是在描述业务状态机：每种状态是什么、携带什么数据、每个分支如何处理，都由类型系统和编译器一起约束。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/enum/" class="print-no-link">#enum</a>
+      
+        <a href="/tags/match/" class="print-no-link">#match</a>
+      
+        <a href="/tags/Option/" class="print-no-link">#Option</a>
+      
+        <a href="/tags/%E6%A8%A1%E5%BC%8F%E5%8C%B9%E9%85%8D/" class="print-no-link">#模式匹配</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/rust/macro.html" title="宏介绍与实战">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">宏介绍与实战</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/trait.html" title="Trait 特征介绍与实战">
+                        <span class="hidden-mobile">Trait 特征介绍与实战</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

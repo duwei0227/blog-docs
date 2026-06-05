@@ -1,0 +1,1128 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/favicon.png">
+  
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="John Doe">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="操作系统的调度单元是线程，而不是进程——一个进程可以同时运行多条执行流，彼此共享内存地址空间，但各自有独立的栈。std::thread 是 Rust 标准库中原生线程管理的统一接口：创建线程、等待线程结束、通过 park&amp;#x2F;unpark 轻量传递信号、通过 thread_local! 为每条线程维护独立状态。Rust 的所有权系统在编译期就排除了数据竞争，使并发编程的正确性得到静态保证，而">
+  
+  
+  
+  <title>[标准库] std::thread 线程管理介绍与实战 - probie&#39;s blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1749284_5i9bdhy70f8.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/c/font_1736178_k526ubmyhba.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"probiecoder.cn","root":"/","version":"1.9.9","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"expand_all":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false},"openkounter":{"server_url":"https://open-kounter.mintimate.cn","path":"window.location.pathname","ignore_local":false},"umami":{"src":null,"website_id":null,"domains":null,"start_time":"2024-01-01T00:00:00.000Z","token":null,"api_server":null}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 8.1.2"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>probie&#39;s blog</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content (desktop) -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/" target="_self">
+                <i class="iconfont icon-home-fill"></i>
+                <span>首页</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/" target="_self">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>归档</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/" target="_self">
+                <i class="iconfont icon-category-fill"></i>
+                <span>分类</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/" target="_self">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>标签</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/" target="_self">
+                <i class="iconfont icon-user-fill"></i>
+                <span>关于</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Mobile grid menu overlay -->
+<div id="mobile-grid-menu" class="d-lg-none">
+  <div class="mobile-grid-menu-inner">
+    <div class="container">
+      <div class="row">
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-home-fill"></i>
+                  <span>首页</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/archives/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-archive-fill"></i>
+                  <span>归档</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/categories/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-category-fill"></i>
+                  <span>分类</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/tags/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-tags-fill"></i>
+                  <span>标签</span>
+                </div>
+              </a>
+            </div>
+          
+        
+          
+          
+          
+          
+            <div class="col-4 mobile-grid-cell">
+              <a href="/about/" target="_self">
+                <div class="mobile-grid-item">
+                  <i class="iconfont icon-user-fill"></i>
+                  <span>关于</span>
+                </div>
+              </a>
+            </div>
+          
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-search-btn">
+            <a href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-search"></i>
+                <span>搜索</span>
+              </div>
+            </a>
+          </div>
+        
+        
+          <div class="col-4 mobile-grid-cell" id="mobile-color-toggle-btn"
+               data-label-light="开灯"
+               data-label-dark="关灯">
+            <a href="javascript:;" aria-label="Color Toggle">
+              <div class="mobile-grid-item">
+                <i class="iconfont icon-dark" id="mobile-color-toggle-icon"></i>
+                <span id="mobile-color-toggle-label">关灯</span>
+              </div>
+            </a>
+          </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="[标准库] std::thread 线程管理介绍与实战"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2026-05-29 14:00" pubdate>
+          2026年5月29日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          12k 字
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          102 分钟
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">[标准库] std::thread 线程管理介绍与实战</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>操作系统的调度单元是线程，而不是进程——一个进程可以同时运行多条执行流，彼此共享内存地址空间，但各自有独立的栈。<code>std::thread</code> 是 Rust 标准库中原生线程管理的统一接口：创建线程、等待线程结束、通过 <code>park</code>&#x2F;<code>unpark</code> 轻量传递信号、通过 <code>thread_local!</code> 为每条线程维护独立状态。Rust 的所有权系统在编译期就排除了数据竞争，使并发编程的正确性得到静态保证，而无需运行时 GC 的介入。</p>
+<h2 id="一、模块概览"><a href="#一、模块概览" class="headerlink" title="一、模块概览"></a>一、模块概览</h2><p><code>std::thread</code> 自 <code>Rust 1.0.0</code> 起稳定，核心组件如下：</p>
+<table>
+<thead>
+<tr>
+<th>组件</th>
+<th>类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>spawn</code></td>
+<td><code>fn</code></td>
+<td>创建独立线程，返回 <code>JoinHandle&lt;T&gt;</code></td>
+</tr>
+<tr>
+<td><code>scope</code></td>
+<td><code>fn</code></td>
+<td>创建有界作用域，允许线程借用局部变量</td>
+</tr>
+<tr>
+<td><code>sleep</code></td>
+<td><code>fn</code></td>
+<td>阻塞当前线程至少指定时长</td>
+</tr>
+<tr>
+<td><code>yield_now</code></td>
+<td><code>fn</code></td>
+<td>协作式让出 CPU 时间片</td>
+</tr>
+<tr>
+<td><code>park</code></td>
+<td><code>fn</code></td>
+<td>阻塞当前线程直到收到 <code>unpark</code> 令牌</td>
+</tr>
+<tr>
+<td><code>park_timeout</code></td>
+<td><code>fn</code></td>
+<td>同 <code>park</code>，但有超时上限</td>
+</tr>
+<tr>
+<td><code>current</code></td>
+<td><code>fn</code></td>
+<td>获取当前线程的 <code>Thread</code> 句柄</td>
+</tr>
+<tr>
+<td><code>available_parallelism</code></td>
+<td><code>fn</code></td>
+<td>查询程序默认可用的并行度（逻辑 CPU 数）</td>
+</tr>
+<tr>
+<td><code>panicking</code></td>
+<td><code>fn</code></td>
+<td>判断当前线程是否正在 <code>panic</code> 展开</td>
+</tr>
+<tr>
+<td><code>Builder</code></td>
+<td><code>struct</code></td>
+<td>线程工厂，配置名称与栈大小</td>
+</tr>
+<tr>
+<td><code>Thread</code></td>
+<td><code>struct</code></td>
+<td>线程句柄，可查询 <code>id</code>&#x2F;<code>name</code>，调用 <code>unpark</code></td>
+</tr>
+<tr>
+<td><code>JoinHandle&lt;T&gt;</code></td>
+<td><code>struct</code></td>
+<td>等待线程结束并获取返回值的所有权凭证</td>
+</tr>
+<tr>
+<td><code>ThreadId</code></td>
+<td><code>struct</code></td>
+<td>线程唯一标识符，不可复用</td>
+</tr>
+<tr>
+<td><code>Scope</code></td>
+<td><code>struct</code></td>
+<td><code>scope</code> 函数的作用域对象，用于在其内部 <code>spawn</code> 有界线程</td>
+</tr>
+<tr>
+<td><code>ScopedJoinHandle&lt;&#39;scope, T&gt;</code></td>
+<td><code>struct</code></td>
+<td>有界线程的等待凭证</td>
+</tr>
+<tr>
+<td><code>LocalKey&lt;T&gt;</code></td>
+<td><code>struct</code></td>
+<td><code>thread_local!</code> 宏生成的线程局部变量访问键</td>
+</tr>
+</tbody></table>
+<h2 id="二、线程创建"><a href="#二、线程创建" class="headerlink" title="二、线程创建"></a>二、线程创建</h2><h3 id="2-1-spawn-—-创建独立线程"><a href="#2-1-spawn-—-创建独立线程" class="headerlink" title="2.1 spawn — 创建独立线程"></a>2.1 spawn — 创建独立线程</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">spawn</span>&lt;F, T&gt;(f: F) <span class="hljs-punctuation">-&gt;</span> JoinHandle&lt;T&gt;<br><span class="hljs-keyword">where</span><br>    F: <span class="hljs-title function_ invoke__">FnOnce</span>() <span class="hljs-punctuation">-&gt;</span> T + <span class="hljs-built_in">Send</span> + <span class="hljs-symbol">&#x27;static</span>,<br>    T: <span class="hljs-built_in">Send</span> + <span class="hljs-symbol">&#x27;static</span>,<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>f</code></td>
+<td>-</td>
+<td>闭包，在新线程中执行；必须满足 <code>Send + &#39;static</code></td>
+</tr>
+</tbody></table>
+<p><code>spawn</code> 立即在操作系统层面创建一条新线程并开始执行 <code>f</code>。返回的 <code>JoinHandle&lt;T&gt;</code> 是等待该线程结束、取回返回值的唯一凭证。若 <code>JoinHandle</code> 被丢弃而未调用 <code>join</code>，线程将继续独立运行（<code>detach</code>）直到自然结束——它不会被强制杀死，也不受父线程生命周期约束（主线程除外）。</p>
+<p><code>&#39;static</code> 约束意味着闭包不能持有对栈上数据的引用，否则编译器拒绝通过；若需要借用局部变量，使用 <code>scope</code>（见 2.3 节）。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">handle</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;子线程运行中，线程名: &#123;:?&#125;&quot;</span>, thread::<span class="hljs-title function_ invoke__">current</span>().<span class="hljs-title function_ invoke__">name</span>());<br>        <span class="hljs-number">42</span><br>    &#125;);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">result</span> = handle.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;线程 panic 了&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;子线程返回值: &#123;result&#125;&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight makefile"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs makefile"><span class="hljs-section">子线程运行中，线程名: None</span><br><span class="hljs-section">子线程返回值: 42</span><br></code></pre></td></tr></table></figure>
+
+<p><code>JoinHandle::join</code> 返回 <code>thread::Result&lt;T&gt;</code>，即 <code>Result&lt;T, Box&lt;dyn Any + Send + &#39;static&gt;&gt;</code>。<code>Ok(T)</code> 是线程正常返回的值；<code>Err(payload)</code> 表示线程发生了 <code>panic</code>，<code>payload</code> 是 <code>panic!</code> 的参数（见 4.3 节）。</p>
+<h3 id="2-2-Builder-—-定制线程属性"><a href="#2-2-Builder-—-定制线程属性" class="headerlink" title="2.2 Builder — 定制线程属性"></a>2.2 Builder — 定制线程属性</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">new</span>() <span class="hljs-punctuation">-&gt;</span> Builder<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">name</span>(<span class="hljs-keyword">self</span>, name: <span class="hljs-type">String</span>) <span class="hljs-punctuation">-&gt;</span> Builder<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">stack_size</span>(<span class="hljs-keyword">self</span>, size: <span class="hljs-type">usize</span>) <span class="hljs-punctuation">-&gt;</span> Builder<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">spawn</span>&lt;F, T&gt;(<span class="hljs-keyword">self</span>, f: F) <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;JoinHandle&lt;T&gt;&gt;<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>name</code></td>
+<td><code>None</code>（匿名）</td>
+<td>线程名称；<code>panic</code> 信息和调试工具会展示该名称</td>
+</tr>
+<tr>
+<td><code>stack_size</code></td>
+<td>平台默认 <code>2 MiB</code></td>
+<td>线程栈大小（字节）；覆盖 <code>RUST_MIN_STACK</code> 环境变量</td>
+</tr>
+</tbody></table>
+<p><code>Builder::spawn</code> 与 <code>thread::spawn</code> 的唯一区别在于返回 <code>io::Result</code>——当操作系统资源不足（如线程数上限）时会返回 <code>Err</code>，而不是直接 <code>panic</code>。</p>
+<p>线程名称通过 <code>pthread_setname_np</code>（<code>Linux</code>&#x2F;<code>macOS</code>）传递给操作系统，可在 <code>/proc/&lt;pid&gt;/task/&lt;tid&gt;/comm</code> 和 <code>ps -T</code> 中看到，也会出现在 <code>panic</code> 消息的 <code>thread &#39;name&#39; panicked at ...</code> 中，有助于快速定位问题。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">handle</span> = thread::Builder::<span class="hljs-title function_ invoke__">new</span>()<br>        .<span class="hljs-title function_ invoke__">name</span>(<span class="hljs-string">&quot;worker-1&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>())<br>        .<span class="hljs-title function_ invoke__">stack_size</span>(<span class="hljs-number">2</span> * <span class="hljs-number">1024</span> * <span class="hljs-number">1024</span>)<br>        .<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>            <span class="hljs-keyword">let</span> <span class="hljs-variable">t</span> = thread::<span class="hljs-title function_ invoke__">current</span>();<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;线程名: &#123;&#125;&quot;</span>, t.<span class="hljs-title function_ invoke__">name</span>().<span class="hljs-title function_ invoke__">unwrap_or</span>(<span class="hljs-string">&quot;(unnamed)&quot;</span>));<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;线程 ID: &#123;:?&#125;&quot;</span>, t.<span class="hljs-title function_ invoke__">id</span>());<br>            <span class="hljs-number">100u32</span><br>        &#125;)<br>        .<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;创建线程失败&quot;</span>);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">result</span> = handle.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">expect</span>(<span class="hljs-string">&quot;线程 panic 了&quot;</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;返回值: &#123;result&#125;&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">线程名</span><span class="hljs-punctuation">:</span> <span class="hljs-string">worker-1</span><br><span class="hljs-attribute">线程 ID</span><span class="hljs-punctuation">:</span> <span class="hljs-string">ThreadId(2)</span><br><span class="hljs-attribute">返回值</span><span class="hljs-punctuation">:</span> <span class="hljs-string">100</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>主线程的栈大小由操作系统或链接器控制，<code>Builder::stack_size</code> 和 <code>RUST_MIN_STACK</code> 均对主线程无效。若程序在主线程递归导致栈溢出，需通过 <code>ulimit -s</code>（<code>Unix</code>）或链接器标志调整。</p>
+</blockquote>
+<h3 id="2-3-scope-—-有界作用域线程"><a href="#2-3-scope-—-有界作用域线程" class="headerlink" title="2.3 scope — 有界作用域线程"></a>2.3 scope — 有界作用域线程</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">scope</span>&lt;<span class="hljs-symbol">&#x27;env</span>, F, T&gt;(f: F) <span class="hljs-punctuation">-&gt;</span> T<br><span class="hljs-keyword">where</span><br>    F: <span class="hljs-keyword">for</span>&lt;<span class="hljs-symbol">&#x27;scope</span>&gt; <span class="hljs-title function_ invoke__">FnOnce</span>(&amp;<span class="hljs-symbol">&#x27;scope</span> Scope&lt;<span class="hljs-symbol">&#x27;scope</span>, <span class="hljs-symbol">&#x27;env</span>&gt;) <span class="hljs-punctuation">-&gt;</span> T,<br></code></pre></td></tr></table></figure>
+
+<p><code>scope</code> 解决了 <code>spawn</code> 的 <code>&#39;static</code> 限制：在 <code>scope</code> 闭包内通过 <code>Scope::spawn</code> 创建的线程，其生命周期不得超过 <code>scope</code> 本身——<code>scope</code> 函数返回前会自动 <code>join</code> 所有内部线程，因此这些线程可以安全地借用外层栈上的数据。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::sync::Mutex;<br><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">data</span> = <span class="hljs-built_in">vec!</span>[<span class="hljs-number">10</span>, <span class="hljs-number">20</span>, <span class="hljs-number">30</span>, <span class="hljs-number">40</span>, <span class="hljs-number">50</span>];<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">results</span>: Mutex&lt;<span class="hljs-type">Vec</span>&lt;<span class="hljs-type">String</span>&gt;&gt; = Mutex::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-type">Vec</span>::<span class="hljs-title function_ invoke__">new</span>());<br><br>    thread::<span class="hljs-title function_ invoke__">scope</span>(|s| &#123;<br>        s.<span class="hljs-title function_ invoke__">spawn</span>(|| &#123;<br>            <span class="hljs-keyword">let</span> <span class="hljs-variable">sum</span>: <span class="hljs-type">i32</span> = data.<span class="hljs-title function_ invoke__">iter</span>().<span class="hljs-title function_ invoke__">sum</span>();<br>            results.<span class="hljs-title function_ invoke__">lock</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">push</span>(<span class="hljs-built_in">format!</span>(<span class="hljs-string">&quot;sum = &#123;sum&#125;&quot;</span>));<br>        &#125;);<br>        s.<span class="hljs-title function_ invoke__">spawn</span>(|| &#123;<br>            <span class="hljs-keyword">let</span> <span class="hljs-variable">max</span> = data.<span class="hljs-title function_ invoke__">iter</span>().<span class="hljs-title function_ invoke__">max</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>            results.<span class="hljs-title function_ invoke__">lock</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">push</span>(<span class="hljs-built_in">format!</span>(<span class="hljs-string">&quot;max = &#123;max&#125;&quot;</span>));<br>        &#125;);<br>    &#125;);<br><br>    <span class="hljs-comment">// scope 结束后所有线程已 join</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">output</span> = results.<span class="hljs-title function_ invoke__">into_inner</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    output.<span class="hljs-title function_ invoke__">sort</span>(); <span class="hljs-comment">// 排序保证输出确定</span><br>    <span class="hljs-keyword">for</span> <span class="hljs-variable">line</span> <span class="hljs-keyword">in</span> &amp;output &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;&#123;line&#125;&quot;</span>);<br>    &#125;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;所有线程已完成，可安全访问 data: &#123;:?&#125;&quot;</span>, &amp;data[..<span class="hljs-number">2</span>]);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight fortran"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs fortran"><span class="hljs-built_in">max</span> = <span class="hljs-number">50</span><br><span class="hljs-built_in">sum</span> = <span class="hljs-number">150</span><br>所有线程已完成，可安全访问 <span class="hljs-keyword">data</span>: [<span class="hljs-number">10</span>, <span class="hljs-number">20</span>]<br></code></pre></td></tr></table></figure>
+
+<p>与 <code>spawn</code> 的对比：</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th><code>spawn</code></th>
+<th><code>scope</code> 内的 <code>spawn</code></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>闭包约束</td>
+<td><code>&#39;static</code></td>
+<td>可借用 <code>&#39;env</code> 生命周期内的数据</td>
+</tr>
+<tr>
+<td>自动 <code>join</code></td>
+<td>否（需手动）</td>
+<td>是（<code>scope</code> 返回前）</td>
+</tr>
+<tr>
+<td>返回凭证</td>
+<td><code>JoinHandle&lt;T&gt;</code></td>
+<td><code>ScopedJoinHandle&lt;&#39;scope, T&gt;</code></td>
+</tr>
+<tr>
+<td>创建方式</td>
+<td><code>thread::spawn(f)</code></td>
+<td><code>s.spawn(f)</code>（<code>s</code> 是 <code>&amp;Scope</code>）</td>
+</tr>
+</tbody></table>
+<h2 id="三、线程控制"><a href="#三、线程控制" class="headerlink" title="三、线程控制"></a>三、线程控制</h2><h3 id="3-1-sleep"><a href="#3-1-sleep" class="headerlink" title="3.1 sleep"></a>3.1 sleep</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">sleep</span>(dur: Duration)<br></code></pre></td></tr></table></figure>
+
+<p><strong>参数：</strong></p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>默认值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>dur</code></td>
+<td>-</td>
+<td>最短休眠时长；实际休眠时间 ≥ <code>dur</code>，操作系统调度精度决定上限</td>
+</tr>
+</tbody></table>
+<p><code>sleep</code> 将当前线程挂起，在此期间不占用 CPU。操作系统保证至少等待 <code>dur</code>，但可能因调度延迟或虚假唤醒（<code>spurious wakeup</code>）而稍长。若需要精确定时（如实时系统），需要平台特定的 API，标准库不提供。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::thread;<br><span class="hljs-keyword">use</span> std::time::Duration;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;开始&quot;</span>);<br>    thread::<span class="hljs-title function_ invoke__">sleep</span>(Duration::<span class="hljs-title function_ invoke__">from_millis</span>(<span class="hljs-number">200</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;休眠 200ms 结束&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs">开始<br>休眠 200ms 结束<br></code></pre></td></tr></table></figure>
+
+<h3 id="3-2-yield-now"><a href="#3-2-yield-now" class="headerlink" title="3.2 yield_now"></a>3.2 yield_now</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">yield_now</span>()<br></code></pre></td></tr></table></figure>
+
+<p>协作式让出当前线程剩余的 CPU 时间片，通知调度器可以运行其他线程。与 <code>sleep</code> 不同，<code>yield_now</code> 不阻塞——如果没有其他可运行线程，当前线程可能立刻继续执行。</p>
+<p>典型用途是在自旋等待某个条件时降低 CPU 占用：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::sync::atomic::&#123;AtomicBool, Ordering&#125;;<br><span class="hljs-keyword">use</span> std::sync::Arc;<br><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">ready</span> = Arc::<span class="hljs-title function_ invoke__">new</span>(AtomicBool::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-literal">false</span>));<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">ready_w</span> = Arc::<span class="hljs-title function_ invoke__">clone</span>(&amp;ready);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">worker</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>        thread::<span class="hljs-title function_ invoke__">sleep</span>(std::time::Duration::<span class="hljs-title function_ invoke__">from_millis</span>(<span class="hljs-number">5</span>));<br>        ready_w.<span class="hljs-title function_ invoke__">store</span>(<span class="hljs-literal">true</span>, Ordering::Release);<br>    &#125;);<br><br>    <span class="hljs-keyword">while</span> !ready.<span class="hljs-title function_ invoke__">load</span>(Ordering::Acquire) &#123;<br>        thread::<span class="hljs-title function_ invoke__">yield_now</span>(); <span class="hljs-comment">// 让出 CPU，而非空转</span><br>    &#125;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;ready!&quot;</span>);<br>    worker.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight arduino"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs arduino">ready!<br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p>自旋 + <code>yield_now</code> 仍然消耗 CPU，适合等待时间极短（微秒级）的场景。等待时间不可预测时，优先使用 <code>park</code>&#x2F;<code>unpark</code> 或条件变量（<code>Condvar</code>）。</p>
+</blockquote>
+<h3 id="3-3-park-与-unpark"><a href="#3-3-park-与-unpark" class="headerlink" title="3.3 park 与 unpark"></a>3.3 park 与 unpark</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">park</span>()<br><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">park_timeout</span>(dur: Duration)<br></code></pre></td></tr></table></figure>
+
+<p><code>park</code> 阻塞当前线程，直到有其他线程调用 <code>Thread::unpark</code> 向该线程发放一个令牌（<code>token</code>）。令牌模型的关键特性：</p>
+<ul>
+<li>令牌只有 0 和 1 两种状态（不会累积）</li>
+<li>若 <code>unpark</code> 先于 <code>park</code> 发生，<code>park</code> 将立即返回并消耗该令牌</li>
+<li>即便没有 <code>unpark</code>，<code>park</code> 也可能虚假唤醒——使用者必须在唤醒后重新检查条件</li>
+</ul>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::sync::&#123;Arc, Mutex&#125;;<br><span class="hljs-keyword">use</span> std::thread;<br><span class="hljs-keyword">use</span> std::time::Duration;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">ready</span> = Arc::<span class="hljs-title function_ invoke__">new</span>(Mutex::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-literal">false</span>));<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">ready_clone</span> = Arc::<span class="hljs-title function_ invoke__">clone</span>(&amp;ready);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">worker</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;worker: 等待信号...&quot;</span>);<br>        thread::<span class="hljs-title function_ invoke__">park</span>();<br>        <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;worker: 收到信号，开始处理&quot;</span>);<br>        <span class="hljs-string">&quot;done&quot;</span><br>    &#125;);<br><br>    <span class="hljs-comment">// 主线程准备好数据后 unpark</span><br>    thread::<span class="hljs-title function_ invoke__">sleep</span>(Duration::<span class="hljs-title function_ invoke__">from_millis</span>(<span class="hljs-number">50</span>));<br>    *ready_clone.<span class="hljs-title function_ invoke__">lock</span>().<span class="hljs-title function_ invoke__">unwrap</span>() = <span class="hljs-literal">true</span>;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;main: 数据就绪，发送信号&quot;</span>);<br>    worker.<span class="hljs-title function_ invoke__">thread</span>().<span class="hljs-title function_ invoke__">unpark</span>();<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">result</span> = worker.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;main: worker 返回 \&quot;&#123;result&#125;\&quot;&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight avrasm"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs avrasm"><span class="hljs-symbol">worker:</span> 等待信号...<br><span class="hljs-symbol">main:</span> 数据就绪，发送信号<br><span class="hljs-symbol">worker:</span> 收到信号，开始处理<br><span class="hljs-symbol">main:</span> worker 返回 <span class="hljs-string">&quot;done&quot;</span><br></code></pre></td></tr></table></figure>
+
+<p><code>park_timeout</code> 是带超时的版本，超时后自动返回，适合需要定期检查状态的场景：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::time::Duration;<br><span class="hljs-keyword">use</span> std::thread;<br><br>thread::<span class="hljs-title function_ invoke__">park_timeout</span>(Duration::<span class="hljs-title function_ invoke__">from_secs</span>(<span class="hljs-number">1</span>));<br><span class="hljs-comment">// 1 秒内若被 unpark 则提前返回，否则超时返回</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>park</code>&#x2F;<code>unpark</code> 的正确使用模式是”先设置条件，再 <code>unpark</code>“；唤醒后”先检查条件，再继续”。因为令牌不会累积，多次 <code>unpark</code> 只会留下一个令牌，中途丢失的信号需要通过共享状态补偿。</p>
+</blockquote>
+<h2 id="四、线程信息查询"><a href="#四、线程信息查询" class="headerlink" title="四、线程信息查询"></a>四、线程信息查询</h2><h3 id="4-1-current-与-ThreadId"><a href="#4-1-current-与-ThreadId" class="headerlink" title="4.1 current 与 ThreadId"></a>4.1 current 与 ThreadId</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">current</span>() <span class="hljs-punctuation">-&gt;</span> Thread<br></code></pre></td></tr></table></figure>
+
+<p>返回当前正在执行的线程的 <code>Thread</code> 句柄。<code>Thread</code> 提供两个主要方法：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>返回类型</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>name()</code></td>
+<td><code>Option&lt;&amp;str&gt;</code></td>
+<td>线程名称；未命名线程返回 <code>None</code></td>
+</tr>
+<tr>
+<td><code>id()</code></td>
+<td><code>ThreadId</code></td>
+<td>唯一标识符；进程生命周期内不复用</td>
+</tr>
+<tr>
+<td><code>unpark()</code></td>
+<td><code>()</code></td>
+<td>向该线程发放一个 <code>park</code> 令牌</td>
+</tr>
+</tbody></table>
+<p><code>ThreadId</code> 实现了 <code>Eq</code>、<code>Hash</code>、<code>Debug</code>，可用作 <code>HashMap</code> 的键。不同进程的 <code>ThreadId</code> 没有可比性。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">t</span> = thread::<span class="hljs-title function_ invoke__">current</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;当前线程名: &#123;&#125;&quot;</span>, t.<span class="hljs-title function_ invoke__">name</span>().<span class="hljs-title function_ invoke__">unwrap_or</span>(<span class="hljs-string">&quot;(unnamed)&quot;</span>));<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;当前线程 ID: &#123;:?&#125;&quot;</span>, t.<span class="hljs-title function_ invoke__">id</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;当前是否在 panic 中: &#123;&#125;&quot;</span>, thread::<span class="hljs-title function_ invoke__">panicking</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight isbl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs isbl">当前线程名: <span class="hljs-variable">main</span><br>当前线程 <span class="hljs-variable">ID</span>: <span class="hljs-function"><span class="hljs-title">ThreadId</span>(<span class="hljs-number">1</span>)</span><br>当前是否在 <span class="hljs-variable">panic</span> 中: <span class="hljs-variable"><span class="hljs-literal">false</span></span><br></code></pre></td></tr></table></figure>
+
+<h3 id="4-2-available-parallelism"><a href="#4-2-available-parallelism" class="headerlink" title="4.2 available_parallelism"></a>4.2 available_parallelism</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">available_parallelism</span>() <span class="hljs-punctuation">-&gt;</span> io::<span class="hljs-type">Result</span>&lt;NonZeroUsize&gt;<br></code></pre></td></tr></table></figure>
+
+<p>返回程序当前可利用的默认并行度——通常是逻辑 CPU 核数，但在受 <code>cgroup</code> 或 <code>taskset</code> 约束的容器环境下会反映实际配额，而非主机总核数。线程池的初始大小通常以此为依据。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">parallelism</span> = thread::<span class="hljs-title function_ invoke__">available_parallelism</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;逻辑 CPU 数: &#123;parallelism&#125;&quot;</span>);<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight nestedtext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs nestedtext"><span class="hljs-attribute">逻辑 CPU 数</span><span class="hljs-punctuation">:</span> <span class="hljs-string">8</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="4-3-panicking-与-panic-捕获"><a href="#4-3-panicking-与-panic-捕获" class="headerlink" title="4.3 panicking 与 panic 捕获"></a>4.3 panicking 与 panic 捕获</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">pub</span> <span class="hljs-keyword">fn</span> <span class="hljs-title function_">panicking</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">bool</span><br></code></pre></td></tr></table></figure>
+
+<p>判断当前线程是否处于 <code>panic</code> 展开（<code>unwinding</code>）阶段。典型用途是在 <code>Drop</code> 实现中区分”正常析构”与”panic 时析构”，避免在后者中再次触发 <code>panic</code>（<code>double-panic</code> 会导致 <code>abort</code>）。</p>
+<p>非 <code>panic</code> 路径下 <code>panicking()</code> 恒为 <code>false</code>；它只在 <code>panic</code> 展开调用栈期间才返回 <code>true</code>。</p>
+<hr>
+<p><code>JoinHandle::join</code> 能捕获子线程的 <code>panic</code>：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::thread;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-comment">// 捕获另一线程的 panic</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">handle</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(|| &#123;<br>        <span class="hljs-built_in">panic!</span>(<span class="hljs-string">&quot;演示 panic 捕获&quot;</span>);<br>    &#125;);<br><br>    <span class="hljs-keyword">match</span> handle.<span class="hljs-title function_ invoke__">join</span>() &#123;<br>        <span class="hljs-title function_ invoke__">Ok</span>(_) =&gt; <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;线程正常退出&quot;</span>),<br>        <span class="hljs-title function_ invoke__">Err</span>(payload) =&gt; &#123;<br>            <span class="hljs-keyword">if</span> <span class="hljs-keyword">let</span> <span class="hljs-variable">Some</span>(msg) = payload.downcast_ref::&lt;&amp;<span class="hljs-type">str</span>&gt;() &#123;<br>                <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;捕获到 panic: \&quot;&#123;msg&#125;\&quot;&quot;</span>);<br>            &#125;<br>        &#125;<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs go">捕获到 <span class="hljs-built_in">panic</span>: <span class="hljs-string">&quot;演示 panic 捕获&quot;</span><br></code></pre></td></tr></table></figure>
+
+<blockquote>
+<p><code>panic</code> 捕获对 <code>panic = &quot;abort&quot;</code> 编译配置无效——该配置下 <code>panic</code> 直接终止进程，<code>JoinHandle::join</code> 永远得不到 <code>Err</code>。生产环境若需要捕获 <code>panic</code>，须在 <code>Cargo.toml</code> 中确认 <code>panic = &quot;unwind&quot;</code>（默认值）。</p>
+</blockquote>
+<h2 id="五、线程局部存储（TLS）"><a href="#五、线程局部存储（TLS）" class="headerlink" title="五、线程局部存储（TLS）"></a>五、线程局部存储（TLS）</h2><h3 id="5-1-thread-local-宏"><a href="#5-1-thread-local-宏" class="headerlink" title="5.1 thread_local! 宏"></a>5.1 thread_local! 宏</h3><p><strong>语法：</strong></p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs rust">thread_local! &#123;<br>    <span class="hljs-keyword">static</span> NAME: TYPE = INIT_EXPR;<br>    <span class="hljs-keyword">static</span> NAME: TYPE = <span class="hljs-keyword">const</span> &#123; CONST_EXPR &#125;; <span class="hljs-comment">// 常量初始化（更高效）</span><br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p><code>thread_local!</code> 宏声明线程局部变量：每条线程首次访问时独立初始化，线程退出时销毁。不同线程的同名变量完全独立，既无需同步原语，也不会相互影响。</p>
+<p>初始化表达式有两种形式：</p>
+<ul>
+<li>普通表达式：首次访问时懒求值（<code>lazy initialization</code>）</li>
+<li><code>const { ... }</code>：在编译期求值，避免运行时初始化开销（自 <code>Rust 1.84.0</code> 稳定）</li>
+</ul>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::cell::RefCell;<br><span class="hljs-keyword">use</span> std::thread;<br><br>thread_local! &#123;<br>    <span class="hljs-keyword">static</span> REQUEST_ID: RefCell&lt;<span class="hljs-type">u64</span>&gt; = <span class="hljs-keyword">const</span> &#123; RefCell::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">0</span>) &#125;;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">set_request_id</span>(id: <span class="hljs-type">u64</span>) &#123;<br>    REQUEST_ID.<span class="hljs-title function_ invoke__">with</span>(|r| *r.<span class="hljs-title function_ invoke__">borrow_mut</span>() = id);<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">current_request_id</span>() <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">u64</span> &#123;<br>    REQUEST_ID.<span class="hljs-title function_ invoke__">with</span>(|r| *r.<span class="hljs-title function_ invoke__">borrow</span>())<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-title function_ invoke__">set_request_id</span>(<span class="hljs-number">1001</span>);<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[main] request_id = &#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">current_request_id</span>());<br><br>    <span class="hljs-comment">// 每个线程独立维护自己的 REQUEST_ID</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">t1</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(|| &#123;<br>        <span class="hljs-title function_ invoke__">set_request_id</span>(<span class="hljs-number">2001</span>);<br>        <span class="hljs-title function_ invoke__">current_request_id</span>()<br>    &#125;);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">t2</span> = thread::<span class="hljs-title function_ invoke__">spawn</span>(|| &#123;<br>        <span class="hljs-title function_ invoke__">set_request_id</span>(<span class="hljs-number">3001</span>);<br>        <span class="hljs-title function_ invoke__">current_request_id</span>()<br>    &#125;);<br><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[thread-1] request_id = &#123;&#125;&quot;</span>, t1.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">unwrap</span>());<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[thread-2] request_id = &#123;&#125;&quot;</span>, t2.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">unwrap</span>());<br><br>    <span class="hljs-comment">// 主线程的 REQUEST_ID 未受子线程影响</span><br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;[main] request_id 仍为 &#123;&#125;&quot;</span>, <span class="hljs-title function_ invoke__">current_request_id</span>());<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight angelscript"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs angelscript"><span class="hljs-string">[main]</span> request_id = <span class="hljs-number">1001</span><br><span class="hljs-string">[thread-1]</span> request_id = <span class="hljs-number">2001</span><br><span class="hljs-string">[thread-2]</span> request_id = <span class="hljs-number">3001</span><br><span class="hljs-string">[main]</span> request_id 仍为 <span class="hljs-number">1001</span><br></code></pre></td></tr></table></figure>
+
+<h3 id="5-2-LocalKey-访问方式"><a href="#5-2-LocalKey-访问方式" class="headerlink" title="5.2 LocalKey 访问方式"></a>5.2 LocalKey 访问方式</h3><p><code>thread_local!</code> 生成的变量类型为 <code>LocalKey&lt;T&gt;</code>，提供以下访问方法：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>with(f)</code></td>
+<td>将共享引用传给闭包 <code>f</code>；线程退出后调用会 <code>panic</code></td>
+</tr>
+<tr>
+<td><code>try_with(f)</code></td>
+<td>同 <code>with</code>，但线程退出后返回 <code>Err(AccessError)</code> 而非 <code>panic</code></td>
+</tr>
+<tr>
+<td><code>set(value)</code></td>
+<td>直接替换当前线程的值（自 <code>Rust 1.84.0</code> 稳定）</td>
+</tr>
+<tr>
+<td><code>get()</code></td>
+<td>返回当前线程的值副本（需 <code>T: Copy</code>，自 <code>Rust 1.84.0</code> 稳定）</td>
+</tr>
+<tr>
+<td><code>replace(value)</code></td>
+<td>替换并返回旧值（需 <code>T: Clone</code>，自 <code>Rust 1.84.0</code> 稳定）</td>
+</tr>
+</tbody></table>
+<p><code>with</code> 传入的是 <code>&amp;T</code>，若要修改内部数据，<code>T</code> 需包含内部可变性——<code>Cell&lt;T&gt;</code>（适合 <code>Copy</code> 类型）或 <code>RefCell&lt;T&gt;</code>（适合任意类型）。<code>LocalKey&lt;T&gt;</code> 本身不是 <code>Sync</code>，因此无法在线程间共享，也不需要锁。</p>
+<blockquote>
+<p><code>thread_local!</code> 变量的析构顺序在同一线程内是声明的逆序，但跨线程不保证顺序。若析构函数访问另一个已被销毁的 <code>TLS</code> 变量，<code>try_with</code> 会返回 <code>Err</code>；<code>with</code> 会 <code>panic</code>。涉及 <code>TLS</code> 相互依赖时，优先使用 <code>try_with</code>。</p>
+</blockquote>
+<h2 id="六、综合实战"><a href="#六、综合实战" class="headerlink" title="六、综合实战"></a>六、综合实战</h2><p>以下示例综合运用了本文介绍的主要 API：用 <code>available_parallelism</code> 感知环境并行度、通过 <code>scope</code> 让 <code>worker</code> 借用外层数据、用 <code>thread_local!</code> 为每条 <code>worker</code> 线程维护独立计数、最后用 <code>park</code>&#x2F;<code>unpark</code> 触发汇报线程。</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">use</span> std::cell::RefCell;<br><span class="hljs-keyword">use</span> std::sync::&#123;Arc, Mutex&#125;;<br><span class="hljs-keyword">use</span> std::thread;<br><span class="hljs-keyword">use</span> std::time::Duration;<br><br><span class="hljs-comment">// 线程局部存储：每个 worker 持有自己的处理计数</span><br>thread_local! &#123;<br>    <span class="hljs-keyword">static</span> PROCESSED: RefCell&lt;<span class="hljs-type">usize</span>&gt; = <span class="hljs-keyword">const</span> &#123; RefCell::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-number">0</span>) &#125;;<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">process_chunk</span>(chunk: &amp;[<span class="hljs-type">i32</span>]) <span class="hljs-punctuation">-&gt;</span> <span class="hljs-type">i64</span> &#123;<br>    PROCESSED.<span class="hljs-title function_ invoke__">with</span>(|p| *p.<span class="hljs-title function_ invoke__">borrow_mut</span>() += chunk.<span class="hljs-title function_ invoke__">len</span>());<br>    chunk.<span class="hljs-title function_ invoke__">iter</span>().<span class="hljs-title function_ invoke__">map</span>(|&amp;x| x <span class="hljs-keyword">as</span> <span class="hljs-type">i64</span> * x <span class="hljs-keyword">as</span> <span class="hljs-type">i64</span>).<span class="hljs-title function_ invoke__">sum</span>()<br>&#125;<br><br><span class="hljs-keyword">fn</span> <span class="hljs-title function_">main</span>() &#123;<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">parallelism</span> = thread::<span class="hljs-title function_ invoke__">available_parallelism</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">get</span>();<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;逻辑 CPU 数: &#123;parallelism&#125;，使用 4 个 worker&quot;</span>);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">data</span>: <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">i32</span>&gt; = (<span class="hljs-number">1</span>..=<span class="hljs-number">20</span>).<span class="hljs-title function_ invoke__">collect</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">chunk_size</span> = (data.<span class="hljs-title function_ invoke__">len</span>() + <span class="hljs-number">3</span>) / <span class="hljs-number">4</span>;<br><br>    <span class="hljs-comment">// worker_results[i] 存放 worker-i 的 (索引, 本线程累计, 平方和)</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">worker_results</span>: Mutex&lt;<span class="hljs-type">Vec</span>&lt;(<span class="hljs-type">usize</span>, <span class="hljs-type">usize</span>, <span class="hljs-type">i64</span>)&gt;&gt; = Mutex::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-type">Vec</span>::<span class="hljs-title function_ invoke__">new</span>());<br><br>    <span class="hljs-comment">// 用 scope 确保 worker 能借用 data</span><br>    thread::<span class="hljs-title function_ invoke__">scope</span>(|s| &#123;<br>        <span class="hljs-keyword">for</span> (i, chunk) <span class="hljs-keyword">in</span> data.<span class="hljs-title function_ invoke__">chunks</span>(chunk_size).<span class="hljs-title function_ invoke__">enumerate</span>() &#123;<br>            <span class="hljs-keyword">let</span> <span class="hljs-variable">results</span> = &amp;worker_results;<br>            s.<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>                <span class="hljs-keyword">let</span> <span class="hljs-variable">result</span> = <span class="hljs-title function_ invoke__">process_chunk</span>(chunk);<br>                <span class="hljs-keyword">let</span> <span class="hljs-variable">local_count</span> = PROCESSED.<span class="hljs-title function_ invoke__">with</span>(|p| *p.<span class="hljs-title function_ invoke__">borrow</span>());<br>                results.<span class="hljs-title function_ invoke__">lock</span>().<span class="hljs-title function_ invoke__">unwrap</span>().<span class="hljs-title function_ invoke__">push</span>((i, local_count, result));<br>            &#125;);<br>        &#125;<br>    &#125;);<br><br>    <span class="hljs-comment">// scope 结束后所有 worker 已 join，按 worker 索引排序打印</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">records</span> = worker_results.<span class="hljs-title function_ invoke__">into_inner</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>    records.<span class="hljs-title function_ invoke__">sort_by_key</span>(|r| r.<span class="hljs-number">0</span>);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">chunk_sizes</span>: <span class="hljs-type">Vec</span>&lt;<span class="hljs-type">usize</span>&gt; = data.<span class="hljs-title function_ invoke__">chunks</span>(chunk_size).<span class="hljs-title function_ invoke__">map</span>(|c| c.<span class="hljs-title function_ invoke__">len</span>()).<span class="hljs-title function_ invoke__">collect</span>();<br>    <span class="hljs-keyword">let</span> <span class="hljs-keyword">mut </span><span class="hljs-variable">total</span> = <span class="hljs-number">0i64</span>;<br>    <span class="hljs-keyword">for</span> (i, local_count, result) <span class="hljs-keyword">in</span> &amp;records &#123;<br>        <span class="hljs-built_in">println!</span>(<br>            <span class="hljs-string">&quot;  worker-&#123;i&#125; 处理 &#123;&#125; 个元素，平方和 = &#123;result&#125;，本线程累计 &#123;local_count&#125;&quot;</span>,<br>            chunk_sizes[*i]<br>        );<br>        total += result;<br>    &#125;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;1²+2²+...+20² = &#123;total&#125;&quot;</span>);<br><br>    <span class="hljs-comment">// 演示 park/unpark 作为简单信号机制</span><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">flag</span> = Arc::<span class="hljs-title function_ invoke__">new</span>(Mutex::<span class="hljs-title function_ invoke__">new</span>(<span class="hljs-literal">false</span>));<br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">flag_clone</span> = Arc::<span class="hljs-title function_ invoke__">clone</span>(&amp;flag);<br><br>    <span class="hljs-keyword">let</span> <span class="hljs-variable">reporter</span> = thread::Builder::<span class="hljs-title function_ invoke__">new</span>()<br>        .<span class="hljs-title function_ invoke__">name</span>(<span class="hljs-string">&quot;reporter&quot;</span>.<span class="hljs-title function_ invoke__">to_string</span>())<br>        .<span class="hljs-title function_ invoke__">spawn</span>(<span class="hljs-keyword">move</span> || &#123;<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;\nreporter: 等待汇报信号...&quot;</span>);<br>            thread::<span class="hljs-title function_ invoke__">park</span>();<br>            <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;reporter: 任务完成，总平方和已就绪&quot;</span>);<br>        &#125;)<br>        .<span class="hljs-title function_ invoke__">unwrap</span>();<br><br>    thread::<span class="hljs-title function_ invoke__">sleep</span>(Duration::<span class="hljs-title function_ invoke__">from_millis</span>(<span class="hljs-number">10</span>));<br>    *flag_clone.<span class="hljs-title function_ invoke__">lock</span>().<span class="hljs-title function_ invoke__">unwrap</span>() = <span class="hljs-literal">true</span>;<br>    <span class="hljs-built_in">println!</span>(<span class="hljs-string">&quot;main: 发送汇报信号&quot;</span>);<br>    reporter.<span class="hljs-title function_ invoke__">thread</span>().<span class="hljs-title function_ invoke__">unpark</span>();<br>    reporter.<span class="hljs-title function_ invoke__">join</span>().<span class="hljs-title function_ invoke__">unwrap</span>();<br>&#125;<br></code></pre></td></tr></table></figure>
+
+<p>运行结果：</p>
+<figure class="highlight subunit"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs subunit">逻辑 CPU 数: 8，使用 4 个 worker<br>  worker<span class="hljs-string">-0</span> 处理 5 个元素，平方和 = 55，本线程累计 5<br>  worker<span class="hljs-string">-1</span> 处理 5 个元素，平方和 = 330，本线程累计 5<br>  worker<span class="hljs-string">-2</span> 处理 5 个元素，平方和 = 855，本线程累计 5<br>  worker<span class="hljs-string">-3</span> 处理 5 个元素，平方和 = 1630，本线程累计 5<br>1²<span class="hljs-string">+2</span>²+...<span class="hljs-string">+20</span>² = 2870<br><br>reporter: 等待汇报信号...<br>main: 发送汇报信号<br>reporter: 任务完成，总平方和已就绪<br></code></pre></td></tr></table></figure>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Rust/" class="category-chain-item">Rust</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E7%BA%BF%E7%A8%8B%E5%AE%89%E5%85%A8/" class="print-no-link">#线程安全</a>
+      
+        <a href="/tags/JoinHandle/" class="print-no-link">#JoinHandle</a>
+      
+        <a href="/tags/%E7%BA%BF%E7%A8%8B%E5%B1%80%E9%83%A8%E5%AD%98%E5%82%A8/" class="print-no-link">#线程局部存储</a>
+      
+        <a href="/tags/scoped%E7%BA%BF%E7%A8%8B/" class="print-no-link">#scoped线程</a>
+      
+        <a href="/tags/park/" class="print-no-link">#park</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/rust/std-sync.html" title="[标准库] std::sync 并发同步原语介绍与实战">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">[标准库] std::sync 并发同步原语介绍与实战</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/rust/std-path.html" title="[标准库] std::path 路径处理介绍与实战">
+                        <span class="hidden-mobile">[标准库] std::path 路径处理介绍与实战</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>目录</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://probiecoder.cn" target="_blank" rel="nofollow noopener"><span>@probiecoder 2025</span></a> 
+    </div>
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    function isExpandAllEnabled() {
+      return CONFIG.toc && CONFIG.toc.expand_all === true;
+    }
+    function expandAllToc() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .tocbot-is-collapsed').removeClass('tocbot-is-collapsed');
+    }
+    function updateTocToggle($li, $childList) {
+      var $toggle = $li.children('.toc-toggle');
+      if ($toggle.length === 0) { return; }
+      var collapsed = $childList.hasClass('tocbot-is-collapsed');
+      $toggle
+        .toggleClass('toc-toggle-collapsed', collapsed)
+        .toggleClass('toc-toggle-expanded', !collapsed);
+    }
+    function bindTocToggle() {
+      if (!isExpandAllEnabled()) { return; }
+      jQuery('#toc-body .toc-list-item').each(function() {
+        var $li = jQuery(this);
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) {
+          if ($li.children('.toc-toggle').length === 0) {
+            $li.prepend('<span class="toc-toggle toc-toggle-placeholder" aria-hidden="true">›</span>');
+          }
+          return;
+        }
+
+        if ($li.children('.toc-toggle').length === 0) {
+          $li.prepend('<span class="toc-toggle toc-toggle-expanded" aria-hidden="true">›</span>');
+        }
+        updateTocToggle($li, $childList);
+      });
+      jQuery('#toc-body').off('click.tocToggle').on('click.tocToggle', '.toc-toggle', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var $li = jQuery(this).parent('.toc-list-item');
+        var $childList = $li.children('ol');
+        if ($childList.length === 0) { return; }
+        $childList.toggleClass('tocbot-is-collapsed');
+        updateTocToggle($li, $childList);
+      });
+      if (!window.__tocToggleObserver) {
+        window.__tocToggleObserver = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            if (mutation.type !== 'attributes' || mutation.attributeName !== 'class') { return; }
+            var $list = jQuery(mutation.target);
+            var $li = $list.parent('.toc-list-item');
+            if ($li.length === 0) { return; }
+            updateTocToggle($li, $list);
+          });
+        });
+        jQuery('#toc-body ol').each(function() {
+          window.__tocToggleObserver.observe(this, { attributes: true });
+        });
+      }
+    }
+    var tocConfig = Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc);
+    if (isExpandAllEnabled()) {
+      tocConfig.collapseDepth = 6;
+    }
+    window.tocbot.init(tocConfig);
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+    expandAllToc();
+    bindTocToggle();
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+        expandAllToc();
+        bindTocToggle();
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/5.0.0/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
